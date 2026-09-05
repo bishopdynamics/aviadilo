@@ -1,0 +1,48 @@
+# >>> project-template-a managed block >>>
+# Replaced verbatim by the template's migration tool. Do not edit inside this
+# block; add project-specific rules below the end marker.
+
+# --- OS junk: macOS ---
+.DS_Store
+.AppleDouble
+._*
+
+# --- OS junk: Linux ---
+*~
+.directory
+.Trash-*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# --- Node ---
+node_modules/
+
+# --- Editors ---
+.idea/
+*.swp
+*.swo
+
+# --- Coding agents: client-specific personal overrides stay local ---
+.claude/settings.local.json
+
+# --- Worker worktrees and run logs (hanuman Codex workers) ---
+.agent-worktrees/
+
+# --- Elefant offline-memory cache is transient and personal ---
+Elefant-Offline.md
+
+# --- Template-maintenance migration reports ---
+.migration-runs/
+# <<< project-template-a managed block <<<
+
+# --- Project-specific ignore rules go below this line ---

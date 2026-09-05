@@ -1,0 +1,18 @@
+{
+  "description": "Project safety hooks shared with other coding agents.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.agent-hooks/rm-guard.py\"",
+            "timeout": 30,
+            "statusMessage": "Checking destructive command policy"
+          }
+        ]
+      }
+    ]
+  }
+}
