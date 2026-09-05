@@ -1,5 +1,5 @@
 {
   "version": 1,
-  "name": "Project Template A",
-  "description": "Language-agnostic process template for agent-driven development with Claude Code or Codex, defining planning, spec, task-queue, and session handoff conventions (no app code)."
+  "name": "aviadilo",
+  "description": "aircraft tracking card for Home Assistant, using free open data"
 }
