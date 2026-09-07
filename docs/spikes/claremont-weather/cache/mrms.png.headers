@@ -1,0 +1,16 @@
+HTTP/2 200 
+server: Apache-Coyote/1.1
+x-frame-options: SAMEORIGIN
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+content-security-policy: base-uri 'self'; form-action 'self'; default-src 'none'; child-src 'self'; connect-src 'self'; font-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self';, frame-ancestors 'self';
+content-disposition: inline; filename=conus-conus_bref_qcd.png
+content-type: image/png
+access-control-allow-origin: *
+cache-control: must-revalidate, max-age=9000
+expires: Sun, 06 Sep 2026 21:38:02 GMT
+date: Sun, 06 Sep 2026 19:08:02 GMT
+strict-transport-security: max-age=31536000 ; preload
+

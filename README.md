@@ -1,0 +1,17 @@
+# Aviadilo
+
+A Lovelace map card and companion Home Assistant integration combining aircraft, weather radar, wind, and household locations on one kiosk-friendly map.
+
+Originally inspired by the ADS-B Exchange globe view, Aviadilo now aims to replace several dashboard maps with one larger shared map. Aircraft, precipitation radar, wind markers/animation, and existing Home Assistant location entities form optional layers. A configurable distance filter keeps far-away household members from pulling the map away from home.
+
+The accepted stack is TypeScript, Lit, Vite, and Leaflet, with a Python Home Assistant integration that shares external-data requests and caches across devices. All supported settings must have a visual editor. Public data access should remain free for household use and conservative on provider requests.
+
+The project is in first-run planning; no application has been implemented and build/run instructions are not yet available.
+
+The [draft implementation spec](docs/spec/ROOT_SPEC.md) targets Home Assistant 2026.9.1 and the user's Chromium tablet-PC kiosk.
+
+See [the revised direction](docs/idea/revised-direction.md), [expanded research and design](docs/research/everything-map.md), and [task queue](docs/TASK_QUEUE.md). The [original idea](docs/idea/initial-idea.md) and [initial research](docs/research/initial-options.md) preserve the aircraft-card starting point.
+
+Weather planning targets California and North America. Selected radar sources are **RainViewer (default), NOAA MRMS, and NOAA KSOX**; wind uses **DWD ICON global**. The [weather source comparison](docs/research/weather-source-quality.md) records the research and final selection.
+
+[Open the static Claremont comparison](docs/spikes/claremont-weather/comparison.html): seven real source snapshots, fully embedded for offline viewing.

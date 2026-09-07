@@ -1,0 +1,40 @@
+{
+  "verifiedAt": "2026-09-06T19:34:43.911063+00:00",
+  "images": 7,
+  "size": [
+    900,
+    600
+  ],
+  "staticFrames": true,
+  "windValidTime": "2026-09-06T21:00:00Z",
+  "windScaleKmh": [
+    0,
+    40
+  ],
+  "browser": {
+    "desktop": [
+      1440,
+      1000
+    ],
+    "mobile": [
+      390,
+      844
+    ],
+    "allImagesLoaded": true,
+    "horizontalOverflow": false,
+    "filters": true,
+    "lightbox": true,
+    "escapeAndFocusReturn": true,
+    "javascriptErrors": 0,
+    "standaloneHttpSubresourceRequests": 0,
+    "fileSchemeWorks": true
+  },
+  "cachedDownloadHashesMatch": true,
+  "commands": [
+    "python3 render_radar.py",
+    "/tmp/aviadilo-spike-venv/bin/python render_wind.py",
+    "node --check app.js",
+    "python3 -m py_compile fetch_once.py render_radar.py render_wind.py package_page.py"
+  ],
+  "independentReference": "https://github.com/ecmwf/cfgrib/blob/master/cfgrib/dataset.py#get_values_in_order (alternative-row normalization)"
+}

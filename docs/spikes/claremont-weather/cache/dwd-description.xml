@@ -1,0 +1,536 @@
+<?xml version="1.0" encoding="UTF-8"?><wcs:CoverageDescriptions xmlns:wcs="http://www.opengis.net/wcs/2.0" xmlns:ows="http://www.opengis.net/ows/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:gmlcov="http://www.opengis.net/gmlcov/1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:swe="http://www.opengis.net/swe/2.0" xmlns:wcsgs="http://www.geoserver.org/wcsgs/2.0" xsi:schemaLocation=" http://www.opengis.net/wcs/2.0 http://schemas.opengis.net/wcs/2.0/wcsDescribeCoverage.xsd http://www.geoserver.org/wcsgs/2.0 https://maps.dwd.de/geoserver/schemas/wcs/2.0/wcsgs.xsd">
+  <wcs:CoverageDescription gml:id="dwd__Icon_reg025_fd_sl_UV10M">
+    <gml:description>Generated from NinJo NWP Raster Store</gml:description>
+    <gml:name>Wind in 10m aus ICON</gml:name>
+    <gml:boundedBy>
+      <gml:EnvelopeWithTimePeriod srsName="http://www.opengis.net/def/crs/EPSG/0/4326" axisLabels="Lat Long elevation time" uomLabels="Deg Deg m s" srsDimension="3">
+        <gml:lowerCorner>-90.125 -180.125 10.0</gml:lowerCorner>
+        <gml:upperCorner>90.125 179.875 10.0</gml:upperCorner>
+        <gml:beginPosition>2026-09-05T06:00:00.000Z</gml:beginPosition>
+        <gml:endPosition>2026-09-14T00:00:00.000Z</gml:endPosition>
+      </gml:EnvelopeWithTimePeriod>
+    </gml:boundedBy>
+    <wcs:CoverageId>dwd__Icon_reg025_fd_sl_UV10M</wcs:CoverageId>
+    <gml:coverageFunction>
+      <gml:GridFunction>
+        <gml:sequenceRule axisOrder="+2 +1">Linear</gml:sequenceRule>
+        <gml:startPoint>0 0</gml:startPoint>
+      </gml:GridFunction>
+    </gml:coverageFunction>
+    <gmlcov:metadata>
+      <gmlcov:Extension>
+        <ows:Keywords>
+          <ows:Keyword>Gitterpunkt (reguläres geographisches Gitter)</ows:Keyword>
+          <ows:Keyword>Gitterpunktsfeld</ows:Keyword>
+          <ows:Keyword>GRIB</ows:Keyword>
+          <ows:Keyword>Kurzfristvorhersage</ows:Keyword>
+          <ows:Keyword>Meteorologie</ows:Keyword>
+          <ows:Keyword>Windgeschwindigkeit</ows:Keyword>
+          <ows:Keyword>10 m über Grund</ows:Keyword>
+        </ows:Keywords>
+        <wcsgs:TimeDomain xmlns:wcsgs="http://www.geoserver.org/wcsgs/2.0" default="2026-09-14T00:00:00.000Z">
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_0">
+            <gml:timePosition>2026-09-05T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_1">
+            <gml:timePosition>2026-09-05T07:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_2">
+            <gml:timePosition>2026-09-05T08:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_3">
+            <gml:timePosition>2026-09-05T09:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_4">
+            <gml:timePosition>2026-09-05T10:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_5">
+            <gml:timePosition>2026-09-05T11:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_6">
+            <gml:timePosition>2026-09-05T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_7">
+            <gml:timePosition>2026-09-05T13:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_8">
+            <gml:timePosition>2026-09-05T14:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_9">
+            <gml:timePosition>2026-09-05T15:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_10">
+            <gml:timePosition>2026-09-05T16:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_11">
+            <gml:timePosition>2026-09-05T17:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_12">
+            <gml:timePosition>2026-09-05T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_13">
+            <gml:timePosition>2026-09-05T19:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_14">
+            <gml:timePosition>2026-09-05T20:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_15">
+            <gml:timePosition>2026-09-05T21:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_16">
+            <gml:timePosition>2026-09-05T22:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_17">
+            <gml:timePosition>2026-09-05T23:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_18">
+            <gml:timePosition>2026-09-06T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_19">
+            <gml:timePosition>2026-09-06T01:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_20">
+            <gml:timePosition>2026-09-06T02:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_21">
+            <gml:timePosition>2026-09-06T03:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_22">
+            <gml:timePosition>2026-09-06T04:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_23">
+            <gml:timePosition>2026-09-06T05:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_24">
+            <gml:timePosition>2026-09-06T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_25">
+            <gml:timePosition>2026-09-06T07:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_26">
+            <gml:timePosition>2026-09-06T08:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_27">
+            <gml:timePosition>2026-09-06T09:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_28">
+            <gml:timePosition>2026-09-06T10:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_29">
+            <gml:timePosition>2026-09-06T11:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_30">
+            <gml:timePosition>2026-09-06T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_31">
+            <gml:timePosition>2026-09-06T13:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_32">
+            <gml:timePosition>2026-09-06T14:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_33">
+            <gml:timePosition>2026-09-06T15:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_34">
+            <gml:timePosition>2026-09-06T16:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_35">
+            <gml:timePosition>2026-09-06T17:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_36">
+            <gml:timePosition>2026-09-06T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_37">
+            <gml:timePosition>2026-09-06T19:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_38">
+            <gml:timePosition>2026-09-06T20:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_39">
+            <gml:timePosition>2026-09-06T21:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_40">
+            <gml:timePosition>2026-09-06T22:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_41">
+            <gml:timePosition>2026-09-06T23:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_42">
+            <gml:timePosition>2026-09-07T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_43">
+            <gml:timePosition>2026-09-07T01:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_44">
+            <gml:timePosition>2026-09-07T02:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_45">
+            <gml:timePosition>2026-09-07T03:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_46">
+            <gml:timePosition>2026-09-07T04:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_47">
+            <gml:timePosition>2026-09-07T05:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_48">
+            <gml:timePosition>2026-09-07T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_49">
+            <gml:timePosition>2026-09-07T07:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_50">
+            <gml:timePosition>2026-09-07T08:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_51">
+            <gml:timePosition>2026-09-07T09:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_52">
+            <gml:timePosition>2026-09-07T10:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_53">
+            <gml:timePosition>2026-09-07T11:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_54">
+            <gml:timePosition>2026-09-07T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_55">
+            <gml:timePosition>2026-09-07T13:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_56">
+            <gml:timePosition>2026-09-07T14:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_57">
+            <gml:timePosition>2026-09-07T15:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_58">
+            <gml:timePosition>2026-09-07T16:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_59">
+            <gml:timePosition>2026-09-07T17:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_60">
+            <gml:timePosition>2026-09-07T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_61">
+            <gml:timePosition>2026-09-07T19:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_62">
+            <gml:timePosition>2026-09-07T20:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_63">
+            <gml:timePosition>2026-09-07T21:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_64">
+            <gml:timePosition>2026-09-07T22:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_65">
+            <gml:timePosition>2026-09-07T23:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_66">
+            <gml:timePosition>2026-09-08T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_67">
+            <gml:timePosition>2026-09-08T01:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_68">
+            <gml:timePosition>2026-09-08T02:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_69">
+            <gml:timePosition>2026-09-08T03:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_70">
+            <gml:timePosition>2026-09-08T04:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_71">
+            <gml:timePosition>2026-09-08T05:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_72">
+            <gml:timePosition>2026-09-08T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_73">
+            <gml:timePosition>2026-09-08T07:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_74">
+            <gml:timePosition>2026-09-08T08:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_75">
+            <gml:timePosition>2026-09-08T09:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_76">
+            <gml:timePosition>2026-09-08T10:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_77">
+            <gml:timePosition>2026-09-08T11:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_78">
+            <gml:timePosition>2026-09-08T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_79">
+            <gml:timePosition>2026-09-08T13:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_80">
+            <gml:timePosition>2026-09-08T14:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_81">
+            <gml:timePosition>2026-09-08T15:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_82">
+            <gml:timePosition>2026-09-08T16:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_83">
+            <gml:timePosition>2026-09-08T17:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_84">
+            <gml:timePosition>2026-09-08T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_85">
+            <gml:timePosition>2026-09-08T19:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_86">
+            <gml:timePosition>2026-09-08T20:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_87">
+            <gml:timePosition>2026-09-08T21:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_88">
+            <gml:timePosition>2026-09-08T22:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_89">
+            <gml:timePosition>2026-09-08T23:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_90">
+            <gml:timePosition>2026-09-09T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_91">
+            <gml:timePosition>2026-09-09T01:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_92">
+            <gml:timePosition>2026-09-09T02:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_93">
+            <gml:timePosition>2026-09-09T03:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_94">
+            <gml:timePosition>2026-09-09T04:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_95">
+            <gml:timePosition>2026-09-09T05:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_96">
+            <gml:timePosition>2026-09-09T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_97">
+            <gml:timePosition>2026-09-09T07:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_98">
+            <gml:timePosition>2026-09-09T08:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_99">
+            <gml:timePosition>2026-09-09T09:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_100">
+            <gml:timePosition>2026-09-09T10:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_101">
+            <gml:timePosition>2026-09-09T11:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_102">
+            <gml:timePosition>2026-09-09T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_103">
+            <gml:timePosition>2026-09-09T13:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_104">
+            <gml:timePosition>2026-09-09T14:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_105">
+            <gml:timePosition>2026-09-09T15:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_106">
+            <gml:timePosition>2026-09-09T16:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_107">
+            <gml:timePosition>2026-09-09T17:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_108">
+            <gml:timePosition>2026-09-09T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_109">
+            <gml:timePosition>2026-09-09T21:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_110">
+            <gml:timePosition>2026-09-10T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_111">
+            <gml:timePosition>2026-09-10T03:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_112">
+            <gml:timePosition>2026-09-10T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_113">
+            <gml:timePosition>2026-09-10T09:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_114">
+            <gml:timePosition>2026-09-10T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_115">
+            <gml:timePosition>2026-09-10T15:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_116">
+            <gml:timePosition>2026-09-10T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_117">
+            <gml:timePosition>2026-09-10T21:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_118">
+            <gml:timePosition>2026-09-11T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_119">
+            <gml:timePosition>2026-09-11T03:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_120">
+            <gml:timePosition>2026-09-11T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_121">
+            <gml:timePosition>2026-09-11T09:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_122">
+            <gml:timePosition>2026-09-11T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_123">
+            <gml:timePosition>2026-09-11T15:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_124">
+            <gml:timePosition>2026-09-11T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_125">
+            <gml:timePosition>2026-09-11T21:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_126">
+            <gml:timePosition>2026-09-12T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_127">
+            <gml:timePosition>2026-09-12T03:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_128">
+            <gml:timePosition>2026-09-12T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_129">
+            <gml:timePosition>2026-09-12T09:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_130">
+            <gml:timePosition>2026-09-12T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_131">
+            <gml:timePosition>2026-09-12T15:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_132">
+            <gml:timePosition>2026-09-12T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_133">
+            <gml:timePosition>2026-09-12T21:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_134">
+            <gml:timePosition>2026-09-13T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_135">
+            <gml:timePosition>2026-09-13T03:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_136">
+            <gml:timePosition>2026-09-13T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_137">
+            <gml:timePosition>2026-09-13T09:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_138">
+            <gml:timePosition>2026-09-13T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_139">
+            <gml:timePosition>2026-09-13T15:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_140">
+            <gml:timePosition>2026-09-13T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_141">
+            <gml:timePosition>2026-09-13T21:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_td_142">
+            <gml:timePosition>2026-09-14T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+        </wcsgs:TimeDomain>
+        <wcsgs:ElevationDomain xmlns:wcsgs="http://www.geoserver.org/wcsgs/2.0" uom="m" default="10.0">
+          <wcsgs:SingleValue>10.0</wcsgs:SingleValue>
+        </wcsgs:ElevationDomain>
+        <wcsgs:DimensionDomain xmlns:wcsgs="http://www.geoserver.org/wcsgs/2.0" name="REFERENCE_TIME" default="2026-09-06T12:00:00.000Z">
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_dd_0_0">
+            <gml:timePosition>2026-09-05T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_dd_0_1">
+            <gml:timePosition>2026-09-05T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_dd_0_2">
+            <gml:timePosition>2026-09-05T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_dd_0_3">
+            <gml:timePosition>2026-09-06T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_dd_0_4">
+            <gml:timePosition>2026-09-06T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="dwd__Icon_reg025_fd_sl_UV10M_dd_0_5">
+            <gml:timePosition>2026-09-06T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+        </wcsgs:DimensionDomain>
+      </gmlcov:Extension>
+    </gmlcov:metadata>
+    <gml:domainSet>
+      <gml:RectifiedGrid gml:id="grid00__dwd__Icon_reg025_fd_sl_UV10M" dimension="2">
+        <gml:limits>
+          <gml:GridEnvelope>
+            <gml:low>0 0</gml:low>
+            <gml:high>1439 720</gml:high>
+          </gml:GridEnvelope>
+        </gml:limits>
+        <gml:axisLabels>i j</gml:axisLabels>
+        <gml:origin>
+          <gml:Point gml:id="p00_dwd__Icon_reg025_fd_sl_UV10M" srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+            <gml:pos>-90.0 -180.0</gml:pos>
+          </gml:Point>
+        </gml:origin>
+        <gml:offsetVector srsName="http://www.opengis.net/def/crs/EPSG/0/4326">0.0 0.25</gml:offsetVector>
+        <gml:offsetVector srsName="http://www.opengis.net/def/crs/EPSG/0/4326">0.25 0.0</gml:offsetVector>
+      </gml:RectifiedGrid>
+    </gml:domainSet>
+    <gmlcov:rangeType>
+      <swe:DataRecord xmlns:swe="http://www.opengis.net/swe/2.0">
+        <swe:field name="u">
+          <swe:Quantity>
+            <swe:description>u</swe:description>
+            <swe:uom code="m/s"/>
+            <swe:constraint>
+              <swe:AllowedValues>
+                <swe:interval>-24.181957244873047 34.03483963012695</swe:interval>
+              </swe:AllowedValues>
+            </swe:constraint>
+          </swe:Quantity>
+        </swe:field>
+        <swe:field name="v">
+          <swe:Quantity>
+            <swe:description>v</swe:description>
+            <swe:uom code="m/s"/>
+            <swe:constraint>
+              <swe:AllowedValues>
+                <swe:interval>-18.051969528198242 26.905061721801758</swe:interval>
+              </swe:AllowedValues>
+            </swe:constraint>
+          </swe:Quantity>
+        </swe:field>
+      </swe:DataRecord>
+    </gmlcov:rangeType>
+    <wcs:ServiceParameters>
+      <wcs:CoverageSubtype>RectifiedGridCoverage</wcs:CoverageSubtype>
+      <wcs:nativeFormat>image/tiff</wcs:nativeFormat>
+    </wcs:ServiceParameters>
+  </wcs:CoverageDescription>
+</wcs:CoverageDescriptions>

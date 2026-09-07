@@ -1,0 +1,25 @@
+HTTP/2 200 
+expires: Wed, 09 Sep 2026 15:39:34 GMT
+server: Apache
+access-control-allow-origin: *
+etag: "e52cbe261e14a0c85f69b6ef13281ebf"
+cache-control: max-age=523091, stale-while-revalidate=604800, stale-if-error=604800
+x-tilerender: orm.openstreetmap.org
+access-control-allow-methods: GET, HEAD, OPTIONS
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+access-control-allow-headers: X-Requested-With
+content-type: image/png
+accept-ranges: bytes
+date: Sun, 06 Sep 2026 19:08:11 GMT
+via: 1.1 varnish
+age: 276407
+x-served-by: cache-bur-kbur8200060-BUR, cache-bur-kbur8200031-BUR
+x-cache: MISS, HIT
+x-cache-hits: 0, 7
+x-timer: S1788721691.130620,VS0,VE0
+x-totp: INVALID
+x-totp-int: 480981
+x-totp-hmac: fkkr1DlHiofx9t9G4lXcksTR6lo=
+alt-svc: h3=":443";ma=86400,h3-29=":443";ma=86400,h3-27=":443";ma=86400
+content-length: 18609
+

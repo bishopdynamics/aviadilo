@@ -1,0 +1,302 @@
+{
+  "dwd": {
+    "product": "DWD ICON global 0.25\u00b0 10 m wind",
+    "validTime": "2026-09-06T21:00:00Z",
+    "timeEvidence": "Explicit configured/requested WCS time subset, also advertised in saved DescribeCoverage; text response has no embedded time.",
+    "inputFile": "dwd-grid21.txt",
+    "modelRun": null,
+    "sourceUnits": [
+      "U east: m/s",
+      "V north: m/s"
+    ],
+    "geometry": {
+      "edgeBounds": [
+        -118.875,
+        33.375,
+        -116.625,
+        34.875
+      ],
+      "gridEnvelope": [
+        245,
+        253,
+        221,
+        226
+      ],
+      "firstCellCenter": [
+        -118.75,
+        34.75
+      ],
+      "lastCellCenter": [
+        -116.75,
+        33.5
+      ],
+      "cellStep": [
+        0.25,
+        -0.25
+      ],
+      "edgeBoundsValidationMaxError": 0.0
+    },
+    "rotation": "Already true east/north; no rotation required",
+    "notes": [
+      "Provider product is ICON global, not ICON-D2.",
+      "Model run is not confirmed by the cached WCS response."
+    ],
+    "status": "ok",
+    "filename": "assets/dwd-wind.png",
+    "gridShape": [
+      6,
+      9
+    ],
+    "units": "km/h",
+    "statisticsScope": "min/maxSpeedKmh cover finite cached source cells; renderedMin/MaxSpeedKmh cover the displayed viewport",
+    "minSpeedKmh": 0.29014234817051754,
+    "maxSpeedKmh": 16.606586925096902,
+    "finiteCellCount": 54,
+    "totalCellCount": 54,
+    "renderedMinSpeedKmh": 0.001992936495485457,
+    "renderedMaxSpeedKmh": 14.90670138211564,
+    "finitePixelCount": 540000,
+    "noDataPixelCount": 0,
+    "display": {
+      "width": 900,
+      "height": 600,
+      "mercatorBounds": [
+        -13194508.192286007,
+        3981793.8760148287,
+        -13014508.192286007,
+        4101793.8760148287
+      ],
+      "colourScaleKmh": [
+        0,
+        40.0
+      ],
+      "shadeOpacity": 0.33725490196078434,
+      "arrowSpacingPixels": 48,
+      "arrowCount": 180,
+      "interpolation": "Bilinear true east/north vectors; no extrapolation; missing corners remain missing"
+    }
+  },
+  "hrrr": {
+    "product": "NOAA HRRR 3 km 10 m wind",
+    "validTime": "2026-09-06T21:00:00Z",
+    "inputFile": "hrrr-wind21.grib2",
+    "timeEvidence": "Both GRIB messages' validityDate/validityTime",
+    "modelRun": "2026-09-06T17:00:00Z",
+    "sourceUnits": [
+      "m s**-1",
+      "m s**-1"
+    ],
+    "gribMetadata": {
+      "shortName": "10u",
+      "name": "10 metre U wind component",
+      "units": "m s**-1",
+      "Nx": 63,
+      "Ny": 51,
+      "gridType": "lambert",
+      "radius": 6371229,
+      "latitudeOfFirstGridPointInDegrees": 33.262413,
+      "longitudeOfFirstGridPointInDegrees": 241.490211,
+      "LoVInDegrees": 262.5,
+      "Latin1InDegrees": 38.5,
+      "Latin2InDegrees": 38.5,
+      "DxInMetres": 3000.0,
+      "DyInMetres": 3000.0,
+      "iScansNegatively": 0,
+      "jScansPositively": 1,
+      "jPointsAreConsecutive": 0,
+      "alternativeRowScanning": 0,
+      "uvRelativeToGrid": 1,
+      "numberOfMissing": 0,
+      "validTime": "2026-09-06T21:00:00Z",
+      "modelRun": "2026-09-06T17:00:00Z",
+      "scanNormalization": "Regular scan order"
+    },
+    "geometry": {
+      "projection": "Spherical Lambert conformal conic",
+      "radiusMetres": 6371229,
+      "maxPositionErrorVsEcCodesMetres": 1.1018572614443583e-08,
+      "rotationFiniteDifferenceMaxUnitVectorError": 2.4159881317764587e-09,
+      "gridConvergenceDegreesMin": -13.309144933492696,
+      "gridConvergenceDegreesMax": -11.865102957483215,
+      "validationPointCount": 3213,
+      "cellStepMetres": [
+        3000.0,
+        3000.0
+      ]
+    },
+    "rotation": {
+      "gridRelativeInput": true,
+      "method": "uE=uGrid*cos(theta)+vGrid*sin(theta); vN=-uGrid*sin(theta)+vGrid*cos(theta)",
+      "speedPreservationMaxErrorMetresPerSecond": 1.7763568394002505e-15
+    },
+    "status": "ok",
+    "filename": "assets/hrrr-wind.png",
+    "gridShape": [
+      51,
+      63
+    ],
+    "units": "km/h",
+    "statisticsScope": "min/maxSpeedKmh cover finite cached source cells; renderedMin/MaxSpeedKmh cover the displayed viewport",
+    "minSpeedKmh": 0.09126280251244401,
+    "maxSpeedKmh": 38.10321678794088,
+    "finiteCellCount": 3213,
+    "totalCellCount": 3213,
+    "renderedMinSpeedKmh": 0.018289267670487372,
+    "renderedMaxSpeedKmh": 37.56669606133337,
+    "finitePixelCount": 540000,
+    "noDataPixelCount": 0,
+    "display": {
+      "width": 900,
+      "height": 600,
+      "mercatorBounds": [
+        -13194508.192286007,
+        3981793.8760148287,
+        -13014508.192286007,
+        4101793.8760148287
+      ],
+      "colourScaleKmh": [
+        0,
+        40.0
+      ],
+      "shadeOpacity": 0.33725490196078434,
+      "arrowSpacingPixels": 48,
+      "arrowCount": 180,
+      "interpolation": "Bilinear true east/north vectors; no extrapolation; missing corners remain missing"
+    }
+  },
+  "ndfd": {
+    "product": "NOAA NDFD 10 m wind forecast",
+    "validTime": "2026-09-06T21:00:00Z",
+    "timeEvidence": "Both GRIB messages' validityDate/validityTime",
+    "referenceTimeMeaning": "NDFD GRIB field reference time; not an individual numerical model run",
+    "requestedValidTime": "2026-09-06T21:00:00Z",
+    "timeOffsetSeconds": 0.0,
+    "availablePairedValidTimes": [
+      "2026-09-06T21:00:00Z",
+      "2026-09-07T00:00:00Z",
+      "2026-09-07T03:00:00Z",
+      "2026-09-07T06:00:00Z",
+      "2026-09-07T09:00:00Z",
+      "2026-09-07T12:00:00Z",
+      "2026-09-07T15:00:00Z",
+      "2026-09-07T18:00:00Z",
+      "2026-09-07T21:00:00Z",
+      "2026-09-08T00:00:00Z",
+      "2026-09-08T03:00:00Z",
+      "2026-09-08T06:00:00Z",
+      "2026-09-08T09:00:00Z",
+      "2026-09-08T12:00:00Z",
+      "2026-09-08T15:00:00Z",
+      "2026-09-08T18:00:00Z",
+      "2026-09-08T21:00:00Z",
+      "2026-09-09T00:00:00Z"
+    ],
+    "notes": [],
+    "modelRun": "2026-09-06T19:00:00Z",
+    "sourceUnits": [
+      "m s**-1",
+      "Degree true"
+    ],
+    "gribMetadata": {
+      "shortName": "10si",
+      "name": "10 metre wind speed",
+      "units": "m s**-1",
+      "Nx": 312,
+      "Ny": 252,
+      "gridType": "lambert",
+      "radius": 6371200.0,
+      "latitudeOfFirstGridPointInDegrees": 29.26025,
+      "longitudeOfFirstGridPointInDegrees": 236.87445,
+      "LoVInDegrees": 265.0,
+      "Latin1InDegrees": 25.0,
+      "Latin2InDegrees": 25.0,
+      "DxInMetres": 5079.406,
+      "DyInMetres": 5079.406,
+      "iScansNegatively": 0,
+      "jScansPositively": 1,
+      "jPointsAreConsecutive": 0,
+      "alternativeRowScanning": 1,
+      "uvRelativeToGrid": 0,
+      "numberOfMissing": 3298,
+      "validTime": "2026-09-06T21:00:00Z",
+      "modelRun": "2026-09-06T19:00:00Z",
+      "scanNormalization": "Reversed alternate data/bitmap scan rows; ecCodes geographic arrays validated in regular grid order"
+    },
+    "directionMetadata": {
+      "shortName": "10wdir",
+      "name": "10 metre wind direction",
+      "units": "Degree true",
+      "Nx": 312,
+      "Ny": 252,
+      "gridType": "lambert",
+      "radius": 6371200.0,
+      "latitudeOfFirstGridPointInDegrees": 29.26025,
+      "longitudeOfFirstGridPointInDegrees": 236.87445,
+      "LoVInDegrees": 265.0,
+      "Latin1InDegrees": 25.0,
+      "Latin2InDegrees": 25.0,
+      "DxInMetres": 5079.406,
+      "DyInMetres": 5079.406,
+      "iScansNegatively": 0,
+      "jScansPositively": 1,
+      "jPointsAreConsecutive": 0,
+      "alternativeRowScanning": 1,
+      "uvRelativeToGrid": 0,
+      "numberOfMissing": 3298,
+      "validTime": "2026-09-06T21:00:00Z",
+      "modelRun": "2026-09-06T19:00:00Z",
+      "scanNormalization": "Reversed alternate data/bitmap scan rows; ecCodes geographic arrays validated in regular grid order"
+    },
+    "geometry": {
+      "projection": "Spherical Lambert conformal conic",
+      "radiusMetres": 6371200.0,
+      "maxPositionErrorVsEcCodesMetres": 8.704016116104503e-09,
+      "rotationFiniteDifferenceMaxUnitVectorError": 3.2888069212422266e-09,
+      "gridConvergenceDegreesMin": -13.146149328884688,
+      "gridConvergenceDegreesMax": -5.033941862868482,
+      "validationPointCount": 78624,
+      "cellStepMetres": [
+        5079.406,
+        5079.406
+      ]
+    },
+    "rotation": {
+      "gridRelativeInput": false,
+      "directionConvention": "Meteorological FROM direction converted to downwind vectors"
+    },
+    "status": "ok",
+    "filename": "assets/ndfd-wind.png",
+    "gridShape": [
+      252,
+      312
+    ],
+    "units": "km/h",
+    "statisticsScope": "min/maxSpeedKmh cover finite cached source cells; renderedMin/MaxSpeedKmh cover the displayed viewport",
+    "minSpeedKmh": 0.0,
+    "maxSpeedKmh": 55.44,
+    "finiteCellCount": 75326,
+    "totalCellCount": 78624,
+    "renderedMinSpeedKmh": 0.002603391992838056,
+    "renderedMaxSpeedKmh": 29.484756793237196,
+    "finitePixelCount": 540000,
+    "noDataPixelCount": 0,
+    "display": {
+      "width": 900,
+      "height": 600,
+      "mercatorBounds": [
+        -13194508.192286007,
+        3981793.8760148287,
+        -13014508.192286007,
+        4101793.8760148287
+      ],
+      "colourScaleKmh": [
+        0,
+        40.0
+      ],
+      "shadeOpacity": 0.33725490196078434,
+      "arrowSpacingPixels": 48,
+      "arrowCount": 180,
+      "interpolation": "Bilinear true east/north vectors; no extrapolation; missing corners remain missing"
+    }
+  }
+}

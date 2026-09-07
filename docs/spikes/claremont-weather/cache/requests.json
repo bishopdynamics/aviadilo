@@ -1,0 +1,127 @@
+[
+  {
+    "name": "mrms",
+    "url": "https://opengeo.ncep.noaa.gov/geoserver/conus/conus_bref_qcd/ows?service=WMS&version=1.1.1&request=GetMap&layers=conus_bref_qcd&styles=&format=image%2Fpng&transparent=TRUE&srs=EPSG%3A3857&bbox=-13194508.192286007%2C3981793.8760148287%2C-13014508.192286007%2C4101793.8760148287&width=900&height=600&time=2026-09-06T18%3A40%3A12.000Z",
+    "file": "mrms.png"
+  },
+  {
+    "name": "sox",
+    "url": "https://opengeo.ncep.noaa.gov/geoserver/ksox/ows?service=WMS&version=1.1.1&request=GetMap&layers=ksox_sr_bref&styles=&format=image%2Fpng&transparent=TRUE&srs=EPSG%3A3857&bbox=-13194508.192286007%2C3981793.8760148287%2C-13014508.192286007%2C4101793.8760148287&width=900&height=600&time=2026-09-06T18%3A42%3A08.000Z",
+    "file": "sox.png"
+  },
+  {
+    "name": "eccc",
+    "url": "https://geo.weather.gc.ca/geomet?service=WMS&version=1.1.1&request=GetMap&layers=RADAR_1KM_RRAI&styles=Radar-Rain_14colors&format=image%2Fpng&transparent=TRUE&srs=EPSG%3A3857&bbox=-13194508.192286007%2C3981793.8760148287%2C-13014508.192286007%2C4101793.8760148287&width=900&height=600&time=2026-09-06T18%3A42%3A00Z",
+    "file": "eccc.png"
+  },
+  {
+    "name": "dwd",
+    "url": "https://maps.dwd.de/geoserver/dwd/wcs?service=WCS&version=2.0.1&request=GetCoverage&coverageId=dwd__Icon_reg025_fd_sl_UV10M&format=text%2Fplain&subset=Lat%2833.349192634681465%2C34.84185365645977%29&subset=Long%28-118.82828375570759%2C-116.61131624429245%29&subset=time%28%222026-09-06T19%3A00%3A00Z%22%29",
+    "file": "dwd-grid.txt"
+  },
+  {
+    "name": "ndfd",
+    "url": "https://mapservices.weather.noaa.gov/geoserver/ndfd/wind/wcs?service=WCS&version=2.0.1&request=GetCoverage&coverageId=ndfd__wind&format=text%2Fplain&subset=X%28-13199508.192286007%2C-13009508.192286007%29&subset=Y%283976793.8760148287%2C4106793.8760148287%29&subset=time%28%222026-09-06T19%3A00%3A00Z%22%29",
+    "file": "ndfd-grid.txt"
+  },
+  {
+    "name": "hrrr",
+    "url": "https://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl?file=hrrr.t17z.wrfsfcf02.grib2&lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=-118.62828375570759&rightlon=-116.81131624429246&toplat=34.64185365645977&bottomlat=33.54919263468146&dir=%2Fhrrr.20260906%2Fconus",
+    "file": "hrrr-wind.grib2"
+  },
+  {
+    "name": "osm",
+    "url": "https://tile.openstreetmap.org/9/87/203.png",
+    "file": "osm-9-87-203.png"
+  },
+  {
+    "name": "osm",
+    "url": "https://tile.openstreetmap.org/9/88/203.png",
+    "file": "osm-9-88-203.png"
+  },
+  {
+    "name": "osm",
+    "url": "https://tile.openstreetmap.org/9/89/203.png",
+    "file": "osm-9-89-203.png"
+  },
+  {
+    "name": "osm",
+    "url": "https://tile.openstreetmap.org/9/87/204.png",
+    "file": "osm-9-87-204.png"
+  },
+  {
+    "name": "osm",
+    "url": "https://tile.openstreetmap.org/9/88/204.png",
+    "file": "osm-9-88-204.png"
+  },
+  {
+    "name": "osm",
+    "url": "https://tile.openstreetmap.org/9/89/204.png",
+    "file": "osm-9-89-204.png"
+  },
+  {
+    "name": "osm",
+    "url": "https://tile.openstreetmap.org/9/87/205.png",
+    "file": "osm-9-87-205.png"
+  },
+  {
+    "name": "osm",
+    "url": "https://tile.openstreetmap.org/9/88/205.png",
+    "file": "osm-9-88-205.png"
+  },
+  {
+    "name": "osm",
+    "url": "https://tile.openstreetmap.org/9/89/205.png",
+    "file": "osm-9-89-205.png"
+  },
+  {
+    "name": "rainviewer",
+    "url": "https://tilecache.rainviewer.com/v2/radar/095dc9d72ba0/512/7/21/50/2/1_1.png",
+    "file": "rainviewer-7-21-50.png"
+  },
+  {
+    "name": "rainviewer",
+    "url": "https://tilecache.rainviewer.com/v2/radar/095dc9d72ba0/512/7/22/50/2/1_1.png",
+    "file": "rainviewer-7-22-50.png"
+  },
+  {
+    "name": "rainviewer",
+    "url": "https://tilecache.rainviewer.com/v2/radar/095dc9d72ba0/512/7/21/51/2/1_1.png",
+    "file": "rainviewer-7-21-51.png"
+  },
+  {
+    "name": "rainviewer",
+    "url": "https://tilecache.rainviewer.com/v2/radar/095dc9d72ba0/512/7/22/51/2/1_1.png",
+    "file": "rainviewer-7-22-51.png"
+  },
+  {
+    "name": "ndfd-grib",
+    "url": "https://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.pacswest/VP.001-003/ds.wspd.bin",
+    "file": "ndfd-speed.grib2"
+  },
+  {
+    "name": "ndfd-grib",
+    "url": "https://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.pacswest/VP.001-003/ds.wdir.bin",
+    "file": "ndfd-direction.grib2"
+  },
+  {
+    "name": "dwd",
+    "url": "https://maps.dwd.de/geoserver/dwd/wcs?service=WCS&version=2.0.1&request=GetCoverage&coverageId=dwd__Icon_reg025_fd_sl_UV10M&format=text%2Fplain&subset=Lat%2833.349192634681465%2C34.84185365645977%29&subset=Long%28-118.82828375570759%2C-116.61131624429245%29&subset=time%28%222026-09-06T21%3A00%3A00Z%22%29",
+    "file": "dwd-grid21.txt"
+  },
+  {
+    "name": "hrrr",
+    "url": "https://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl?file=hrrr.t17z.wrfsfcf04.grib2&lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=-118.62828375570759&rightlon=-116.81131624429246&toplat=34.64185365645977&bottomlat=33.54919263468146&dir=%2Fhrrr.20260906%2Fconus",
+    "file": "hrrr-wind21.grib2"
+  },
+  {
+    "name": "legend",
+    "url": "https://opengeo.ncep.noaa.gov/geoserver/conus/ows?service=WMS&version=1.1.1&request=GetLegendGraphic&layer=conus_bref_qcd&format=image/png",
+    "file": "noaa-legend.png"
+  },
+  {
+    "name": "legend",
+    "url": "https://geo.weather.gc.ca/geomet?service=WMS&version=1.3.0&request=GetLegendGraphic&layer=RADAR_1KM_RRAI&style=Radar-Rain_14colors&format=image/png",
+    "file": "eccc-legend.png"
+  }
+]

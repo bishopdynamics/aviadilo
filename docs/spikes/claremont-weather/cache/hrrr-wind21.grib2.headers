@@ -1,0 +1,28 @@
+HTTP/2 200 
+server: Apache
+x-frame-options: SAMEORIGIN
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+content-security-policy: script-src 'self' 'unsafe-inline' 'unsafe-eval' *;
+referrer-policy: no-referrer
+content-transfer-encoding: binary
+content-disposition: attachment; filename="hrrr.t17z.wrfsfcf04.grib2"
+content-description: grib2 file
+x-frame-options: SAMEORIGIN
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+content-security-policy: default-src 'self'
+referrer-policy: no-referrer
+cache-control: no-cache, private, max-age=14400
+content-type: application/octet-stream
+expires: Sun, 06 Sep 2026 23:24:06 GMT
+content-length: 7204
+date: Sun, 06 Sep 2026 19:24:06 GMT
+set-cookie: session=expiry=1788723246406590;Max-Age=600;path=/; HttpOnly; Secure;
+set-cookie: session=expiry=1788723246406467;Max-Age=600;path=/; HttpOnly; Secure;
+set-cookie: session=expiry=1788723246406467;Max-Age=600;path=/; HttpOnly; Secure;
+set-cookie: session=expiry=1788723246406590;Max-Age=600;path=/; HttpOnly; Secure;
+set-cookie: NSC_ESNS=84b34d6b-bdd6-1a9d-9678-00e0eddbf4e7_2917100704_1791515840_00000000075240380557; Path=/; Expires=Sun, 06-Sep-2026 19:24:21 GMT
+akamai-request-bc: [a=23.210.14.202,b=982569339,c=g,n=US_CA_LOSANGELES,o=20940],[c=c,n=US_CA_ELSEGUNDO,o=20940],[a=18,c=o]
+strict-transport-security: max-age=31536000 ; preload
+

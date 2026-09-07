@@ -10,4 +10,10 @@ and the agent then removes it from this list.
 
 One line per item: `- <what> — from docs/spec/<file>.md (YYYY-MM-DD)`
 
--
+- Multiple independent aircraft collection areas/integration profiles — proposed deferral from docs/spec/ROOT_SPEC.md (2026-09-06; draft).
+- GitHub mirror and HACS publication/automatic resource registration beyond the initial validated manual bundle — proposed deferral from docs/spec/ROOT_SPEC.md (2026-09-06; draft).
+- Additional weather providers (NDFD, HRRR, ECCC, IEM, etc.); outside the selected source set — from docs/spec/ROOT_SPEC.md (2026-09-06; user-selected source scope).
+- Aircraft route/photo enrichment, watchlists, prediction, notifications, and continuous history — proposed deferral from docs/spec/ROOT_SPEC.md (2026-09-06; draft).
+- People history and synchronized cross-layer historical replay — proposed deferral from docs/spec/ROOT_SPEC.md (2026-09-06; draft).
+- Alerts, lightning, wildfire, additional geographic layers, and a 3D globe — proposed deferral from docs/spec/ROOT_SPEC.md (2026-09-06; draft).
+- Additional browser/older-HA support after dedicated compatibility testing — proposed deferral from docs/spec/ROOT_SPEC.md (2026-09-06; draft).

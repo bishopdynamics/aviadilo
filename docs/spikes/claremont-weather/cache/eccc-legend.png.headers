@@ -1,0 +1,12 @@
+HTTP/1.1 200 OK
+Date: Sun, 06 Sep 2026 19:24:07 GMT
+Server: Apache
+Strict-Transport-Security: max-age=63072000; preload
+Strict-Transport-Security: max-age=63072000; preload
+X-GeoMet-Status: 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization
+Access-Control-Allow-Methods: POST, GET, OPTIONS
+Content-Type: image/png
+Transfer-Encoding: chunked
+

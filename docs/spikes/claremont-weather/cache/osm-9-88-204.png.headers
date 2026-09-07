@@ -1,0 +1,23 @@
+HTTP/2 200 
+cache-control: max-age=518814, stale-while-revalidate=604800, stale-if-error=604800
+server: Apache
+etag: "e151c3650cb497afa88c029a3aac7369"
+x-tilerender: piasa.openstreetmap.org
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+access-control-allow-origin: *
+content-type: image/png
+expires: Tue, 08 Sep 2026 14:12:17 GMT
+accept-ranges: bytes
+date: Sun, 06 Sep 2026 19:08:15 GMT
+via: 1.1 varnish
+age: 363771
+x-served-by: cache-bur-kbur8200076-BUR, cache-bur-kbur8200104-BUR
+x-cache: MISS, HIT
+x-cache-hits: 0, 21
+x-timer: S1788721695.131980,VS0,VE0
+x-totp: INVALID
+x-totp-int: 480981
+x-totp-hmac: fkkr1DlHiofx9t9G4lXcksTR6lo=
+alt-svc: h3=":443";ma=86400,h3-29=":443";ma=86400,h3-27=":443";ma=86400
+content-length: 43239
+

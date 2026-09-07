@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?><wcs:CoverageDescriptions xmlns:wcs="http://www.opengis.net/wcs/2.0" xmlns:ows="http://www.opengis.net/ows/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:gmlcov="http://www.opengis.net/gmlcov/1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:swe="http://www.opengis.net/swe/2.0" xmlns:wcsgs="http://www.geoserver.org/wcsgs/2.0" xsi:schemaLocation=" http://www.opengis.net/wcs/2.0 http://schemas.opengis.net/wcs/2.0/wcsDescribeCoverage.xsd http://www.geoserver.org/wcsgs/2.0 http://mapservices.weather.noaa.gov/geoserver/schemas/wcs/2.0/wcsgs.xsd">
+  <wcs:CoverageDescription gml:id="ndfd__wind">
+    <gml:description>Generated from ImageMosaic</gml:description>
+    <gml:name>wind</gml:name>
+    <gml:boundedBy>
+      <gml:EnvelopeWithTimePeriod srsName="http://www.opengis.net/def/crs/EPSG/0/3857" axisLabels="X Y time" uomLabels="m m s" srsDimension="2">
+        <gml:lowerCorner>-2.00375083427892E7 -3572603.74816414</gml:lowerCorner>
+        <gml:upperCorner>2.00415338031256E7 1.55387110963092E7</gml:upperCorner>
+        <gml:beginPosition>2026-09-06T18:00:00.000Z</gml:beginPosition>
+        <gml:endPosition>2026-09-13T00:00:00.000Z</gml:endPosition>
+      </gml:EnvelopeWithTimePeriod>
+    </gml:boundedBy>
+    <wcs:CoverageId>ndfd__wind</wcs:CoverageId>
+    <gml:coverageFunction>
+      <gml:GridFunction>
+        <gml:sequenceRule axisOrder="+1 +2">Linear</gml:sequenceRule>
+        <gml:startPoint>0 0</gml:startPoint>
+      </gml:GridFunction>
+    </gml:coverageFunction>
+    <gmlcov:metadata>
+      <gmlcov:Extension>
+        <ows:Keywords>
+          <ows:Keyword>wind</ows:Keyword>
+          <ows:Keyword>WCS</ows:Keyword>
+          <ows:Keyword>ImageMosaic</ows:Keyword>
+        </ows:Keywords>
+        <wcsgs:TimeDomain xmlns:wcsgs="http://www.geoserver.org/wcsgs/2.0" default="2026-09-13T00:00:00.000Z">
+          <gml:TimeInstant gml:id="ndfd__wind_td_0">
+            <gml:timePosition>2026-09-06T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_1">
+            <gml:timePosition>2026-09-06T19:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_2">
+            <gml:timePosition>2026-09-06T20:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_3">
+            <gml:timePosition>2026-09-06T21:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_4">
+            <gml:timePosition>2026-09-06T22:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_5">
+            <gml:timePosition>2026-09-06T23:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_6">
+            <gml:timePosition>2026-09-07T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_7">
+            <gml:timePosition>2026-09-07T01:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_8">
+            <gml:timePosition>2026-09-07T02:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_9">
+            <gml:timePosition>2026-09-07T03:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_10">
+            <gml:timePosition>2026-09-07T04:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_11">
+            <gml:timePosition>2026-09-07T05:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_12">
+            <gml:timePosition>2026-09-07T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_13">
+            <gml:timePosition>2026-09-07T07:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_14">
+            <gml:timePosition>2026-09-07T08:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_15">
+            <gml:timePosition>2026-09-07T09:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_16">
+            <gml:timePosition>2026-09-07T10:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_17">
+            <gml:timePosition>2026-09-07T11:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_18">
+            <gml:timePosition>2026-09-07T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_19">
+            <gml:timePosition>2026-09-07T13:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_20">
+            <gml:timePosition>2026-09-07T14:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_21">
+            <gml:timePosition>2026-09-07T15:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_22">
+            <gml:timePosition>2026-09-07T16:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_23">
+            <gml:timePosition>2026-09-07T17:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_24">
+            <gml:timePosition>2026-09-07T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_25">
+            <gml:timePosition>2026-09-07T19:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_26">
+            <gml:timePosition>2026-09-07T20:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_27">
+            <gml:timePosition>2026-09-07T21:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_28">
+            <gml:timePosition>2026-09-07T22:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_29">
+            <gml:timePosition>2026-09-07T23:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_30">
+            <gml:timePosition>2026-09-08T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_31">
+            <gml:timePosition>2026-09-08T01:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_32">
+            <gml:timePosition>2026-09-08T02:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_33">
+            <gml:timePosition>2026-09-08T03:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_34">
+            <gml:timePosition>2026-09-08T04:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_35">
+            <gml:timePosition>2026-09-08T05:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_36">
+            <gml:timePosition>2026-09-08T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_37">
+            <gml:timePosition>2026-09-08T09:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_38">
+            <gml:timePosition>2026-09-08T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_39">
+            <gml:timePosition>2026-09-08T15:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_40">
+            <gml:timePosition>2026-09-08T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_41">
+            <gml:timePosition>2026-09-08T21:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_42">
+            <gml:timePosition>2026-09-09T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_43">
+            <gml:timePosition>2026-09-09T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_44">
+            <gml:timePosition>2026-09-09T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_45">
+            <gml:timePosition>2026-09-09T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_46">
+            <gml:timePosition>2026-09-10T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_47">
+            <gml:timePosition>2026-09-10T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_48">
+            <gml:timePosition>2026-09-10T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_49">
+            <gml:timePosition>2026-09-10T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_50">
+            <gml:timePosition>2026-09-11T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_51">
+            <gml:timePosition>2026-09-11T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_52">
+            <gml:timePosition>2026-09-11T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_53">
+            <gml:timePosition>2026-09-11T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_54">
+            <gml:timePosition>2026-09-12T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_55">
+            <gml:timePosition>2026-09-12T06:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_56">
+            <gml:timePosition>2026-09-12T12:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_57">
+            <gml:timePosition>2026-09-12T18:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+          <gml:TimeInstant gml:id="ndfd__wind_td_58">
+            <gml:timePosition>2026-09-13T00:00:00.000Z</gml:timePosition>
+          </gml:TimeInstant>
+        </wcsgs:TimeDomain>
+      </gmlcov:Extension>
+    </gmlcov:metadata>
+    <gml:domainSet>
+      <gml:RectifiedGrid gml:id="grid00__ndfd__wind" dimension="2">
+        <gml:limits>
+          <gml:GridEnvelope>
+            <gml:low>0 0</gml:low>
+            <gml:high>30096 14350</gml:high>
+          </gml:GridEnvelope>
+        </gml:limits>
+        <gml:axisLabels>i j</gml:axisLabels>
+        <gml:origin>
+          <gml:Point gml:id="p00_ndfd__wind" srsName="http://www.opengis.net/def/crs/EPSG/0/3857">
+            <gml:pos>-2.00375083427892E7 1.55387110963092E7</gml:pos>
+          </gml:Point>
+        </gml:origin>
+        <gml:offsetVector srsName="http://www.opengis.net/def/crs/EPSG/0/3857">1331.670569360205 0.0</gml:offsetVector>
+        <gml:offsetVector srsName="http://www.opengis.net/def/crs/EPSG/0/3857">0.0 -1331.670569360205</gml:offsetVector>
+      </gml:RectifiedGrid>
+    </gml:domainSet>
+    <gmlcov:rangeType>
+      <swe:DataRecord xmlns:swe="http://www.opengis.net/swe/2.0">
+        <swe:field name="wind_speed">
+          <swe:Quantity>
+            <swe:description>wind_speed</swe:description>
+            <swe:uom code="W.m-2.Sr-1"/>
+            <swe:constraint>
+              <swe:AllowedValues>
+                <swe:interval>-3.4028235E38 3.4028235E38</swe:interval>
+              </swe:AllowedValues>
+            </swe:constraint>
+          </swe:Quantity>
+        </swe:field>
+        <swe:field name="wind_direction">
+          <swe:Quantity>
+            <swe:description>wind_direction</swe:description>
+            <swe:uom code="W.m-2.Sr-1"/>
+            <swe:constraint>
+              <swe:AllowedValues>
+                <swe:interval>-3.4028235E38 3.4028235E38</swe:interval>
+              </swe:AllowedValues>
+            </swe:constraint>
+          </swe:Quantity>
+        </swe:field>
+      </swe:DataRecord>
+    </gmlcov:rangeType>
+    <wcs:ServiceParameters>
+      <wcs:CoverageSubtype>RectifiedGridCoverage</wcs:CoverageSubtype>
+      <wcs:nativeFormat>image/tiff</wcs:nativeFormat>
+    </wcs:ServiceParameters>
+  </wcs:CoverageDescription>
+</wcs:CoverageDescriptions>

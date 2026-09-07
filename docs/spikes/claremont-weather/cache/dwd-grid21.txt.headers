@@ -1,0 +1,19 @@
+HTTP/1.1 200 200
+Date: Sun, 06 Sep 2026 19:24:05 GMT
+Server: Apache
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Frame-Options: SAMEORIGIN
+Content-Security-Policy: default-src 'self' *.dwd.de; script-src 'self' *.dwd.de 'unsafe-inline' 'unsafe-eval' data:; style-src 'self' *.dwd.de 'unsafe-inline' data:; img-src 'self' *.dwd.de *.flugwetter.de data:; frame-src 'self' *.dwd.de;
+Content-Disposition: inline; filename=dwd__Icon_reg025_fd_sl_UV10M.txt
+Vary: Accept-Encoding
+X-Permitted-Cross-Domain-Policies: master-only
+X-Content-Security-Policy: default-src 'self' *.dwd.de; script-src 'self' *.dwd.de 'unsafe-inline' 'unsafe-eval' data:; style-src 'self' *.dwd.de 'unsafe-inline' data:; img-src 'self' *.dwd.de *.flugwetter.de data:; frame-src 'self' *.dwd.de;
+Referrer-Policy: origin-when-cross-origin
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: Authorization
+Transfer-Encoding: chunked
+Content-Type: text/plain
+

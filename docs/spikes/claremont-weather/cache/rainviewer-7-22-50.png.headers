@@ -1,0 +1,24 @@
+HTTP/2 200 
+date: Sun, 06 Sep 2026 19:08:25 GMT
+content-type: image/png
+content-length: 96065
+etag: "W/"4166680904""
+x-rv-render-status: complete
+cache-control: max-age=172800
+access-control-allow-origin: *
+x-cache: rv_edge
+x-cache-status: HIT
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+permissions-policy: geolocation=(), microphone=(), camera=(), payment=()
+x-permitted-cross-domain-policies: none
+alt-svc: h3=":443"; ma=86400
+x-ratelimit-limit: 500
+x-ratelimit-used: 2
+x-ratelimit-window: 60
+x-ratelimit-burst-limit: 300
+x-ratelimit-burst-used: 2
+

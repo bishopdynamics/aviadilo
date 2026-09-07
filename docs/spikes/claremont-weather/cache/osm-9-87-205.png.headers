@@ -1,0 +1,25 @@
+HTTP/2 200 
+expires: Thu, 10 Sep 2026 00:24:04 GMT
+server: Apache
+access-control-allow-headers: X-Requested-With
+x-tilerender: palulukon.openstreetmap.org
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+etag: "ea70d4bf76104a9837a77beceb706be6"
+content-type: image/png
+access-control-allow-origin: *
+cache-control: max-age=525944, stale-while-revalidate=604800, stale-if-error=604800
+access-control-allow-methods: GET, HEAD, OPTIONS
+accept-ranges: bytes
+date: Sun, 06 Sep 2026 19:08:19 GMT
+via: 1.1 varnish
+age: 247799
+x-served-by: cache-bur-kbur8200087-BUR, cache-bur-kbur8200141-BUR
+x-cache: MISS, HIT
+x-cache-hits: 0, 5
+x-timer: S1788721699.130574,VS0,VE1
+x-totp: INVALID
+x-totp-int: 480981
+x-totp-hmac: fkkr1DlHiofx9t9G4lXcksTR6lo=
+alt-svc: h3=":443";ma=86400,h3-29=":443";ma=86400,h3-27=":443";ma=86400
+content-length: 7362
+

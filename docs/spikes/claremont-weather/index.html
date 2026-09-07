@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>Claremont weather source comparison</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="snapshots.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#sources">Skip to source images</a>
+    <main class="page">
+      <header class="masthead">
+        <div class="eyebrow"><span class="location-dot" aria-hidden="true"></span> AVIADILO / WEATHER STUDY</div>
+        <div class="heading-row">
+          <div>
+            <h1>Weather over Claremont</h1>
+            <p class="location" id="location">Claremont, California</p>
+          </div>
+          <div class="snapshot-stamp"><span class="stamp-label">SAVED SNAPSHOT</span><strong id="capture-date">Local comparison</strong><span id="capture-time">No live updates</span></div>
+        </div>
+        <p class="intro" id="summary">Compare saved radar and wind imagery over the same part of Southern California.</p>
+        <div class="study-details" id="study-details" hidden>
+          <span id="coordinates"></span><span id="extent"></span><span id="source-total"></span>
+        </div>
+      </header>
+
+      <section class="comparison" aria-labelledby="sources-heading">
+        <div class="section-bar">
+          <div><p class="eyebrow section-kicker">THE SOURCE IMAGES</p><h2 id="sources-heading">A view from each provider</h2></div>
+          <div class="filters" role="group" aria-label="Filter weather sources" hidden id="filters">
+            <button type="button" class="filter active" data-filter="all" aria-pressed="true">All <span id="all-count"></span></button>
+            <button type="button" class="filter" data-filter="radar" aria-pressed="false">Radar <span id="radar-count"></span></button>
+            <button type="button" class="filter" data-filter="wind" aria-pressed="false">Wind <span id="wind-count"></span></button>
+          </div>
+        </div>
+        <p class="timing-note">Radar observations and wind forecasts have independent timestamps. Compare the valid time on each image before comparing conditions.</p>
+        <p class="results-status sr-only" id="results-status" role="status"></p>
+        <div class="source-grid" id="sources"></div>
+        <div class="empty-state" id="empty-state" hidden>No saved sources in this category.</div>
+        <div class="missing-data" id="missing-data" hidden><h3>Local snapshot data is missing</h3><p>Keep <code>snapshots.js</code> and the <code>assets</code> folder alongside this page, then open it again. No provider requests are made by this page.</p></div>
+        <noscript><div class="missing-data">Enable JavaScript to display the saved local source images. This page does not contact weather providers.</div></noscript>
+      </section>
+
+      <aside class="study-notes" id="study-notes" aria-labelledby="notes-heading" hidden><h2 id="notes-heading">Reading this comparison</h2><ul id="notes-list"></ul></aside>
+      <footer><span>AVIADILO <span class="footer-divider">/</span> Claremont weather study</span><span>Saved images. No animation. No automatic requests to providers.</span></footer>
+    </main>
+
+    <dialog class="lightbox" id="lightbox" aria-labelledby="lightbox-title">
+      <div class="lightbox-bar"><div><p class="eyebrow">SAVED SOURCE IMAGE</p><h2 id="lightbox-title"></h2><p id="lightbox-caption"></p></div><button class="close-button" type="button" id="close-lightbox" aria-label="Close enlarged image">Close <span aria-hidden="true">×</span></button></div>
+      <div class="lightbox-image-wrap"><img id="lightbox-image" alt=""></div>
+    </dialog>
+  </body>
+</html>

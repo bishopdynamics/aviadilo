@@ -1,0 +1,86 @@
+{
+  "rainviewer": {
+    "status": "ok",
+    "file": "assets/rainviewer-radar.png",
+    "validTime": "2026-09-06T18:40:00Z",
+    "sourceAlphaRange": [
+      73,
+      255
+    ],
+    "opacity": 0.65,
+    "size": [
+      900,
+      600
+    ],
+    "bbox": [
+      -118.52828375570759,
+      33.64919263468146,
+      -116.91131624429245,
+      34.54185365645977
+    ],
+    "units": "dBZ"
+  },
+  "mrms": {
+    "status": "ok",
+    "file": "assets/mrms-radar.png",
+    "validTime": "2026-09-06T18:40:12.000Z",
+    "sourceAlphaRange": [
+      0,
+      255
+    ],
+    "opacity": 0.65,
+    "size": [
+      900,
+      600
+    ],
+    "bbox": [
+      -118.52828375570759,
+      33.64919263468146,
+      -116.91131624429245,
+      34.54185365645977
+    ],
+    "units": "dBZ"
+  },
+  "sox": {
+    "status": "ok",
+    "file": "assets/sox-radar.png",
+    "validTime": "2026-09-06T18:42:08.000Z",
+    "sourceAlphaRange": [
+      0,
+      255
+    ],
+    "opacity": 0.65,
+    "size": [
+      900,
+      600
+    ],
+    "bbox": [
+      -118.52828375570759,
+      33.64919263468146,
+      -116.91131624429245,
+      34.54185365645977
+    ],
+    "units": "dBZ"
+  },
+  "eccc": {
+    "status": "ok",
+    "file": "assets/eccc-radar.png",
+    "validTime": "2026-09-06T18:42:00Z",
+    "sourceAlphaRange": [
+      0,
+      255
+    ],
+    "opacity": 0.65,
+    "size": [
+      900,
+      600
+    ],
+    "bbox": [
+      -118.52828375570759,
+      33.64919263468146,
+      -116.91131624429245,
+      34.54185365645977
+    ],
+    "units": "mm/h"
+  }
+}

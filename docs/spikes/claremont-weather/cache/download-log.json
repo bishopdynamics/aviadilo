@@ -1,0 +1,202 @@
+{
+  "mrms.png": {
+    "url": "https://opengeo.ncep.noaa.gov/geoserver/conus/conus_bref_qcd/ows?service=WMS&version=1.1.1&request=GetMap&layers=conus_bref_qcd&styles=&format=image%2Fpng&transparent=TRUE&srs=EPSG%3A3857&bbox=-13194508.192286007%2C3981793.8760148287%2C-13014508.192286007%2C4101793.8760148287&width=900&height=600&time=2026-09-06T18%3A40%3A12.000Z",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:02.198858+00:00",
+    "bytes": 89903,
+    "sha256": "b640ee0f271938af47adab0c18e48527504d881aba8ecd33214f92e0a7ac2944",
+    "error": null
+  },
+  "sox.png": {
+    "url": "https://opengeo.ncep.noaa.gov/geoserver/ksox/ows?service=WMS&version=1.1.1&request=GetMap&layers=ksox_sr_bref&styles=&format=image%2Fpng&transparent=TRUE&srs=EPSG%3A3857&bbox=-13194508.192286007%2C3981793.8760148287%2C-13014508.192286007%2C4101793.8760148287&width=900&height=600&time=2026-09-06T18%3A42%3A08.000Z",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:04.608395+00:00",
+    "bytes": 696686,
+    "sha256": "2af47dd3cefed10ba49b76b3141d07fa7b7ade85dbf80195a8c6ca35a8f73952",
+    "error": null
+  },
+  "eccc.png": {
+    "url": "https://geo.weather.gc.ca/geomet?service=WMS&version=1.1.1&request=GetMap&layers=RADAR_1KM_RRAI&styles=Radar-Rain_14colors&format=image%2Fpng&transparent=TRUE&srs=EPSG%3A3857&bbox=-13194508.192286007%2C3981793.8760148287%2C-13014508.192286007%2C4101793.8760148287&width=900&height=600&time=2026-09-06T18%3A42%3A00Z",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:05.090384+00:00",
+    "bytes": 27921,
+    "sha256": "5f0ed93c8c11551191aa70e0ffa930220c289b26e3d312fdaf39fc576a444d94",
+    "error": null
+  },
+  "dwd-grid.txt": {
+    "url": "https://maps.dwd.de/geoserver/dwd/wcs?service=WCS&version=2.0.1&request=GetCoverage&coverageId=dwd__Icon_reg025_fd_sl_UV10M&format=text%2Fplain&subset=Lat%2833.349192634681465%2C34.84185365645977%29&subset=Long%28-118.82828375570759%2C-116.61131624429245%29&subset=time%28%222026-09-06T19%3A00%3A00Z%22%29",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:05.989666+00:00",
+    "bytes": 2760,
+    "sha256": "2ccc74c87fdea9a191e5e8c5146c38d8f6465dbbc17b5312cca1bc4ab4fa720f",
+    "error": null
+  },
+  "ndfd-grid.txt": {
+    "url": "https://mapservices.weather.noaa.gov/geoserver/ndfd/wind/wcs?service=WCS&version=2.0.1&request=GetCoverage&coverageId=ndfd__wind&format=text%2Fplain&subset=X%28-13199508.192286007%2C-13009508.192286007%29&subset=Y%283976793.8760148287%2C4106793.8760148287%29&subset=time%28%222026-09-06T19%3A00%3A00Z%22%29",
+    "httpStatus": "500",
+    "capturedAt": "2026-09-06T19:08:06.381709+00:00",
+    "bytes": 606,
+    "sha256": "fa1868d805eb5e00518f7ac8eade5b9629634fd8c5c716859bf30ebfcaef6b55",
+    "error": "HTTP 500"
+  },
+  "hrrr-wind.grib2": {
+    "url": "https://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl?file=hrrr.t17z.wrfsfcf02.grib2&lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=-118.62828375570759&rightlon=-116.81131624429246&toplat=34.64185365645977&bottomlat=33.54919263468146&dir=%2Fhrrr.20260906%2Fconus",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:07.068043+00:00",
+    "bytes": 7606,
+    "sha256": "7c21538f381428ce08db65fa741f5a8fda94761ebc0edf00f4ab4a9f77d1008f",
+    "error": null
+  },
+  "osm-9-87-203.png": {
+    "url": "https://tile.openstreetmap.org/9/87/203.png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:07.248747+00:00",
+    "bytes": 24006,
+    "sha256": "31b008386cd93c0a6ead6ad8966cdb1b1e7f34ee3b433bca6192c66afdcf78b1",
+    "error": null
+  },
+  "osm-9-88-203.png": {
+    "url": "https://tile.openstreetmap.org/9/88/203.png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:09.133002+00:00",
+    "bytes": 21260,
+    "sha256": "d47ba2d336b2f6623923df5d60000e8a693e2f263849755bd8e4e5711c172399",
+    "error": null
+  },
+  "osm-9-89-203.png": {
+    "url": "https://tile.openstreetmap.org/9/89/203.png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:11.132918+00:00",
+    "bytes": 18609,
+    "sha256": "13b062444169dc4568b44932b8dba5f82614f8ca40c54becfb2f5095b14ae10a",
+    "error": null
+  },
+  "osm-9-87-204.png": {
+    "url": "https://tile.openstreetmap.org/9/87/204.png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:13.143076+00:00",
+    "bytes": 35915,
+    "sha256": "925a7570f24f16e9456ba50856922549eb4115deeae50d7fb51637400d08b04c",
+    "error": null
+  },
+  "osm-9-88-204.png": {
+    "url": "https://tile.openstreetmap.org/9/88/204.png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:15.149186+00:00",
+    "bytes": 43239,
+    "sha256": "ef146985432b30cd24c22a3dbc48c2cf522102451857b559d3e406241c64932a",
+    "error": null
+  },
+  "osm-9-89-204.png": {
+    "url": "https://tile.openstreetmap.org/9/89/204.png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:17.152823+00:00",
+    "bytes": 33412,
+    "sha256": "784a99b2778e390abdea37ed549a9beaf9af65ca498d91015ae6bc765a72fcf9",
+    "error": null
+  },
+  "osm-9-87-205.png": {
+    "url": "https://tile.openstreetmap.org/9/87/205.png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:19.132848+00:00",
+    "bytes": 7362,
+    "sha256": "796139cfe52cbedbf6dbb55bee1d323c3c1bf10d17aa4586b87daaedb86ba4b8",
+    "error": null
+  },
+  "osm-9-88-205.png": {
+    "url": "https://tile.openstreetmap.org/9/88/205.png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:21.132149+00:00",
+    "bytes": 19807,
+    "sha256": "7e0ca6843b50f3a745a760090e4602950a3574e43f30efd1441e02926bd8a881",
+    "error": null
+  },
+  "osm-9-89-205.png": {
+    "url": "https://tile.openstreetmap.org/9/89/205.png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:23.134368+00:00",
+    "bytes": 31735,
+    "sha256": "993b401e9e83377b3ec7c1d9a06f880ee9c929422a4e1e78e63386465af052f4",
+    "error": null
+  },
+  "rainviewer-7-21-50.png": {
+    "url": "https://tilecache.rainviewer.com/v2/radar/095dc9d72ba0/512/7/21/50/2/1_1.png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:24.101379+00:00",
+    "bytes": 30317,
+    "sha256": "f2f01845c21d287e7d3582bf748edc836aa109fd7d5cfa733bb5e06de27af8d4",
+    "error": null
+  },
+  "rainviewer-7-22-50.png": {
+    "url": "https://tilecache.rainviewer.com/v2/radar/095dc9d72ba0/512/7/22/50/2/1_1.png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:26.188038+00:00",
+    "bytes": 96065,
+    "sha256": "efa52e6e48b765b1837fe5a6790e3ba3178c2b0e94c6ad66c4693c4945d5e96e",
+    "error": null
+  },
+  "rainviewer-7-21-51.png": {
+    "url": "https://tilecache.rainviewer.com/v2/radar/095dc9d72ba0/512/7/21/51/2/1_1.png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:28.178367+00:00",
+    "bytes": 91684,
+    "sha256": "6a6c403e56452830018ed7d9b2d4d4dab0e80d44d04a98eeb7799d4129d920df",
+    "error": null
+  },
+  "rainviewer-7-22-51.png": {
+    "url": "https://tilecache.rainviewer.com/v2/radar/095dc9d72ba0/512/7/22/51/2/1_1.png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:08:30.163015+00:00",
+    "bytes": 82251,
+    "sha256": "f93989dcec1f3e3de73740f483851251563fca71f83529764cf57f4b170dfc86",
+    "error": null
+  },
+  "ndfd-speed.grib2": {
+    "url": "https://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.pacswest/VP.001-003/ds.wspd.bin",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:21:29.384645+00:00",
+    "bytes": 905373,
+    "sha256": "6da9022e1d6e3a4719e1dfe8e5ebfb1e34176c88aee69423b13b9ec2f88570c2",
+    "error": null
+  },
+  "ndfd-direction.grib2": {
+    "url": "https://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gr2/DC.ndfd/AR.pacswest/VP.001-003/ds.wdir.bin",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:21:31.662102+00:00",
+    "bytes": 652724,
+    "sha256": "5dd8f204bdc0bc7267dfac2f3752ec8ba737dddef5b2389f7f655a6d3b020e22",
+    "error": null
+  },
+  "dwd-grid21.txt": {
+    "url": "https://maps.dwd.de/geoserver/dwd/wcs?service=WCS&version=2.0.1&request=GetCoverage&coverageId=dwd__Icon_reg025_fd_sl_UV10M&format=text%2Fplain&subset=Lat%2833.349192634681465%2C34.84185365645977%29&subset=Long%28-118.82828375570759%2C-116.61131624429245%29&subset=time%28%222026-09-06T21%3A00%3A00Z%22%29",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:24:06.168137+00:00",
+    "bytes": 2754,
+    "sha256": "9fb97c3eca29314e2b5451b1cc9fbf485c8670e14d28ebb383daa2a8a0ea0447",
+    "error": null
+  },
+  "hrrr-wind21.grib2": {
+    "url": "https://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl?file=hrrr.t17z.wrfsfcf04.grib2&lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=-118.62828375570759&rightlon=-116.81131624429246&toplat=34.64185365645977&bottomlat=33.54919263468146&dir=%2Fhrrr.20260906%2Fconus",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:24:06.856467+00:00",
+    "bytes": 7204,
+    "sha256": "18dd856c1ac1d90527b66ea89ce681cd2eec8eb7f5b54339e8ee04386fc47b3e",
+    "error": null
+  },
+  "noaa-legend.png": {
+    "url": "https://opengeo.ncep.noaa.gov/geoserver/conus/ows?service=WMS&version=1.1.1&request=GetLegendGraphic&layer=conus_bref_qcd&format=image/png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:24:07.055941+00:00",
+    "bytes": 5578,
+    "sha256": "51e526deb5ac5678a977799d7f478dafe2c022652d1a172fcab68506311e075b",
+    "error": null
+  },
+  "eccc-legend.png": {
+    "url": "https://geo.weather.gc.ca/geomet?service=WMS&version=1.3.0&request=GetLegendGraphic&layer=RADAR_1KM_RRAI&style=Radar-Rain_14colors&format=image/png",
+    "httpStatus": "200",
+    "capturedAt": "2026-09-06T19:24:07.441933+00:00",
+    "bytes": 12603,
+    "sha256": "d8220579dd51e8c1209dcc5e8f5d9bb4e0ca8c20e4c3d5e0cf69f747e76ab011",
+    "error": null
+  }
+}

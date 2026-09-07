@@ -1,0 +1,18 @@
+HTTP/1.1 200 OK
+Date: Sun, 06 Sep 2026 19:21:29 GMT
+Server: Apache
+Set-Cookie: session=expiry=1788723089690826;Max-Age=600;path=/; HttpOnly; Secure;
+X-Frame-Options: SAMEORIGIN
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+Content-Security-Policy: script-src 'self'
+Referrer-Policy: no-referrer
+Strict-Transport-Security: max-age=31536000
+Cache-Control: no-cache, private
+Last-Modified: Sun, 06 Sep 2026 18:47:52 GMT
+Accept-Ranges: bytes
+Content-Length: 652724
+Set-Cookie: session=expiry=1788723089690826;Max-Age=600;path=/; HttpOnly; Secure;
+Content-Type: application/octet-stream
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+
