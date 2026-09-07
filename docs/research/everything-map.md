@@ -1,6 +1,6 @@
 # Aviadilo: aircraft, weather radar, wind, and household locations
 
-Researched and drafted 2026-09-06. This revises the project direction after the user approved the previous stack and companion integration, then expanded the scope. It is input to initial planning, not an approved implementation specification.
+Historical research and design discussion from 2026-09-06. The user has now approved [ROOT_SPEC.md](../spec/ROOT_SPEC.md), which is authoritative for implementation; proposal wording below preserves the research history.
 
 ## Revised product
 
@@ -11,6 +11,8 @@ The first complete release should cover the requested layers together, including
 The original aircraft research remains useful in [initial-options.md](initial-options.md). The explicit user decisions are captured separately in [revised-direction.md](../idea/revised-direction.md).
 
 Provider decision after the Claremont spike (2026-09-06): **radar = RainViewer (default), NOAA MRMS, NOAA KSOX; wind = DWD ICON global only**. This supersedes earlier candidate recommendations. See [the source-quality comparison](weather-source-quality.md) for the historical comparison. Other researched weather sources are outside the selected implementation scope.
+
+Delivery decision: HACS installation/updates are required from the beginning. The user created and pushed public `bishopdynamics/aviadilo`, using remote `github` and upstream `github/main`. The [root spec](../spec/ROOT_SPEC.md) now defines a bundled HACS Integration package and GitHub Actions.
 
 ## What the new scope changes
 
@@ -226,4 +228,4 @@ The stack, integration, combined map direction, graphical editing, and mandatory
 
 The user answered the environment questions: HACS `weather-radar-card`, household locations entirely in `device_tracker` entities, and California/North America. The spike review settled radar choices (RainViewer default, NOAA MRMS, NOAA KSOX) and wind (DWD ICON global only). Use the captured source identities rather than the old card's inaccurate DWD model label.
 
-Still settle supported HA versions/kiosk browser, tile/grid-cache limits, authenticated transport, package/install layout, and remaining behaviour/defaults before approving the implementation spec. Do not reopen weather source selection or the RainViewer default. First-run setup remains incomplete; the completed spike is a research artifact.
+The [root spec](../spec/ROOT_SPEC.md) is approved in full as of 2026-09-06, including cache/transport and behaviour decisions. Implementation begins next session. Do not reopen accepted choices. Remaining first-run setup is local; repository connection and initial push are complete.

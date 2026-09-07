@@ -1,15 +1,15 @@
 # Task Queue
 
-Agent-worked, ordered queue that drives session-by-session work. Processing rules live in `AGENTS.md` ("Task queue"). This file is project-owned.
+Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-specific overrides in `PROJECT.md`.
 
 ## Queue
 
-1. [in-progress] Initial Planning
-   - Draft `docs/spec/ROOT_SPEC.md` ready for review (2026-09-06), targeting HA 2026.9.1 and the user's Chromium tablet PC. Eight serial slices cover contracts, integration/cache, authenticated transport, map/editor/people, aircraft, radar, wind, and packaging/HA verification. Engineering proposals await review; first-run setup remains pending.
-   - First-run design revised 2026-09-06: user approved the initial stack/integration/settings and expanded scope to one map with aircraft, radar, wind, and household device trackers. Mandatory people-radius filtering and full visual editing. See `docs/idea/revised-direction.md` and `docs/research/everything-map.md`; original research is `docs/research/initial-options.md`. First-run setup and detailed specification remain pending.
-   - Weather sources selected after spike review (2026-09-06): radar RainViewer (default), NOAA MRMS, NOAA KSOX; wind DWD ICON global only. Other researched sources are outside the selected implementation scope.
-   - Claremont static spike reviewed for source selection: `docs/spikes/claremont-weather/comparison.html` (seven frozen source images retained as research). Results and source-resolution caveats are in the adjacent README. Initial Planning remains pending completion; this does not approve the full implementation specification.
-   1. Read `docs/idea/initial-idea.md`.
-   2. Discuss, help the user flesh out the idea, research, discuss again, then write `docs/spec/ROOT_SPEC.md` (start from `docs/spec/SPEC_TEMPLATE.md`).
-2. ROOT_SPEC.md
-   1. Implement the initial specification.
+1. [ready] Implement `docs/spec/ROOT_SPEC.md` — approved 2026-09-06; **start next session**, as explicitly requested by the user.
+   - Begin with remaining first-run trust/setup checks and slice 1: Bootstrap, HACS packaging and frozen schemas. Scope and decisions are approved; explain the slice at kickoff without asking for renewed permission.
+   - Keep `docs/FIRST_RUN.md` until its remaining local setup is actually complete. Identity, stack, public GitHub repository, `github` remote, and initial upstream push are already settled.
+   - Use the approved eight serial slices, template-based worker briefs, explicit model/effort, and post-integration verification/review. Commit each slice and update status; follow the normal slice handoff cadence.
+   - HACS is required from the first release. Remote: `github`; upstream: `github/main`; repository: `bishopdynamics/aviadilo`.
+
+## Completed
+
+- 2026-09-06 — Initial Planning completed by user approval of the revised `ROOT_SPEC.md`. Combined-map research and the Claremont source-comparison spike are preserved. Selected radar: RainViewer (default), NOAA MRMS, NOAA KSOX; wind: DWD ICON global.

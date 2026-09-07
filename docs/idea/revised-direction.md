@@ -12,6 +12,7 @@ The user approved the recommendations from the 2026-09-05 research:
 
 - TypeScript + Lit frontend, Vite tooling, and Leaflet for the initial 2D map.
 - A companion Python Home Assistant integration for shared collection and caching.
+- HACS installation from the first release, using the user-created public GitHub repository `bishopdynamics/aviadilo`. Remote `github` and upstream `github/main` are already configured; the user pushed the existing work.
 - Free data sources, conservative polling, and replaceable aircraft-provider adapters.
 - A mandatory visual editor covering all supported configuration, including advanced settings.
 - Compatibility input: latest Home Assistant, displayed in Chromium on a tablet PC kiosk. HA 2026.9.1 is the verified current stable baseline as of 2026-09-06; the user's installed patch/browser build was not inspected.
@@ -31,6 +32,6 @@ Approval of the earlier suggestions retains their initial-versus-later distincti
 
 ## Design work now
 
-The weather source set and radar default are settled. Use the selected products and captured endpoint evidence from the Claremont spike when drafting the initial specification. New layer behaviour, people-filter details, cache sizing, packaging, and compatibility targets still need to be made concrete. Other researched weather adapters are outside the selected implementation scope; the complete frozen comparison remains available as research.
+The user approved the full root specification on 2026-09-06, including layer behaviour, people-filter details, cache sizing, HACS packaging, compatibility targets, and implementation slices. Production implementation begins next session. Other researched weather adapters are outside the selected implementation scope; the complete frozen comparison remains available as research.
 
-See [the draft implementation spec](../spec/ROOT_SPEC.md) and [expanded research](../research/everything-map.md). Proposed engineering choices await spec review; the product requirements and accepted foundation above are user decisions.
+See [the approved implementation spec](../spec/ROOT_SPEC.md) and [expanded research](../research/everything-map.md). The approved spec is authoritative where earlier research discusses alternatives.

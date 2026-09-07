@@ -1,7 +1,8 @@
 # SPEC: Aviadilo household map
 
-- **Status:** draft — accepted product decisions incorporated; new engineering choices below await review.
+- **Status:** approved — user approved the revised specification on 2026-09-06; implementation starts next session.
 - **Addenda:** none.
+- **Repository:** public `https://github.com/bishopdynamics/aviadilo`; remote `github`, upstream `github/main`. HACS from the first release is an accepted user requirement.
 - **Compatibility baseline:** Home Assistant Core 2026.9.1, current stable Chromium on a tablet PC. The user reported using latest HA; this patch version is the verified release baseline, not an inspection of their installation.
 - **Inputs:** `docs/idea/revised-direction.md`, `docs/research/everything-map.md`, `docs/research/weather-source-quality.md`, and the frozen Claremont spike.
 
@@ -9,7 +10,7 @@
 
 Aviadilo replaces separate aircraft, radar, and household-location maps with one large Lovelace map suitable for the user's Chromium kiosk. A Python Home Assistant integration shares external data collection and caching across cards and devices. A TypeScript/Lit/Leaflet card renders aircraft, precipitation radar, wind, and existing household trackers as independent layers. Every supported setting has a graphical editor, and distant travellers cannot pull the home view out to a world map.
 
-This document makes the proposed implementation concrete. It does not authorize deployment to the user's HA instance or mark first-run setup complete.
+The user approved this implementation plan and asked to start implementation next session. First-run local setup remains outstanding; approval does not mark those setup checks complete or deploy anything to the user's HA instance.
 
 ## Goals
 
@@ -19,7 +20,7 @@ This document makes the proposed implementation concrete. It does not authorize 
 - Share data requests and cached frames across viewers; replay should reuse downloaded data.
 - Handle missing, stale, unavailable, and out-of-coverage data without breaking other layers.
 - Support the user's current HA release and Chromium tablet PC, including touch and prolonged display.
-- Deliver an installable integration/card bundle with reproducible development, tests, and packaging.
+- Deliver HACS installation and upgrades from the first release, with the card bundled alongside its integration and reproducible builds/tests.
 
 ## Non-Goals
 
@@ -31,7 +32,7 @@ This document makes the proposed implementation concrete. It does not authorize 
 
 ## Key Decisions
 
-“Accepted” identifies user decisions. “Proposed” identifies concrete engineering choices submitted with this draft.
+All decisions below are accepted through the user's approval of the revised specification on 2026-09-06.
 
 | Decision | Choice | Rationale / alternatives considered |
 | --- | --- | --- |
@@ -40,20 +41,23 @@ This document makes the proposed implementation concrete. It does not authorize 
 | People — accepted | Existing coordinate-bearing `device_tracker` entities; radius filter before drawing/fitting | No migration of the household's tracking setup |
 | Editor — accepted | Graphical access to every supported option | Advanced panels may collapse, but no YAML-only supported features |
 | Compatibility — accepted input / pinned baseline | HA 2026.9.1 and current stable Chromium on tablet PC | Record tested Chromium version in verification; refresh the HA baseline deliberately as development proceeds |
-| Aircraft sources — proposed | adsb.fi default; ADSB.lol alternative, manually selected | adsb.fi has a documented 1 request/second ceiling; both were researched. No automatic provider switching |
-| Installation — proposed | One integration ZIP containing the compiled card; manual local installation first | Avoid separate backend/card version drift. GitHub/HACS publication is a follow-up to the GitLab development repository |
-| Initial configuration model — proposed | One integration entry with one shared home/zone/custom collection area; any number of cards/viewers | Matches the household use case and keeps global cache/poll controls unambiguous. Multiple independently configured aircraft areas can follow |
-| Viewport — proposed | Fixed home-area view by default; optional fit-visible mode | Only the central viewport controller can change bounds |
+| Aircraft sources — accepted | adsb.fi default; ADSB.lol alternative, manually selected | adsb.fi has a documented 1 request/second ceiling; both were researched. No automatic provider switching |
+| Installation — accepted requirement / packaging design | HACS Integration repository with the compiled card included in the same versioned package | HACS is required immediately. One installation keeps backend/card versions aligned; normal first-use flow adds this public repository to HACS as type Integration |
+| Repository and CI — accepted | Public GitHub `bishopdynamics/aviadilo`, `github` remote; GitHub Actions | User created and pushed the repository. GitLab and an `origin` remote are not required |
+| Initial configuration model — accepted | One integration entry with one shared home/zone/custom collection area; any number of cards/viewers | Matches the household use case and keeps global cache/poll controls unambiguous. Multiple independently configured aircraft areas can follow |
+| Viewport — accepted | Fixed home-area view by default; optional fit-visible mode | Only the central viewport controller can change bounds |
 | Initial collection — accepted | 50 km aircraft radius, requested 10-second interval | Subject to shared provider limits and backoff |
-| Cache — proposed | 512 MiB disk budget, 64 MiB backend memory budget; graphical disk setting 128–4096 MiB | Bounded persistent reuse; avoids unbounded kiosk growth |
-| Viewer lifetime — proposed | 20-second heartbeat, 60-second lease; hide/disconnect ends demand | Stop upstream work after all active viewers leave |
-| Time — proposed | Live targets, separately labelled radar history and current-valid model wind | No implication that a past radar frame rewinds live targets |
+| Cache — accepted | 512 MiB disk budget, 64 MiB backend memory budget; graphical disk setting 128–4096 MiB | Bounded persistent reuse; avoids unbounded kiosk growth |
+| Viewer lifetime — accepted | 20-second heartbeat, 60-second lease; hide/disconnect ends demand | Stop upstream work after all active viewers leave |
+| Time — accepted | Live targets, separately labelled radar history and current-valid model wind | No implication that a past radar frame rewinds live targets |
 
 The HA release and its Python requirement are verified from [2026.9.1](https://github.com/home-assistant/core/releases/tag/2026.9.1) and [its project metadata](https://raw.githubusercontent.com/home-assistant/core/2026.9.1/pyproject.toml): backend development/tests require Python 3.14.2 or newer within the supported 3.14 line. Use Node 24 LTS for the frontend development environment; pin dependency versions in lockfiles during setup.
 
 ## Design
 
 ### Product layout and first use
+
+First use: add `bishopdynamics/aviadilo` as a HACS custom repository of type Integration, download its release, restart HA when requested, then add Aviadilo under Devices & services. The integration loads the bundled card module so it appears in the graphical card picker without copying JavaScript files or writing resource YAML. HACS installation/updates do not depend on admission to the default HACS catalogue. [HACS custom repositories](https://www.hacs.xyz/docs/faq/custom_repositories/).
 
 The integration's graphical setup chooses a location anchor (HA home by default, another `zone`, or explicit coordinates), aircraft provider, and collection radius. Missing coordinates prevent activation of affected collection rather than falling back to zero.
 
@@ -101,7 +105,7 @@ Source policies:
 | NOAA radar | Metadata every 2 minutes while demanded; conservative initial ceiling 30 requests/minute, at least 2 seconds apart, shared by MRMS/KSOX |
 | DWD wind | Refresh advertised valid-time/run information hourly while demanded; conservative maximum 10 requests/minute across metadata/grid requests |
 
-Only adsb.fi and RainViewer ceilings above are derived from published numeric limits. The other values are proposed conservative defaults where no applicable fixed limit was verified; accept stricter server instructions and revise policy when authoritative limits change. Relevant evidence: [adsb.fi](https://github.com/adsbfi/opendata), [ADSB.lol](https://github.com/adsblol/api), [RainViewer transition](https://www.rainviewer.com/api/transition-faq.html). Treat no-limit claims as unverified.
+Only adsb.fi and RainViewer ceilings above are derived from published numeric limits. The other values are approved conservative defaults where no applicable fixed limit was verified; accept stricter server instructions and revise policy when authoritative limits change. Relevant evidence: [adsb.fi](https://github.com/adsbfi/opendata), [ADSB.lol](https://github.com/adsblol/api), [RainViewer transition](https://www.rainviewer.com/api/transition-faq.html). Treat no-limit claims as unverified.
 
 All requests, including manual refresh, retries, metadata, and test-connection actions, pass through the same provider queue. Coalesce identical in-flight work. No parallel requests to one provider initially. Retry 429 according to provider cooldown headers; transient failures back off from 30 seconds to 15 minutes with jitter. Authentication or invalid-request errors stop repetitive requests and show an actionable state. Empty successful data is a valid result.
 
@@ -177,17 +181,29 @@ Each layer has independent loading/current/stale/unavailable/outside-coverage st
 
 ### Repository and packaging
 
-Proposed layout:
+Approved layout:
 
 - `src/`: card entry, configuration/editor, HA transport wrapper, map/viewport, and separate layer modules.
-- `custom_components/aviadilo/`: integration/config flow, service, authenticated transport, providers, scheduling/cache, and translations.
+- `custom_components/aviadilo/`: the single HACS integration, including config flow, service, authenticated transport, providers, scheduling/cache, translations, local `brand/` assets, and bundled `frontend/` runtime files.
 - `contracts/`: JSON schema and cross-language fixtures.
 - `tests/frontend/`, `tests/backend/`, `tests/e2e/`: separate native test suites.
 - `dev/`: synthetic fixture harness and isolated HA test-instance configuration.
 - `scripts/`: reproducible bundle/release packaging and validation.
+- `hacs.json`: HACS metadata at repository root.
+- `.github/workflows/`: native checks, HACS/hassfest validation, and release packaging.
 - Existing research/spike documents remain intact.
 
-Build `aviadilo.js` with bundled runtime assets, copy it into the integration release directory, and serve it through an integration-owned static resource path. Provide exact resource-registration instructions and validate resource URL/cache-busting behaviour in HA. Do not assume HACS publishes directly from GitLab. Initial distribution is an integration ZIP and local resource registration; later GitHub/HACS publication is separate authorization/work.
+The user-created public GitHub repository is the development and HACS source; keep its `github` remote name. At verification, `main` and its local tracking ref `github/main` both pointed to `0a91da20ef8e8e8d181f4f7779d23ea84dc7e096`. No remote rename or additional repository is needed.
+
+Package Aviadilo as HACS type **Integration**, with exactly one directory under `custom_components/`. All runtime files, including the compiled `frontend/aviadilo.js`, styles/images, and `brand/icon.png`, belong inside `custom_components/aviadilo/`. Frontend source and research may remain elsewhere in the repository. [HACS integration structure](https://www.hacs.xyz/docs/publish/integration/).
+
+Root `hacs.json` declares `name: Aviadilo`, `homeassistant: 2026.9.1`, `zip_release: true`, `filename: aviadilo.zip`, and `hide_default_branch: true`. Release packaging archives the contents of the integration directory at ZIP root, so HACS installs them into `custom_components/aviadilo/`. Validate this extraction in a clean HACS instance; do not ship source-only branch downloads that lack the built card. Manifest version, JavaScript build version, tag version, and archive version must match. [HACS manifest options](https://www.hacs.xyz/docs/publish/start/).
+
+Register a versioned integration-owned static path and load its bundled ES module using HA's extra-module registration mechanism. Isolate registration/removal in `static.py`; avoid duplicate registrations and remove owned module registrations on unload. The module uses the current package version for cache busting; an HA restart/browser reload after HACS upgrades must load the matching card. This also supports dashboards using YAML without modifying their resource configuration. Verify against the pinned HA version because this is a frontend integration point. [HA module registration implementation](https://raw.githubusercontent.com/home-assistant/core/2026.9.1/homeassistant/components/frontend/__init__.py).
+
+Use GitHub Actions from bootstrap: native checks on pull requests/pushes; HACS validation with category `integration`; hassfest validation; deterministic frontend build and ZIP checks. A version-tag release workflow attaches the tested `aviadilo.zip` to the matching GitHub Release. Keep dependency/action versions pinned and release write permissions limited to the release job. Repository description, topics, issue tracker, manifest links, and codeowner metadata must satisfy HACS checks. [HACS validation action](https://www.hacs.xyz/docs/publish/action/).
+
+Acceptance includes clean installation and upgrade through HACS, automatic card availability, retained settings/cache outside the replaced integration directory, correct packaged brand/runtime files, and first-use graphical configuration. The first usable prerelease must already use this route. Default-catalogue inclusion is optional follow-up distribution work; it does not defer HACS usability.
 
 Makefile is a thin portable wrapper: default `help`; `setup`, `run` (fixture harness), `build`, `test`, `check`, `lint`, `format`, `clean`. A distinct `ha-dev` target starts the isolated HA test instance; no target points at the user's production instance by default.
 
@@ -195,14 +211,16 @@ Makefile is a thin portable wrapper: default `help`; `setup`, `run` (fixture har
 
 All slices are **[serial]** initially. This avoids worktree/toolchain overhead while contracts and the new integration are established. Changes can be scheduled in parallel later only with disjoint ownership and isolated worktrees. Each worker gets a template-based self-contained brief and an explicit model/effort. The orchestrator alone edits handoff, memory, task queue, and deferred records.
 
-The owned paths below are proposed for approval with this draft. Directory entries grant ownership only within that new module/test subtree. Shared files repeat across serial slices deliberately; no parallel ownership is implied.
+The owned paths below were approved with this specification. Directory entries grant ownership only within that new module/test subtree. Shared files repeat across serial slices deliberately; no parallel ownership is implied.
 
-1. **Bootstrap and frozen schemas — (M), [serial].** Establish toolchains, build/test commands, fixture harness, and versioned data/configuration schemas.
+1. **Bootstrap, HACS packaging and frozen schemas — (M), [serial].** Establish toolchains, build/test commands, fixture harness, HACS layout/release packaging, and versioned data/configuration schemas.
    - Owned files: `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`, `eslint.config.js`, `.prettierrc.json`, `.node-version`, `pyproject.toml`, `uv.lock`, `.python-version`, `Makefile`, project-owned portion of `.gitignore`, `contracts/**`, `src/aviadilo-map.ts` (buildable stub), `src/data/types.ts`, `src/config/**`, `custom_components/aviadilo/models.py`, `custom_components/aviadilo/providers/base.py`, `dev/index.html`, `dev/fixtures.ts`, `tests/frontend/config/**`, `tests/backend/test_contracts.py`.
-   - Verification: format/lint/type checks, schema validation across both languages, offline fixture build.
+   - Additional owned packaging files: `hacs.json`, `custom_components/aviadilo/__init__.py` (stub), `custom_components/aviadilo/manifest.json`, `custom_components/aviadilo/brand/**`, generated `custom_components/aviadilo/frontend/**`, `scripts/build_release.py`, `scripts/check_release.py`, `.github/workflows/check.yml`, `.github/workflows/validate.yml`, `.github/workflows/release.yml`.
+   - Verification: format/lint/type checks, schema validation across both languages, offline fixture build, HACS layout/manifest checks, and ZIP contents including the built card. Prepare validation workflows without claiming an unreleased stub is a usable product.
 2. **Integration setup, scheduler and cache — (M), [serial].**
    - Owned files: `custom_components/aviadilo/__init__.py`, `manifest.json`, `const.py`, `config_flow.py`, `strings.json`, `translations/en.json` under that same integration directory; `custom_components/aviadilo/service.py`, `scheduler.py`, `cache.py`; `tests/backend/test_config_flow.py`, `test_service.py`, `test_scheduler.py`, `test_cache.py`, `conftest.py`.
-   - Verification: config/options flows, aggregate pacing and retries with fake clocks, concurrent cache misses coalesced, disk budget/restart/corruption cleanup.
+   - Additional owned files: `custom_components/aviadilo/static.py`, `tests/backend/test_static.py`.
+   - Verification: config/options flows, module registration/removal, aggregate pacing and retries with fake clocks, concurrent cache misses coalesced, disk budget/restart/corruption cleanup.
 3. **Authenticated protocol, both ends — (M), [serial].**
    - Owned files: `custom_components/aviadilo/websocket.py`, `http.py`, `__init__.py`, `service.py`; `src/data/client.ts`, `src/data/ha.ts`; `tests/backend/test_websocket.py`, `test_http.py`; `tests/frontend/data/**`.
    - Verification: shared contract fixtures, authentication, bounded parameters, lease expiry, stale-revision rejection, cancellation, no tokens in URLs. Both serializers/parsers belong to this worker.
@@ -218,23 +236,20 @@ The owned paths below are proposed for approval with this draft. Directory entri
 7. **DWD wind and local animation — (M), [serial].**
    - Owned files: `custom_components/aviadilo/providers/dwd_icon.py`, `service.py`; `src/layers/wind/**`, `src/editor/wind-panel.ts`; `tests/backend/providers/test_wind.py`, `tests/frontend/wind/**`.
    - Verification: actual WCS geometry/time/unit fixtures, null masks, cardinal wind direction, common icon/particle field, reduced motion, hidden-tab stop, density controls causing no upstream requests.
-8. **Product integration, packaging and isolated HA acceptance — (M), [serial].**
-   - Owned files: `src/aviadilo-map.ts`, `src/editor/editor.ts`, `custom_components/aviadilo/__init__.py`, `custom_components/aviadilo/static.py`; `scripts/build_release.py`, `scripts/check_release.py`, `dev/ha/**`, `tests/e2e/**`, `playwright.config.ts`, `.gitlab-ci.yml`, `Makefile`.
-   - Verification: `make check`; release ZIP contents; clean install into HA 2026.9.1; card picker/config/options; all four layers; two clients sharing requests; reload/reconnect; browser sizing and a prolonged kiosk run. The orchestrator runs singleton HA/UI verification and updates user/development docs.
+8. **Product integration and HACS/HA acceptance — (M), [serial].**
+   - Owned files: `src/aviadilo-map.ts`, `src/editor/editor.ts`, `custom_components/aviadilo/__init__.py`, `custom_components/aviadilo/static.py`; `scripts/build_release.py`, `scripts/check_release.py`, `dev/ha/**`, `tests/e2e/**`, `playwright.config.ts`, `hacs.json`, `.github/workflows/check.yml`, `.github/workflows/validate.yml`, `.github/workflows/release.yml`, `Makefile`.
+   - Verification: `make check`; HACS/hassfest and release ZIP checks; clean HACS install and upgrade in HA 2026.9.1; automatically available card picker/config/options; all four layers; two clients sharing requests; reload/reconnect; browser sizing and a prolonged kiosk run. The orchestrator runs singleton HA/UI verification and updates user/development docs.
 
-First-run completion, repository connection, and the user's approval of this draft precede implementation dispatch. Existing accepted decisions need no reconfirmation.
+Implementation is authorized for the next session. Begin with the remaining first-run trust/setup checks and slice 1 bootstrap work, then proceed through the approved serial slices. Repository creation, connection, and the initial push are already complete. Explain each slice as it begins; do not request renewed approval for this plan or its accepted choices.
 
 ## Open Questions
 
-- Review the proposed aircraft choices (adsb.fi default, ADSB.lol alternative), single shared integration area, manual combined bundle before HACS publication, cache budgets, and new display defaults. These are concrete proposals, not unresolved alternatives that workers should choose.
-- No further broad compatibility input is required from the user: latest HA and Chromium tablet PC are sufficient to start against the pinned baseline. Record exact tested browser/version and kiosk sizing during acceptance.
-
-The implementation spec remains draft until these proposed choices are accepted or revised. Repository authorization/trust/setup are tracked separately as first-run prerequisites.
+None. The user approved all remaining engineering choices on 2026-09-06.
 
 ## Deferred / Follow-ups
 
 - Multiple independent aircraft collection areas/integration profiles.
-- GitHub mirror and HACS publication/automatic resource registration beyond the initial validated manual bundle.
+- Optional submission to the default HACS catalogue; custom-repository HACS installation and updates are required in the initial release.
 - Additional weather providers (NDFD, HRRR, ECCC, IEM, etc.); outside the selected source set.
 - Aircraft route/photo enrichment, watchlists, prediction, notifications, and continuous history.
 - People history and synchronized cross-layer historical replay.
@@ -244,3 +259,5 @@ The implementation spec remains draft until these proposed choices are accepted 
 ## Change Log
 
 - 2026-09-06 — Drafted from the accepted combined-map direction, source-selection spike, and latest-HA/Chromium tablet compatibility input. Added proposed cache/transport/package choices and serial owned-file slices. No implementation approval inferred.
+- 2026-09-06 — User corrected delivery to HACS from the beginning and created/pushed public `bishopdynamics/aviadilo` with remote `github`. Replaced manual-first/GitLab assumptions with bundled HACS Integration packaging, automatic card-module loading, GitHub Actions, and HACS install/upgrade acceptance.
+- 2026-09-06 — User approved the revised specification in full and requested session wrap, with implementation beginning next session. Cleared open questions and accepted the engineering defaults and deferrals.
