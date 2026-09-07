@@ -7,6 +7,7 @@ from collections import OrderedDict
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import datetime
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -18,7 +19,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .cache import Cache
 from .config_flow import resolve_anchor
 from .const import HEARTBEAT_SECONDS, LEASE_SECONDS
-from .models import Viewport
+from .models import AircraftResult, Viewport
 from .scheduler import ProviderBlocked, Scheduler
 
 
@@ -112,6 +113,7 @@ class AviadiloService:
         self.anchor_state = "current"
         self.product_states: dict[str, str] = {}
         self.entry_id: str | None = None
+        self.status_signatures: dict[str, str] = {}
         self.viewers: dict[str, Viewer] = {}
         self.snapshots: OrderedDict[str, dict[str, Any]] = OrderedDict()
         self.snapshot_areas: dict[str, tuple[float, float] | None] = {}
@@ -172,7 +174,10 @@ class AviadiloService:
             same_area = context.area == resolve_anchor(self.hass, self.config["anchor"])
         except ValueError:
             same_area = False
-        if self.closed or not same_area or not (audience or background):
+        demanded = context.product == "aircraft" and any(
+            v.demand.aircraft for v in self.viewers.values()
+        )
+        if self.closed or not same_area or not (audience or background or demanded):
             return False
         stored = deepcopy(payload)
         key = self._snapshot_key(context.product, context.viewport)
@@ -216,14 +221,47 @@ class AviadiloService:
                 producer = self.producers[product]
                 bucket = self.scheduler.buckets[self.scheduler.bucket_name(producer.provider)]
                 interval = max(producer.interval, bucket.interval)
+            payload = self.snapshots.get(self._snapshot_key(product or "", viewer.viewport))
+            try:
+                current_area = resolve_anchor(self.hass, self.config["anchor"])
+            except ValueError:
+                current_area = None
+            if (
+                self.snapshot_areas.get(self._snapshot_key(product or "", viewer.viewport))
+                != current_area
+            ):
+                payload = None
+            last_success = payload.get("fetched_at") if payload and product == "aircraft" else None
+            state = "loading" if available else "unavailable"
+            message = None if available else "Source adapter is not installed"
+            if available and product == "aircraft":
+                failure = bucket.state in ("cooldown", "configuration_required")
+                failure = failure or self.product_states.get(product) in (
+                    "unavailable",
+                    "configuration_required",
+                )
+                if last_success:
+                    age = max(0, time.time() - datetime.fromisoformat(last_success).timestamp())
+                    state = "stale" if failure or age > max(60, (interval or 0) * 2) else "current"
+                elif failure:
+                    state = "unavailable"
+                if failure:
+                    message = (
+                        "Correct provider configuration and reload"
+                        if bucket.blocked
+                        else "Source unavailable; shared collection will retry"
+                    )
+                interval = min(86400, max(interval or 0, bucket.cooldown - self.clock()))
+                if current_area is None:
+                    state, message = "unavailable", "Collection anchor is unavailable"
             statuses.append(
                 {
                     "layer": layer,
                     "provider": provider,
-                    "state": "loading" if available and not reason else "unavailable",
-                    "last_success": None,
+                    "state": "unavailable" if reason else state,
+                    "last_success": last_success,
                     "effective_interval_s": interval,
-                    "message": reason or (None if available else "Source adapter is not installed"),
+                    "message": reason or message,
                 }
             )
         if reason and not statuses:
@@ -241,7 +279,9 @@ class AviadiloService:
 
     def initial(self, lease_id: str) -> None:
         viewer = self.viewers[lease_id]
-        viewer.send(self.status_event(viewer))
+        status = self.status_event(viewer)
+        self.status_signatures[lease_id] = json.dumps(status, sort_keys=True)
+        viewer.send(status)
         for product in viewer.demand.products():
             key = self._snapshot_key(product, viewer.viewport)
             payload = self.snapshots.get(key)
@@ -298,10 +338,60 @@ class AviadiloService:
         parent = await self.hass.async_add_executor_job(Path(self.hass.config.config_dir).resolve)
         self.cache.directory = parent / "aviadilo_cache"
         await self.cache.start()
+        if "aircraft" not in self.producers:
+            self._register_aircraft()
         self.monitor = asyncio.create_task(self._monitor())
 
+    def _register_aircraft(self) -> None:
+        from .providers.adsb_fi import AdsbFiProvider
+        from .providers.adsb_lol import AdsbLolProvider
+
+        adapter = (
+            AdsbFiProvider if self.config["aircraft_provider"] == "adsb_fi" else AdsbLolProvider
+        )(self.session, self.cache)
+
+        async def fetch() -> tuple[Publication, AircraftResult]:
+            context = self.capture("aircraft")
+            if context.area is None:
+                raise ValueError("Missing collection anchor")
+            result = await adapter.fetch(
+                {
+                    "latitude": context.area[0],
+                    "longitude": context.area[1],
+                    "radius_m": self.config["aircraft_radius_m"],
+                }
+            )
+            return context, result
+
+        def consume(value: tuple[Publication, AircraftResult]) -> None:
+            context, result = value
+            if self.publish(context, {"kind": "aircraft", **result}):
+                captured = {id(viewer) for _, viewer in context.audiences}
+                # Viewers joining/changing revision during the request receive
+                # the shared latest replay under their current envelope only.
+                for key, viewer in list(self.viewers.items()):
+                    if id(viewer) not in captured and viewer.demand.aircraft:
+                        self.initial(key)
+
+        self.register_producer(
+            "aircraft",
+            Producer(
+                adapter.provider, "shared-area", self.config["aircraft_interval_s"], fetch, consume
+            ),
+        )
+
+    def _broadcast_status(self) -> None:
+        for key, viewer in list(self.viewers.items()):
+            event = self.status_event(viewer)
+            signature = json.dumps(event, sort_keys=True)
+            if self.status_signatures.get(key) != signature:
+                self.status_signatures[key] = signature
+                viewer.send(event)
+        for key in self.status_signatures.keys() - self.viewers.keys():
+            del self.status_signatures[key]
+
     def register_producer(self, product: str, producer: Producer) -> None:
-        """Install one adapter before collection; no adapters ship in this slice."""
+        """Install one adapter before collection."""
         if self.closed or product in self.producers:
             raise ValueError("Service closed or producer already registered")
         if producer.interval <= 0:
@@ -329,6 +419,7 @@ class AviadiloService:
 
     def unsubscribe(self, lease_id: str) -> None:
         self.viewers.pop(lease_id, None)
+        self.status_signatures.pop(lease_id, None)
         self.leases.pop(lease_id, None)
         self.reconcile()
 
@@ -339,6 +430,7 @@ class AviadiloService:
                 if viewer := self.viewers.get(key):
                     viewer.end("aviadilo:lease_expired")
                 self.viewers.pop(key, None)
+                self.status_signatures.pop(key, None)
                 self.leases.pop(key, None)
         self.tiles.reconcile()
         desired: set[str] = set()
@@ -362,6 +454,10 @@ class AviadiloService:
         if self.leases and not self.closed:
             delay = min(lease.expires for lease in self.leases.values()) - now
             self.expiry_timer = self.hass.loop.call_later(delay, self.reconcile)
+        if "aircraft" not in desired:
+            key = self._snapshot_key("aircraft", None)
+            self.snapshots.pop(key, None)
+            self.snapshot_areas.pop(key, None)
         for product, task in list(self.tasks.items()):
             if product not in desired:
                 task.cancel()
@@ -396,17 +492,22 @@ class AviadiloService:
                 )
                 producer.consume(result)
                 self.product_states[product] = "current"
+                self._broadcast_status()
                 await self.sleep(producer.interval)
         except ProviderBlocked:
             self.product_states[product] = "configuration_required"
         except Exception:
             # No exception details: adapter errors can include private URLs/data.
             self.product_states[product] = "unavailable"
+        finally:
+            if not self.closed:
+                self._broadcast_status()
 
     async def _monitor(self) -> None:
         while not self.closed:
             await self.sleep(HEARTBEAT_SECONDS)
             self.reconcile()
+            self._broadcast_status()
 
     async def close(self) -> None:
         if self.closed:
@@ -415,6 +516,7 @@ class AviadiloService:
         for viewer in list(self.viewers.values()):
             viewer.end("aviadilo:closed")
         self.viewers.clear()
+        self.status_signatures.clear()
         await self.tiles.close()
         self.snapshots.clear()
         self.snapshot_areas.clear()

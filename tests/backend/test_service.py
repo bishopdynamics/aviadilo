@@ -51,7 +51,6 @@ async def test_setup_missing_bundle_closes_cache(
 async def test_shared_viewers_heartbeat_expiry_and_cancel(hass: HomeAssistant) -> None:
     now = 0.0
     service = AviadiloService(hass, deepcopy(DEFAULTS), clock=lambda: now)
-    await service.start()
     calls: list[int] = []
     started = asyncio.Event()
 
@@ -64,6 +63,7 @@ async def test_shared_viewers_heartbeat_expiry_and_cancel(hass: HomeAssistant) -
     service.register_producer(
         "aircraft", Producer("adsb_fi", "area", 10, fetch, lambda value: None)
     )
+    await service.start()
     await settle()
     assert not calls
     service.subscribe("one", Demand(aircraft=True))
@@ -89,7 +89,6 @@ async def test_shared_viewers_heartbeat_expiry_and_cancel(hass: HomeAssistant) -
 async def test_expired_queued_demand_never_reaches_producer(hass: HomeAssistant) -> None:
     now = 0.0
     service = AviadiloService(hass, deepcopy(DEFAULTS), clock=lambda: now)
-    await service.start()
     bucket = service.scheduler.buckets["adsb_fi"]
     await bucket.lock.acquire()
     calls = []
@@ -98,6 +97,7 @@ async def test_expired_queued_demand_never_reaches_producer(hass: HomeAssistant)
         calls.append(1)
 
     service.register_producer("aircraft", Producer("adsb_fi", "x", 10, fetch, lambda value: None))
+    await service.start()
     service.subscribe("viewer", Demand(aircraft=True))
     await settle()
     now = 60
@@ -112,7 +112,6 @@ async def test_background_only_selected_aircraft_and_invalid_anchor(hass: HomeAs
     config = deepcopy(DEFAULTS)
     config["background_collection"] = True
     service = AviadiloService(hass, config)
-    await service.start()
     calls = []
 
     async def fetch() -> None:
@@ -127,6 +126,7 @@ async def test_background_only_selected_aircraft_and_invalid_anchor(hass: HomeAs
         service.register_producer(
             product, Producer(provider, product, 10, fetch, lambda value: None)
         )
+    await service.start()
     await settle()
     assert set(service.tasks) == {"aircraft"}
     assert len(calls) == 1

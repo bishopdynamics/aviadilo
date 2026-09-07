@@ -1,5 +1,6 @@
 """Real HA core/flow/router fixtures, with no upstream providers or HA package stubs."""
 
+import asyncio
 from collections.abc import AsyncIterator
 from copy import deepcopy
 from pathlib import Path
@@ -81,7 +82,7 @@ async def transport(
     from homeassistant.helpers import device_registry, entity_registry
 
     from custom_components.aviadilo.http import register as register_http
-    from custom_components.aviadilo.service import AviadiloService
+    from custom_components.aviadilo.service import AviadiloService, Producer
     from custom_components.aviadilo.websocket import register as register_ws
 
     device_registry.async_setup(hass)
@@ -100,6 +101,13 @@ async def transport(
     register_http(hass)
     service = AviadiloService(hass, deepcopy(DEFAULTS))
     service.entry_id = entry.entry_id
+
+    async def offline_aircraft() -> None:
+        await asyncio.Future[None]()
+
+    service.register_producer(
+        "aircraft", Producer("adsb_fi", "offline", 10, offline_aircraft, lambda result: None)
+    )
     await service.start()
     hass.data[DOMAIN] = service
     async with TestClient(TestServer(hass.http.app)) as client:

@@ -139,7 +139,7 @@ async def test_unload_expiry_and_info(
     await ws.send_json({**fixture("info"), "id": 1, "entry_id": None})
     info = (await ws.receive_json())["result"]
     Draft7Validator(json.loads(Path("contracts/info.schema.json").read_text())).validate(info)
-    assert info["capabilities"] == {"aircraft": [], "radar": [], "wind": []}
+    assert info["capabilities"] == {"aircraft": ["adsb_fi"], "radar": [], "wind": []}
     await ws.send_json(subscribe(service, 2))
     await ws.receive_json()
     await ws.receive_json()
