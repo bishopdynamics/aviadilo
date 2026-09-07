@@ -8,8 +8,10 @@ from homeassistant.exceptions import ConfigEntryError
 
 from .config_flow import settings, validate_settings
 from .const import DOMAIN
+from .http import register as register_http
 from .service import AviadiloService
 from .static import async_register, async_unregister
+from .websocket import register as register_websocket
 
 type AviadiloConfigEntry = ConfigEntry[AviadiloService]
 
@@ -34,9 +36,12 @@ async def _async_setup_entry(hass: HomeAssistant, entry: AviadiloConfigEntry) ->
     try:
         await service.start()
         await async_register(hass)
+        register_websocket(hass)
+        register_http(hass)
     except BaseException:
         await service.close()
         raise
+    service.entry_id = entry.entry_id
     entry.runtime_data = service
     hass.data[DOMAIN] = service
     return True

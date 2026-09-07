@@ -1,6 +1,6 @@
 # Development
 
-Aviadilo contains the first two slices: the bootstrap plus HA integration setup/options, scheduler/cache, diagnostics and bundled-module registration. The card is still a stub and the fixture harness remains its local development surface. Authenticated transport, live providers and the full map/editor follow in the approved serial slices.
+Aviadilo contains the first three slices: bootstrap, HA integration setup/options and collection foundations, plus authenticated transport and a frontend client. The card is still a stub and the fixture harness remains its local development surface. Live providers and the full map/editor follow in the approved serial slices.
 
 ## Toolchains
 
@@ -80,3 +80,25 @@ The final ZIP was installed into that isolated instance and HA restarted. The en
 Artifact: `dist/aviadilo.zip`, still development version `0.1.0-dev.1`, now 15 runtime files. SHA256: `61e5f18152807d63f842085b6d618f858336c7ddc8676f15996d6bf82b92e7ed`.
 
 HACS installation/upgrade acceptance remains for slice 8. Docker daemon access was denied at the host level, so the pinned hassfest container was not run. GitHub description/topics and remote HACS validation also remain pending.
+
+## Authenticated transport — slice 3
+
+`websocket.py` implements the four version 1 commands through HA's authenticated connection dispatcher. Each connection owns its own subscription IDs; even another connection for the same user cannot update or heartbeat them. Normal HA unsubscribe/disconnect, lease expiry and integration unload clean up demand and callbacks. The initial status event establishes the frontend's subscription ID.
+
+`src/data/ha.ts` isolates the HA APIs. `createHaAdapter(hass)` supplies `AviadiloClient` with authenticated calls, subscriptions and fetches. The client validates messages, debounces selection updates for 300 ms, tracks revisions, sends 20-second heartbeats, and cancels/revokes tile work on hide, selection changes or disposal. It disables HA's automatic subscription replay so its own reconnect logic uses the latest selection. Server lifecycle signals use the existing status-message field (`aviadilo:closed` and `aviadilo:lease_expired`).
+
+The client is an exported API for the next card/layer slices; the current card stub does not yet consume it. Callers supply a resolved integration entry ID, layer flags, radar source and viewport; call `setSelection`, `setVisible`/`setActive`, `loadTile`/`releaseTile`, and `dispose` as the view lifecycle changes.
+
+Future provider adapters capture a publication context with `service.capture(product, viewport?)` before awaiting work, then call `service.publish(context, payload)` without a viewer envelope. The service rejects stale audiences/areas, fans out current envelopes and bounds shared replay to 16 keys / 8 MiB of serialized snapshots. Aircraft background collection can retain its latest snapshot without viewers.
+
+Radar adapters register a `TileSource` with `service.tiles.register(...)`: explicit trusted HTTPS hosts, products, sizes/styles and a synchronous URL resolver. The gateway owns all fetching, pacing, caching and revalidation. `/api/aviadilo/radar` requires authentication and a current matching viewer/revision, advertised frame and intersecting viewport. Opaque frame IDs travel as encoded query values. There is no arbitrary-URL input and no HA token in the URL.
+
+Initial limits are 4 subscriptions per connection, 16 per user and 128 total; 8 active tile requests per user and 32 total. PNG responses are capped at 2 MiB with bounded dimensions and framing checks. The backend request deadline is 120 seconds and the frontend deadline 150 seconds, allowing queue pacing while ensuring stalled work ends. All upstream redirects are rejected; adapters must use canonical allowed hosts. Upstream failures return errors rather than transparent images. A 304 without new cache headers inherits the stored freshness policy.
+
+### Verification — 2026-09-07
+
+Independent `make check` passed **57 frontend and 169 backend tests**, formatting/lint, TypeScript, strict mypy on 24 files, both builds and the 17-file HACS ZIP check. Tests exercise real HA authentication/HTTP/WebSocket behavior and shared fixtures, with injected upstream responses rather than provider calls.
+
+A temporary bundle of the actual frontend client ran inside the isolated HA 2026.9.1 UI in Chromium 151.0.7922.34. It established a subscription, coalesced two rapid edits into revision 2, removed its viewer on hide, and resumed cleanly. A second authenticated connection could heartbeat its own subscription but received `not_found` when targeting the first connection's ID; closing it left one viewer. Unauthenticated tile access returned HTTP 401. The client recovered from integration reload and a full HA restart using the final ZIP, retaining revision 2 with one viewer. Disposal left zero viewers and zero queued work. The temporary test token was revoked, its private file removed, and HA/browser stopped.
+
+Artifact: `dist/aviadilo.zip`, development version `0.1.0-dev.1`, 17 runtime files. SHA256: `3e334596f5c489bbb8ac7fb65a8de1dd7c7737b4e287844051866312a8b0b136`. Live providers, card wiring and full HACS acceptance remain later slices.

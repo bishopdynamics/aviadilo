@@ -67,3 +67,40 @@ async def entry(hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch) -> config_
         patch.setattr(hass.config_entries, "async_setup", AsyncMock(return_value=True))
         await hass.config_entries.async_add(result)
     return result
+
+
+@pytest.fixture
+async def transport(
+    hass: HomeAssistant, entry: config_entries.ConfigEntry
+) -> AsyncIterator[tuple[object, str]]:
+    """Real HA authentication, WS router and HTTP middleware on local sockets."""
+    from aiohttp.test_utils import TestClient, TestServer
+    from homeassistant.auth import auth_manager_from_config
+    from homeassistant.components import websocket_api
+    from homeassistant.components.http.auth import async_setup_auth
+    from homeassistant.helpers import device_registry, entity_registry
+
+    from custom_components.aviadilo.http import register as register_http
+    from custom_components.aviadilo.service import AviadiloService
+    from custom_components.aviadilo.websocket import register as register_ws
+
+    device_registry.async_setup(hass)
+    await device_registry.async_load(hass)
+    await entity_registry.async_load(hass)
+    hass.auth = await auth_manager_from_config(hass, [], [])
+    user = await hass.auth.async_create_user("Transport test")
+    refresh = await hass.auth.async_create_refresh_token(user, client_id="http://test.local")
+    token = hass.auth.async_create_access_token(refresh)
+    from homeassistant.helpers.http import KEY_HASS
+
+    hass.http.app[KEY_HASS] = hass
+    await async_setup_auth(hass, hass.http.app)
+    await websocket_api.async_setup(hass, {})
+    register_ws(hass)
+    register_http(hass)
+    service = AviadiloService(hass, deepcopy(DEFAULTS))
+    service.entry_id = entry.entry_id
+    await service.start()
+    hass.data[DOMAIN] = service
+    async with TestClient(TestServer(hass.http.app)) as client:
+        yield client, token

@@ -1,6 +1,6 @@
 # SPEC: Aviadilo household map
 
-- **Status:** approved — user approved the revised specification on 2026-09-06; slices 1 and 2 implemented and verified through 2026-09-07.
+- **Status:** approved — user approved the revised specification on 2026-09-06; slices 1–3 implemented and verified through 2026-09-07.
 - **Addenda:** none.
 - **Repository:** public `https://github.com/bishopdynamics/aviadilo`; remote `github`, upstream `github/main`. HACS from the first release is an accepted user requirement.
 - **Compatibility baseline:** Home Assistant Core 2026.9.1, current stable Chromium on a tablet PC. The user reported using latest HA; this patch version is the verified release baseline, not an inspection of their installation.
@@ -10,7 +10,7 @@
 
 Aviadilo replaces separate aircraft, radar, and household-location maps with one large Lovelace map suitable for the user's Chromium kiosk. A Python Home Assistant integration shares external data collection and caching across cards and devices. A TypeScript/Lit/Leaflet card renders aircraft, precipitation radar, wind, and existing household trackers as independent layers. Every supported setting has a graphical editor, and distant travellers cannot pull the home view out to a world map.
 
-The user approved this implementation plan and implementation began in the following session. First-run setup and slices 1–2 verification are complete; nothing has been deployed to the user's HA instance.
+The user approved this implementation plan and implementation began in the following session. First-run setup and slices 1–3 verification are complete; nothing has been deployed to the user's HA instance.
 
 ## Goals
 
@@ -224,6 +224,7 @@ The owned paths below were approved with this specification. Directory entries g
    - Verification: config/options flows, module registration/removal, aggregate pacing and retries with fake clocks, concurrent cache misses coalesced, disk budget/restart/corruption cleanup.
 3. **Authenticated protocol, both ends — (M), [serial].**
    - Owned files: `custom_components/aviadilo/websocket.py`, `http.py`, `__init__.py`, `service.py`; `src/data/client.ts`, `src/data/ha.ts`; `tests/backend/test_websocket.py`, `test_http.py`; `tests/frontend/data/**`.
+   - Slice 3 test/lifecycle support ownership clarified 2026-09-07: `tests/backend/conftest.py` for real authenticated HA connection fixtures and `custom_components/aviadilo/manifest.json` for explicit transport dependencies. No protocol or product-scope change.
    - Verification: shared contract fixtures, authentication, bounded parameters, lease expiry, stale-revision rejection, cancellation, no tokens in URLs. Both serializers/parsers belong to this worker.
 4. **Map, full editor shell, people and viewport — (M), [serial].**
    - Owned files: `src/aviadilo-map.ts`, `src/map/**`, `src/layers/types.ts`, `src/layers/people/**`, `src/editor/editor.ts`, `src/editor/map-panel.ts`, `src/editor/people-panel.ts`, `src/editor/ha-controls.ts`, `src/localize/**`, `tests/frontend/map/**`, `tests/frontend/people/**`, `tests/frontend/editor/**`.
@@ -241,7 +242,7 @@ The owned paths below were approved with this specification. Directory entries g
    - Owned files: `src/aviadilo-map.ts`, `src/editor/editor.ts`, `custom_components/aviadilo/__init__.py`, `custom_components/aviadilo/static.py`; `scripts/build_release.py`, `scripts/check_release.py`, `dev/ha/**`, `tests/e2e/**`, `playwright.config.ts`, `hacs.json`, `.github/workflows/check.yml`, `.github/workflows/validate.yml`, `.github/workflows/release.yml`, `Makefile`.
    - Verification: `make check`; HACS/hassfest and release ZIP checks; clean HACS install and upgrade in HA 2026.9.1; automatically available card picker/config/options; all four layers; two clients sharing requests; reload/reconnect; browser sizing and a prolonged kiosk run. The orchestrator runs singleton HA/UI verification and updates user/development docs.
 
-Implementation is authorized. First-run setup and slices 1–2 verification are complete; follow `docs/TASK_QUEUE.md` for the current slice and handoff. Repository creation, connection, and the initial push are already complete. Explain each slice as it begins; do not request renewed approval for this plan or its accepted choices.
+Implementation is authorized. First-run setup and slices 1–3 verification are complete; follow `docs/TASK_QUEUE.md` for the current slice and handoff. Repository creation, connection, and the initial push are already complete. Explain each slice as it begins; do not request renewed approval for this plan or its accepted choices.
 
 ## Open Questions
 
@@ -264,3 +265,4 @@ None. The user approved all remaining engineering choices on 2026-09-06.
 - 2026-09-06 — User approved the revised specification in full and requested session wrap, with implementation beginning next session. Cleared open questions and accepted the engineering defaults and deferrals.
 - 2026-09-06 — Implemented and independently verified slice 1 bootstrap in the following session; completed first-run setup. Recorded shared contracts, offline scaffold, packaging and verification in `docs/development.md`. Remaining product slices and live acceptance are pending.
 - 2026-09-07 — Implemented and independently verified slice 2 after user go-ahead. Added real-HA test dependencies and approved diagnostics support; verified graphical configuration, bounded collection/cache foundations and startup-safe module registration in isolated HA. Background collection is conservatively aircraft-only; weather remains viewer-driven. No provider adapters or production deployment added.
+- 2026-09-07 — Implemented and independently verified slice 3 after user continuation. Both protocol ends follow the frozen schemas; added authenticated transport, captured publication contexts, bounded tile access and the frontend client. Verified ownership, cancellation, revisions and recovery in real isolated HA. Provider adapters and card wiring remain in their later slices.
