@@ -6,7 +6,7 @@ Originally inspired by the ADS-B Exchange globe view, Aviadilo now aims to repla
 
 The accepted stack is TypeScript, Lit, Vite, and Leaflet, with a Python Home Assistant integration that shares external-data requests and caches across devices. All supported settings must have a visual editor. Public data access should remain free for household use and conservative on provider requests.
 
-The first three implementation slices are in place: build tooling, shared data contracts, HACS packaging, graphical integration setup/options, a shared scheduler and cache, diagnostics, automatic card-module loading, and authenticated transport with a frontend client. The card remains a development stub; live providers, the map and the full visual card editor arrive in later slices.
+The first four implementation slices are in place: build tooling, shared contracts, HACS packaging, integration setup/options, shared scheduling/cache, authenticated transport, and a responsive Leaflet map with a graphical editor and household trackers. The people layer filters distant travellers before rendering or fitting the map. Aircraft, radar and wind settings are editable, but their providers and rendering remain in later slices.
 
 The public repository is [bishopdynamics/aviadilo](https://github.com/bishopdynamics/aviadilo). HACS installation and updates are required from the first release, using one Integration package that includes the card. The first HACS-installable release is still pending.
 

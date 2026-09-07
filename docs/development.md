@@ -1,6 +1,6 @@
 # Development
 
-Aviadilo contains the first three slices: bootstrap, HA integration setup/options and collection foundations, plus authenticated transport and a frontend client. The card is still a stub and the fixture harness remains its local development surface. Live providers and the full map/editor follow in the approved serial slices.
+Aviadilo contains the first four slices: bootstrap, HA integration foundations, authenticated transport, and the map/editor/household-tracker layer. The fixture harness exercises the map, editor and traveller filtering offline. Aircraft, radar and wind providers/rendering follow in the approved serial slices.
 
 ## Toolchains
 
@@ -102,3 +102,25 @@ Independent `make check` passed **57 frontend and 169 backend tests**, formattin
 A temporary bundle of the actual frontend client ran inside the isolated HA 2026.9.1 UI in Chromium 151.0.7922.34. It established a subscription, coalesced two rapid edits into revision 2, removed its viewer on hide, and resumed cleanly. A second authenticated connection could heartbeat its own subscription but received `not_found` when targeting the first connection's ID; closing it left one viewer. Unauthenticated tile access returned HTTP 401. The client recovered from integration reload and a full HA restart using the final ZIP, retaining revision 2 with one viewer. Disposal left zero viewers and zero queued work. The temporary test token was revoked, its private file removed, and HA/browser stopped.
 
 Artifact: `dist/aviadilo.zip`, development version `0.1.0-dev.1`, 17 runtime files. SHA256: `3e334596f5c489bbb8ac7fb65a8de1dd7c7737b4e287844051866312a8b0b136`. Live providers, card wiring and full HACS acceptance remain later slices.
+
+## Map, editor and people — slice 4
+
+The card now embeds Leaflet and its styles in one JavaScript module, matching the integration's single-file static route. Map/list/combined layout, theme, anchors, extent, zoom limits, transient layer toggles and recenter controls have graphical settings. The editor exposes every v1 setting through native accessible controls; aircraft/radar/wind settings are saved for their later implementation slices. Valid edits preserve unknown root, panel and tracker fields; invalid drafts retain the last valid configuration.
+
+Selected `device_tracker` entities supply the people layer directly. Radius filtering happens before drawing/counting/fitting, including the boundary, longitude wrapping, zero coordinates and missing-anchor handling. Unavailable positions require explicit stale display. Explicit position timestamps take precedence; `last_updated` is labelled as an entity update with GPS age unknown, and `last_changed` is never treated as GPS freshness. Accuracy circles do not contribute fit bounds. The central viewport holds the home view or fits filtered points/zones, suspends automatic fitting after manual interaction, and resumes on recenter or an enabled idle return.
+
+Runtime basemap tiles use OpenStreetMap's standard HTTPS endpoint with visible attribution, normal browser caching and valid referrers. Only visible tiles load; one queue per page starts at most one image per second with one in flight, a 15-second deadline, and cancellation on unload/hide. There is no prefetch, automatic retry or cache busting. This browser queue shares pacing across cards on the same page; it is not an installation-wide cache or cross-device limiter. External aircraft/weather requests retain the backend scheduler contract. Basemap requirements follow the separately researched [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/).
+
+Picker/editor previews use a local schematic map and synthetic locations, with no Aviadilo tile, photo, provider or backend requests. HA frontend 20260826.6 sets `.preview` through `hui-card`, but its `hui-card-picker` creates custom cards directly without that flag. `src/map/ha-preview.ts` isolates a composed-ancestor check for that case, evaluated before side effects and again on reattachment. This context is never saved into card configuration. `fixtureHass` is an explicit development-only state injection; HA previews do not read real household positions.
+
+The card currently reads `aviadilo/info` on connection/configuration to resolve integration status and the default people anchor. It does not yet subscribe to external layers or continuously refresh changed integration options; reload the card after changing the integration anchor. Full transport/layer wiring remains later work.
+
+### Verification — 2026-09-07
+
+Independent final `make check` passed **83 frontend and 169 backend tests**, formatting/lint, TypeScript, strict mypy on 24 files, both builds and 17-file ZIP validation. The nine Python warnings are from HA/dependencies. Log: `/tmp/aviadilo-root-slice4-check.log`. Runtime module: 719.69 kB raw / 125.75 kB gzip, with no separate CSS or JavaScript chunks.
+
+Chromium 151.0.7922.34 exercised development and built fixtures, 390-pixel width without horizontal overflow, Tokyo exclusion/return, keyboard zoom preservation/recenter, persistent popups, synthetic touch events and listener cleanup on detach/reattach. Unit tests cover boundary/zero/unknown/wrapped positions, missing anchors, empty/single fits, idle return, future fields and tile pacing/cancellation. Trusted touch emulation did not persist through this browser connector's CDP calls; physical touch/tablet acceptance remains unclaimed.
+
+In isolated HA Core 2026.9.1, the final ZIP survived a full restart and registered the card/editor. A people-only dashboard showed the nearby tracker and excluded Tokyo/unavailable trackers; a real HA state update brought the traveller back without overriding a manual view. HA's native editor saved a title and 25 nmi as 46,300 metres and reopened with the same displayed values. The final card picker showed synthetic people even without `.preview`, with zero OSM requests. OSM images were mocked throughout automated map interaction; no public map/aircraft/weather provider was exercised. HA's own unrelated picker examples requested its demo images. Final stable card interactions had no JavaScript errors; earlier stop/restart and general HA UI errors are not counted as card acceptance failures.
+
+Artifact: `dist/aviadilo.zip`, development version `0.1.0-dev.1`, 17 runtime files. SHA256: `425bfb404e7c52a12b79f876fcdb8ad80af34ac6524257aa6df8f1615e46b153`. All test servers/browser sessions stopped and the temporary HA token/private files removed. HACS install/upgrade, live sources, integration option-change recovery and the physical kiosk remain later acceptance work.
