@@ -7,7 +7,7 @@ from collections import OrderedDict
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from dataclasses import dataclass, replace
-from datetime import datetime
+from datetime import UTC, datetime
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -20,7 +20,11 @@ from .cache import Cache
 from .config_flow import resolve_anchor
 from .const import HEARTBEAT_SECONDS, LEASE_SECONDS
 from .models import AircraftResult, Viewport
+from .providers.dwd_icon import DwdIconProvider, Region, region_for
 from .scheduler import ProviderBlocked, Scheduler
+
+# The 16 replay slots also hold aircraft and all three radar source manifests.
+MAX_WIND_REGIONS = 12
 
 
 @dataclass(frozen=True)
@@ -113,6 +117,9 @@ class AviadiloService:
         self.anchor_state = "current"
         self.product_states: dict[str, str] = {}
         self.radar_due: dict[str, float] = {}
+        self.wind_adapter: DwdIconProvider | None = None
+        self.wind_tasks: dict[str, asyncio.Task[None]] = {}
+        self.wind_states: dict[str, tuple[str, float | None]] = {}
         self.entry_id: str | None = None
         self.status_signatures: dict[str, str] = {}
         self.viewers: dict[str, Viewer] = {}
@@ -123,8 +130,12 @@ class AviadiloService:
         self.tiles = TileGateway(self)
 
     def watch(self, lease_id: str, viewer: Viewer) -> None:
-        self.subscribe(lease_id, viewer.demand)
         self.viewers[lease_id] = viewer
+        try:
+            self.subscribe(lease_id, viewer.demand)
+        except Exception:
+            self.viewers.pop(lease_id, None)
+            raise
         self.tiles.reconcile()
 
     def capture(self, product: str, viewport: Viewport | None = None) -> Publication:
@@ -135,7 +146,11 @@ class AviadiloService:
                 (key, viewer)
                 for key, viewer in self.viewers.items()
                 if product in viewer.demand.products()
-                and (product != "wind" or viewer.viewport == viewport)
+                and (
+                    product != "wind"
+                    or self._snapshot_key(product, viewer.viewport)
+                    == self._snapshot_key(product, viewport)
+                )
             ),
             deepcopy(viewport),
             resolve_anchor(self.hass, self.config["anchor"]),
@@ -143,7 +158,8 @@ class AviadiloService:
 
     @staticmethod
     def _snapshot_key(product: str, viewport: Viewport | None) -> str:
-        return json.dumps([product, viewport if product == "wind" else None], sort_keys=True)
+        region = region_for(viewport) if product == "wind" and viewport else None
+        return json.dumps([product, region.key if region else None], sort_keys=True)
 
     def publish(self, context: Publication, payload: dict[str, Any]) -> bool:
         """Publish normalized data to still-current captured audiences.
@@ -275,6 +291,46 @@ class AviadiloService:
                 interval = min(86400, max(interval or 0, bucket.cooldown - self.clock()))
                 if current_area is None:
                     state, message = "unavailable", "Collection anchor is unavailable"
+            if available and layer == "wind" and self.wind_adapter:
+                region = region_for(viewer.viewport)
+                record = self.wind_states.get(region.key) if region else None
+                last_success = (
+                    datetime.fromtimestamp(record[1], UTC).isoformat().replace("+00:00", "Z")
+                    if record and record[1] is not None
+                    else None
+                )
+                failure = bucket.state in ("cooldown", "configuration_required") or bool(
+                    record and record[0] != "current"
+                )
+                state = "current" if payload else "loading"
+                if payload and (failure or not record or time.time() - (record[1] or 0) >= 3600):
+                    state = "stale"
+                elif failure:
+                    state = "unavailable"
+                if region and region.key not in self._wind_regions():
+                    state, message = (
+                        "unavailable",
+                        "Wind active-region limit reached (12); close an unused map",
+                    )
+                elif failure:
+                    message = (
+                        "Wind source unavailable; retaining the last model-valid field"
+                        if payload
+                        else "Wind source unavailable; shared collection will retry"
+                    )
+                if current_area is None:
+                    state, message = "unavailable", "Collection anchor is unavailable"
+                if (
+                    payload
+                    and abs(datetime.fromisoformat(payload["valid_time"]).timestamp() - time.time())
+                    > 10800
+                ):
+                    state = "stale"
+                    message = "Advertised model-valid time is more than three hours from now"
+                if payload and not any(value is not None for value in payload["u_mps"]):
+                    state = "unavailable"
+                    message = "No wind data is available for this model-valid field."
+                interval = min(86400, max(interval or 0, bucket.cooldown - self.clock()))
             statuses.append(
                 {
                     "layer": layer,
@@ -362,6 +418,7 @@ class AviadiloService:
         if "aircraft" not in self.producers:
             self._register_aircraft()
         self._register_radar()
+        self._register_wind()
         self.monitor = asyncio.create_task(self._monitor())
 
     def _register_aircraft(self) -> None:
@@ -430,6 +487,101 @@ class AviadiloService:
             adapter.provider,
             Producer(adapter.provider, "radar-metadata-v1", adapter.interval, fetch, consume),
         )
+
+    def _register_wind(self) -> None:
+        if "wind" in self.producers:
+            return
+        self.wind_adapter = DwdIconProvider(self.session, self.cache)
+
+        async def unused() -> None:
+            raise RuntimeError("Wind uses per-region paced orchestration")
+
+        self.register_producer(
+            "wind", Producer("dwd_icon_global", "wind", 3600, unused, lambda result: None)
+        )
+
+    def _wind_regions(self) -> dict[str, Region]:
+        regions: dict[str, Region] = {}
+        for key, viewer in self.viewers.items():
+            if (
+                key in self.leases
+                and viewer.demand.wind
+                and (region := region_for(viewer.viewport))
+            ):
+                if len(regions) < MAX_WIND_REGIONS or region.key in regions:
+                    regions[region.key] = region
+        return regions
+
+    def _reconcile_wind(self, enabled: bool) -> None:
+        regions = self._wind_regions() if enabled else {}
+        for key, task in list(self.wind_tasks.items()):
+            if key not in regions:
+                task.cancel()
+        for key in self.wind_states.keys() - regions.keys():
+            del self.wind_states[key]
+        allowed = {json.dumps(["wind", region.key], sort_keys=True) for region in regions.values()}
+        for key in list(self.snapshots):
+            if json.loads(key)[0] == "wind" and key not in allowed:
+                self.snapshots.pop(key, None)
+                self.snapshot_areas.pop(key, None)
+        for key, region in regions.items():
+            if key not in self.wind_tasks:
+                task = asyncio.create_task(self._collect_wind(region))
+                self.wind_tasks[key] = task
+                task.add_done_callback(partial(self._wind_collected, key))
+
+    def _wind_collected(self, key: str, task: asyncio.Task[None]) -> None:
+        if self.wind_tasks.get(key) is task:
+            del self.wind_tasks[key]
+        if not task.cancelled():
+            task.exception()
+        if task.cancelled() and not self.closed:
+            self.reconcile()
+
+    def _wind_demanded(self) -> bool:
+        self.reconcile()
+        return not self.closed and self.anchor_state == "current" and bool(self._wind_regions())
+
+    async def _collect_wind(self, region: Region) -> None:
+        adapter = self.wind_adapter
+        assert adapter is not None
+
+        def demanded() -> bool:
+            self.reconcile()
+            return (
+                not self.closed
+                and self.anchor_state == "current"
+                and region.key in self._wind_regions()
+            )
+
+        try:
+            while demanded():
+                viewport = next(
+                    viewer.viewport
+                    for viewer in self.viewers.values()
+                    if viewer.demand.wind and region_for(viewer.viewport) == region
+                )
+                context = self.capture("wind", viewport)
+                metadata = await adapter.describe(self.scheduler, self._wind_demanded)
+                if not demanded():
+                    return
+                result = await adapter.grid(self.scheduler, metadata, region, demanded)
+                # Explicit current-region replay handles a viewer joining or a
+                # revision changing in flight, while preserving original area.
+                current = self.capture("wind", context.viewport)
+                if self.publish(replace(context, audiences=current.audiences), result):
+                    self.wind_states[region.key] = ("current", time.time())
+                self._broadcast_status()
+                await self.sleep(adapter.interval)
+        except ProviderBlocked:
+            previous = self.wind_states.get(region.key, ("loading", None))[1]
+            self.wind_states[region.key] = ("configuration_required", previous)
+        except Exception:
+            previous = self.wind_states.get(region.key, ("loading", None))[1]
+            self.wind_states[region.key] = ("unavailable", previous)
+        finally:
+            if not self.closed:
+                self._broadcast_status()
 
     def _broadcast_status(self) -> None:
         for key, viewer in list(self.viewers.items()):
@@ -509,6 +661,9 @@ class AviadiloService:
             key = self._snapshot_key("aircraft", None)
             self.snapshots.pop(key, None)
             self.snapshot_areas.pop(key, None)
+        if self.wind_adapter is not None:
+            self._reconcile_wind("wind" in desired)
+            desired.discard("wind")
         for product, task in list(self.tasks.items()):
             if product not in desired:
                 task.cancel()
@@ -582,7 +737,7 @@ class AviadiloService:
             self.expiry_timer.cancel()
             self.expiry_timer = None
         self.leases.clear()
-        tasks = list(self.tasks.values())
+        tasks = [*self.tasks.values(), *self.wind_tasks.values()]
         if self.monitor:
             tasks.append(self.monitor)
         for task in tasks:
@@ -591,12 +746,14 @@ class AviadiloService:
         await self.scheduler.close()
         await self.cache.close()
         self.tasks.clear()
+        self.wind_tasks.clear()
+        self.wind_states.clear()
         # session is HA-owned and must remain open.
 
     def diagnostics(self) -> dict[str, Any]:
         return {
             "viewers": len(self.leases),
-            "active_products": len(self.tasks),
+            "active_products": len(self.tasks) + bool(self.wind_tasks),
             "anchor_state": self.anchor_state,
             "scheduler": self.scheduler.diagnostics(),
             "cache": self.cache.diagnostics(),

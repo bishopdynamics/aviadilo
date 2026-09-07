@@ -480,11 +480,14 @@ async def test_exact_collection_radius_boundary_and_wrapped_longitude(
 
 async def test_status_memory_is_bounded_during_viewer_churn_expiry_and_close(
     hass: HomeAssistant,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from dataclasses import replace
 
     now = [0.0]
     service = AviadiloService(hass, deepcopy(DEFAULTS), clock=lambda: now[0])
+    # This churn regression intentionally has no active source adapter.
+    monkeypatch.setattr(service, "_register_wind", lambda: None)
     await service.start()
     ended: list[str] = []
     try:

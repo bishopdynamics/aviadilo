@@ -111,6 +111,7 @@ async def transport(
     # Protocol tests inject their own trusted tile resolver and publication.
     # Adapter registration/collection is tested separately in test_radar.py.
     monkeypatch.setattr(service, "_register_radar", lambda: None)
+    monkeypatch.setattr(service, "_register_wind", lambda: None)
     await service.start()
     hass.data[DOMAIN] = service
     async with TestClient(TestServer(hass.http.app)) as client:
