@@ -1,0 +1,106 @@
+{
+  "title": "Aviadilo",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Shared collection settings",
+        "description": "Choose the shared collection area. Radius is limited to 463 km (250 nmi). Diagnostics are available from the integration menu.",
+        "data": {
+          "anchor_kind": "Location anchor",
+          "aircraft_provider": "Aircraft provider",
+          "aircraft_radius": "Collection radius (in selected units)",
+          "aircraft_radius_unit": "Radius units",
+          "aircraft_interval_s": "Requested aircraft interval",
+          "disk_cache_mib": "Disk cache budget",
+          "background_collection": "Collect aircraft in background without viewers"
+        }
+      },
+      "anchor": {
+        "title": "Collection location",
+        "data": {
+          "entity_id": "Zone",
+          "latitude": "Latitude",
+          "longitude": "Longitude"
+        }
+      },
+      "advanced": {
+        "title": "Conservative provider pacing",
+        "description": "These settings can only reduce request rates. All viewers, retries, metadata and tiles share these limits.",
+        "data": {
+          "adsb_fi_min_interval_s": "adsb.fi minimum interval",
+          "adsb_lol_min_interval_s": "ADSB.lol minimum interval",
+          "rainviewer_requests_per_minute": "RainViewer requests per minute",
+          "noaa_requests_per_minute": "Shared NOAA requests per minute",
+          "dwd_requests_per_minute": "DWD requests per minute"
+        }
+      }
+    },
+    "error": {
+      "invalid_settings": "Enter valid settings within the displayed limits.",
+      "invalid_anchor": "Location is missing, unavailable or invalid. Select a valid zone or enter coordinates."
+    },
+    "abort": {
+      "single_instance_allowed": "Only one Aviadilo integration is supported.",
+      "already_configured": "Aviadilo is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "title": "Shared collection settings",
+        "description": "Choose the shared collection area. Radius is limited to 463 km (250 nmi). Diagnostics are available from the integration menu.",
+        "data": {
+          "anchor_kind": "Location anchor",
+          "aircraft_provider": "Aircraft provider",
+          "aircraft_radius": "Collection radius (in selected units)",
+          "aircraft_radius_unit": "Radius units",
+          "aircraft_interval_s": "Requested aircraft interval",
+          "disk_cache_mib": "Disk cache budget",
+          "background_collection": "Collect aircraft in background without viewers"
+        }
+      },
+      "anchor": {
+        "title": "Collection location",
+        "data": {
+          "entity_id": "Zone",
+          "latitude": "Latitude",
+          "longitude": "Longitude"
+        }
+      },
+      "advanced": {
+        "title": "Conservative provider pacing",
+        "description": "These settings can only reduce request rates. All viewers, retries, metadata and tiles share these limits.",
+        "data": {
+          "adsb_fi_min_interval_s": "adsb.fi minimum interval",
+          "adsb_lol_min_interval_s": "ADSB.lol minimum interval",
+          "rainviewer_requests_per_minute": "RainViewer requests per minute",
+          "noaa_requests_per_minute": "Shared NOAA requests per minute",
+          "dwd_requests_per_minute": "DWD requests per minute"
+        }
+      },
+      "init": {
+        "title": "Aviadilo options",
+        "menu_options": {
+          "user": "Shared collection settings",
+          "clear_cache": "Clear cached data"
+        }
+      },
+      "clear_cache": {
+        "title": "Clear cached data",
+        "description": "Delete locally cached public provider data. Active viewers may fetch it again subject to provider limits. Settings are retained.",
+        "data": {
+          "confirm": "Confirm clearing the cache"
+        }
+      }
+    },
+    "error": {
+      "invalid_settings": "Enter valid settings within the displayed limits.",
+      "invalid_anchor": "Location is missing, unavailable or invalid. Select a valid zone or enter coordinates."
+    },
+    "abort": {
+      "cache_cleared": "The cache has been cleared.",
+      "cache_clear_cancelled": "Cache clearing was cancelled.",
+      "integration_not_loaded": "Load the integration before clearing its cache."
+    }
+  }
+}

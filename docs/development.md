@@ -1,6 +1,6 @@
 # Development
 
-Aviadilo currently contains the slice 1 bootstrap. The integration and card are stubs; the fixture harness is the local development surface. Live providers, HA setup/options, authenticated transport, and the full map/editor follow in the approved serial slices.
+Aviadilo contains the first two slices: the bootstrap plus HA integration setup/options, scheduler/cache, diagnostics and bundled-module registration. The card is still a stub and the fixture harness remains its local development surface. Authenticated transport, live providers and the full map/editor follow in the approved serial slices.
 
 ## Toolchains
 
@@ -8,7 +8,7 @@ Aviadilo currently contains the slice 1 bootstrap. The integration and card are 
 - Python 3.14.2, pinned in `.python-version`, matching the approved Python 3.14 baseline for Home Assistant 2026.9.1.
 - `uv` 0.12.8 (also pinned in CI), GNU Make, and Git. The Makefile uses GNU Make 3.81-compatible constructs for macOS; execution was verified on Linux.
 
-Install the pinned Node version before running `make setup`. Dependency versions are recorded in `package-lock.json` and `uv.lock`. Production HA tests are separate from the bootstrap's contract tests.
+Install the pinned Node version before running `make setup`. Dependency versions are recorded in `package-lock.json` and `uv.lock`. Backend tests now use real Home Assistant 2026.9.1 APIs and pytest-asyncio; they require no running HA instance or provider access.
 
 The 2026-09-06 development session provisioned temporary toolchains without changing the host's Node 22/Python 3.12 installation:
 
@@ -56,3 +56,27 @@ The orchestrator independently ran `make check` on Node 24.20.0/Python 3.14.2: f
 Headless Chromium 151.0.7922.34 rendered the development and built fixture pages, including a 390-pixel viewport without horizontal overflow. The compiled module extracted directly from the ZIP also registered and rendered under the strict script policy. These checks recorded no JavaScript errors or external resource requests on stable loads. This is bootstrap browser evidence, not acceptance on the user's tablet or Home Assistant instance.
 
 Artifact: `dist/aviadilo.zip`, version `0.1.0-dev.1`, six runtime files. SHA256: `3bd6d1ed3e66f25a384f881f87bcde46cb807c00f4472d4b1f48864f5d7553be`.
+
+## Integration foundation — slice 2
+
+HA's normal setup/options flows cover the shared location, aircraft provider/radius/units, requested interval, disk budget, background collection and conservative provider limits. Cache clearing is a separate confirmed action. Diagnostics expose aggregate state and counts without coordinates, tracker data, response bodies or credentials.
+
+Background collection currently covers the selected aircraft source; radar and wind require viewer demand. This avoids fetching unused weather layers. Viewer leases expire after 60 seconds, and demand is checked again immediately before queued work reaches a producer. Adapters and authenticated transport are later slices, so this slice makes no provider requests.
+
+The scheduler shares one queue per provider (one combined NOAA queue), coalesces requests and retains consumed slots/cooldowns across integration reloads. Correcting settings and reloading can release a permanent error without resetting rate-limit history. Requests have a 60-second timeout.
+
+The cache lives at `<HA config>/aviadilo_cache`, outside the replaceable integration directory. The default disk budget is 512 MiB; complete entry bytes count toward it. Entries are capped at 8 MiB and retained blobs at 32 MiB, reserving room for temporary buffers within the 64 MiB backend cache budget. Metadata/entry count is bounded. Atomic writes, recovery and cancellation handling keep clear/unload operations coherent. Revalidation updates freshness separately from the original data time, and all selected radar products have 24-hour retention.
+
+The module URL includes the integration version. A tiny public bootstrap waits for HA's `home-assistant` element before importing the card; this avoids registering it before HA replaces the browser's custom-element registry. Unload removes the integration's extra-module registration. HA's HTTP router cannot remove an individual route after startup, so the versioned asset routes remain for that HA process and are reused safely on reload.
+
+### Verification — 2026-09-07
+
+Independent `make check` passed 31 frontend and 97 backend tests, formatting/lint, strict mypy on 20 files, both Vite builds and ZIP validation. The five pytest warnings originate in HA/dependency deprecations. In this Codex environment, the sandbox blocks asyncio socket wakeups; the offline check ran with normal escalation rather than changing the tests.
+
+An isolated HA Core 2026.9.1 instance with frontend 20260826.6 and Chromium 151.0.7922.34 exercised graphical setup and options, automatic module loading, confirmed cache clearing and authenticated diagnostics. Changing 75 nmi saved 138,900 metres and reloaded successfully. The test instance is separate from the user's HA installation. Its optional camera/FFmpeg native libraries were absent; no Aviadilo setup failure resulted.
+
+The final ZIP was installed into that isolated instance and HA restarted. The entry loaded with its saved options; both versioned bootstrap and card URLs returned HTTP 200, and the card registered in HA's final registry and rendered. The graphical entry menu exposed Download diagnostics. No Aviadilo provider work was active.
+
+Artifact: `dist/aviadilo.zip`, still development version `0.1.0-dev.1`, now 15 runtime files. SHA256: `61e5f18152807d63f842085b6d618f858336c7ddc8676f15996d6bf82b92e7ed`.
+
+HACS installation/upgrade acceptance remains for slice 8. Docker daemon access was denied at the host level, so the pinned hassfest container was not run. GitHub description/topics and remote HACS validation also remain pending.
