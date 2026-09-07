@@ -72,7 +72,7 @@ async def entry(hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch) -> config_
 
 @pytest.fixture
 async def transport(
-    hass: HomeAssistant, entry: config_entries.ConfigEntry
+    hass: HomeAssistant, entry: config_entries.ConfigEntry, monkeypatch: pytest.MonkeyPatch
 ) -> AsyncIterator[tuple[object, str]]:
     """Real HA authentication, WS router and HTTP middleware on local sockets."""
     from aiohttp.test_utils import TestClient, TestServer
@@ -108,6 +108,9 @@ async def transport(
     service.register_producer(
         "aircraft", Producer("adsb_fi", "offline", 10, offline_aircraft, lambda result: None)
     )
+    # Protocol tests inject their own trusted tile resolver and publication.
+    # Adapter registration/collection is tested separately in test_radar.py.
+    monkeypatch.setattr(service, "_register_radar", lambda: None)
     await service.start()
     hass.data[DOMAIN] = service
     async with TestClient(TestServer(hass.http.app)) as client:

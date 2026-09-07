@@ -6,7 +6,7 @@ import time
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from functools import partial
 from pathlib import Path
@@ -112,6 +112,7 @@ class AviadiloService:
         self.closed = False
         self.anchor_state = "current"
         self.product_states: dict[str, str] = {}
+        self.radar_due: dict[str, float] = {}
         self.entry_id: str | None = None
         self.status_signatures: dict[str, str] = {}
         self.viewers: dict[str, Viewer] = {}
@@ -231,10 +232,14 @@ class AviadiloService:
                 != current_area
             ):
                 payload = None
-            last_success = payload.get("fetched_at") if payload and product == "aircraft" else None
+            last_success = (
+                payload.get("fetched_at" if product == "aircraft" else "generated_at")
+                if payload
+                else None
+            )
             state = "loading" if available else "unavailable"
             message = None if available else "Source adapter is not installed"
-            if available and product == "aircraft":
+            if available and (product == "aircraft" or layer == "radar"):
                 failure = bucket.state in ("cooldown", "configuration_required")
                 failure = failure or self.product_states.get(product) in (
                     "unavailable",
@@ -242,9 +247,25 @@ class AviadiloService:
                 )
                 if last_success:
                     age = max(0, time.time() - datetime.fromisoformat(last_success).timestamp())
-                    state = "stale" if failure or age > max(60, (interval or 0) * 2) else "current"
+                    state = (
+                        "stale"
+                        if failure
+                        or age > max(60 if product == "aircraft" else 900, (interval or 0) * 2)
+                        else "current"
+                    )
                 elif failure:
                     state = "unavailable"
+                if layer == "radar" and payload:
+                    frames = payload["frames"]
+                    if not frames:
+                        state, message = "unavailable", "No advertised radar frames"
+                    elif (
+                        time.time()
+                        - max(datetime.fromisoformat(frame["time"]).timestamp() for frame in frames)
+                        > 900
+                    ):
+                        state = "stale"
+                        message = "Latest advertised radar frame is older than 15 minutes"
                 if failure:
                     message = (
                         "Correct provider configuration and reload"
@@ -340,6 +361,7 @@ class AviadiloService:
         await self.cache.start()
         if "aircraft" not in self.producers:
             self._register_aircraft()
+        self._register_radar()
         self.monitor = asyncio.create_task(self._monitor())
 
     def _register_aircraft(self) -> None:
@@ -378,6 +400,35 @@ class AviadiloService:
             Producer(
                 adapter.provider, "shared-area", self.config["aircraft_interval_s"], fetch, consume
             ),
+        )
+
+    def _register_radar(self) -> None:
+        from .providers.noaa_ksox import NoaaKsoxProvider
+        from .providers.noaa_mrms import NoaaMrmsProvider
+        from .providers.rainviewer import RainViewerProvider
+
+        for adapter_type in (RainViewerProvider, NoaaMrmsProvider, NoaaKsoxProvider):
+            if adapter_type.provider not in self.producers:
+                self._install_radar(adapter_type(self.session, self.cache))
+
+    def _install_radar(self, adapter: Any) -> None:
+        async def fetch() -> tuple[Publication, dict[str, Any]]:
+            context = self.capture(adapter.provider)
+            result = await adapter.fetch()
+            return context, result
+
+        def consume(value: tuple[Publication, dict[str, Any]]) -> None:
+            context, result = value
+            # Metadata is source-wide, independent of viewport. Re-capture the
+            # current audience explicitly for replay, retaining the original
+            # area guard. publish() itself still rejects stale viewer objects.
+            current = self.capture(adapter.provider)
+            self.publish(replace(context, audiences=current.audiences), result)
+
+        self.tiles.register(adapter.provider, adapter.tile_source())
+        self.register_producer(
+            adapter.provider,
+            Producer(adapter.provider, "radar-metadata-v1", adapter.interval, fetch, consume),
         )
 
     def _broadcast_status(self) -> None:
@@ -487,10 +538,17 @@ class AviadiloService:
 
         try:
             while not self.closed:
+                # Hiding the last card cancels its collector, not the metadata
+                # cadence. A rapid reopen replays the snapshot and waits for the
+                # next normal poll, even when upstream says no-cache.
+                if product in self.radar_due and self.radar_due[product] > self.clock():
+                    await self.sleep(self.radar_due[product] - self.clock())
                 result = await self.scheduler.request(
                     producer.provider, producer.key, demanded_fetch
                 )
                 producer.consume(result)
+                if product in ("rainviewer", "noaa_mrms", "noaa_ksox"):
+                    self.radar_due[product] = self.clock() + producer.interval
                 self.product_states[product] = "current"
                 self._broadcast_status()
                 await self.sleep(producer.interval)

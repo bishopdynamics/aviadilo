@@ -446,3 +446,103 @@ it('bounds a stuck tile body and cancels its reader', async () => {
   expect(cancel).toHaveBeenCalledOnce();
   expect(URL.createObjectURL).not.toHaveBeenCalled();
 });
+
+it('cancels one tile waiter without aborting another coalesced consumer', async () => {
+  const ha = new FakeHa();
+  const selected = selection();
+  selected.layers.radar = true;
+  const api = client(ha, selected);
+  await flush();
+  ha.ready();
+  await flush();
+  ha.event(fixture('radar'));
+  const gate = deferred<Response>();
+  ha.fetch.mockReturnValue(gate.promise);
+  const tile = { product: 'radar', frame: 'opaque/frame-01', z: 0, x: 0, y: 0 };
+  const abortA = new AbortController(),
+    abortB = new AbortController();
+  const a = api.loadTile(tile, abortA.signal),
+    b = api.loadTile(tile, abortB.signal);
+  const rejected = expect(a).rejects.toMatchObject({ name: 'AbortError' });
+  abortA.abort();
+  await rejected;
+  expect(ha.fetch).toHaveBeenCalledOnce();
+  expect(ha.fetch.mock.calls[0][1].aborted).toBe(false);
+  gate.resolve(
+    new Response(png(), { headers: { 'Content-Type': 'image/png' } }),
+  );
+  expect(await b).toMatch(/^blob:/);
+  expect(URL.createObjectURL).toHaveBeenCalledOnce();
+});
+
+it('aborts final tile waiter, allows same-key replacement and ignores late old result', async () => {
+  const ha = new FakeHa();
+  const selected = selection();
+  selected.layers.radar = true;
+  const api = client(ha, selected);
+  await flush();
+  ha.ready();
+  await flush();
+  ha.event(fixture('radar'));
+  const old = deferred<Response>(),
+    fresh = deferred<Response>();
+  ha.fetch.mockReturnValueOnce(old.promise).mockReturnValueOnce(fresh.promise);
+  const tile = { product: 'radar', frame: 'opaque/frame-01', z: 0, x: 0, y: 0 };
+  const abort = new AbortController();
+  const a = api.loadTile(tile, abort.signal);
+  const rejection = expect(a).rejects.toMatchObject({ name: 'AbortError' });
+  abort.abort();
+  await rejection;
+  expect(ha.fetch.mock.calls[0][1].aborted).toBe(true);
+  const b = api.loadTile(tile);
+  await flush();
+  expect(ha.fetch).toHaveBeenCalledTimes(2);
+  old.resolve(
+    new Response(png(), { headers: { 'Content-Type': 'image/png' } }),
+  );
+  await flush();
+  expect(URL.createObjectURL).not.toHaveBeenCalled();
+  fresh.resolve(
+    new Response(png(), { headers: { 'Content-Type': 'image/png' } }),
+  );
+  expect(await b).toMatch(/^blob:/);
+  expect(URL.createObjectURL).toHaveBeenCalledOnce();
+});
+
+it('preserves a same-key replacement started synchronously by an abort listener', async () => {
+  const ha = new FakeHa();
+  const selected = selection();
+  selected.layers.radar = true;
+  const api = client(ha, selected);
+  await flush();
+  ha.ready();
+  await flush();
+  ha.event(fixture('radar'));
+  const tile = { product: 'radar', frame: 'opaque/frame-01', z: 0, x: 0, y: 0 };
+  const first = new AbortController(),
+    second = new AbortController();
+  let replacement: Promise<string> | undefined;
+  ha.fetch
+    .mockImplementationOnce((_path, signal) => {
+      signal.addEventListener('abort', () => {
+        replacement = api.loadTile(tile, second.signal);
+      });
+      return new Promise<Response>(() => undefined);
+    })
+    .mockImplementationOnce(() => new Promise<Response>(() => undefined));
+  const initial = api.loadTile(tile, first.signal);
+  const rejected = expect(initial).rejects.toMatchObject({
+    name: 'AbortError',
+  });
+  first.abort();
+  await rejected;
+  await flush();
+  expect(ha.fetch).toHaveBeenCalledTimes(2);
+  expect(replacement).toBeDefined();
+  const secondRejected = expect(replacement!).rejects.toMatchObject({
+    name: 'AbortError',
+  });
+  second.abort();
+  await secondRejected;
+  expect(ha.fetch.mock.calls[1][1].aborted).toBe(true);
+});

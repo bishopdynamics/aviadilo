@@ -28,6 +28,11 @@ export interface RadarTile {
   style?: string;
 }
 type Manifest = Extract<SnapshotEvent, { kind: 'radar-manifest' }>;
+interface TileJob {
+  promise: Promise<string>;
+  controller: AbortController;
+  waiters: number;
+}
 interface ImageEntry {
   url: string;
   bytes: number;
@@ -105,7 +110,7 @@ export class AviadiloClient {
   private updating = false;
   private manifest?: Manifest;
   private images = new Map<string, ImageEntry>();
-  private pending = new Map<string, Promise<string>>();
+  private pending = new Map<string, TileJob>();
   private unlisten: () => void;
   private stateValue: ClientState = 'idle';
   private readonly visibility = () => this.setVisible(!document.hidden);
@@ -406,7 +411,8 @@ export class AviadiloClient {
   /** Returns a bounded object URL. Rendering code releases it when a tile leaves
    * view; all URLs are revoked on source/viewport edits, hide, or disposal.
    */
-  async loadTile(tile: RadarTile): Promise<string> {
+  async loadTile(tile: RadarTile, signal?: AbortSignal): Promise<string> {
+    if (signal?.aborted) throw aborted();
     const manifest = this.manifest;
     if (
       !this.wanted() ||
@@ -449,17 +455,44 @@ export class AviadiloClient {
       this.images.set(key, existing);
       return existing.url;
     }
-    const pending = this.pending.get(key);
-    if (pending) return pending;
-    if (this.pending.size >= 8)
-      throw new Error('Aviadilo tile request limit reached');
-    const signal = this.tiles.signal;
-    const promise = this.fetchTile(key, tile, signal);
-    this.pending.set(key, promise);
+    let job = this.pending.get(key);
+    if (job?.controller.signal.aborted) job = undefined;
+    if (!job) {
+      if (this.pending.size >= 8)
+        throw new Error('Aviadilo tile request limit reached');
+      const controller = new AbortController();
+      const requestSignal = AbortSignal.any([
+        this.tiles.signal,
+        controller.signal,
+      ]);
+      job = {
+        promise: this.fetchTile(key, tile, requestSignal),
+        controller,
+        waiters: 0,
+      };
+      this.pending.set(key, job);
+      const current = job;
+      // Remove only this job: an aborted same-key request can be replaced before
+      // its underlying HA fetch finishes unwinding.
+      void current.promise
+        .finally(() => {
+          if (this.pending.get(key) === current) this.pending.delete(key);
+        })
+        .catch(() => undefined);
+    }
+    job.waiters++;
     try {
-      return await promise;
+      return signal
+        ? await bounded(job.promise, signal, 150000)
+        : await job.promise;
     } finally {
-      if (this.pending.get(key) === promise) this.pending.delete(key);
+      job.waiters--;
+      if (job.waiters === 0 && this.pending.get(key) === job) {
+        // Remove before abort: synchronous abort listeners may request this
+        // same key again, and must not have their replacement deleted below.
+        this.pending.delete(key);
+        job.controller.abort();
+      }
     }
   }
   private async fetchTile(
