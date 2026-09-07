@@ -46,3 +46,6 @@ Elefant-Offline.md
 # <<< project-template-a managed block <<<
 
 # --- Project-specific ignore rules go below this line ---
+custom_components/aviadilo/frontend/
+coverage/
+src/config/validators.js

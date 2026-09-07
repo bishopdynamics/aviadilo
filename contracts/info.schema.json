@@ -1,0 +1,217 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Info",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "entry_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "area": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "latitude": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "longitude": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            "radius_m": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 463000
+            }
+          },
+          "required": ["latitude", "longitude", "radius_m"],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "aircraft": {
+          "type": "array",
+          "items": {
+            "enum": ["adsb_fi", "adsb_lol"]
+          },
+          "maxItems": 2,
+          "minItems": 0
+        },
+        "radar": {
+          "type": "array",
+          "items": {
+            "enum": ["rainviewer", "noaa_mrms", "noaa_ksox"]
+          },
+          "maxItems": 3,
+          "minItems": 0
+        },
+        "wind": {
+          "type": "array",
+          "items": {
+            "enum": ["dwd_icon_global"]
+          },
+          "maxItems": 1,
+          "minItems": 0
+        }
+      },
+      "required": ["aircraft", "radar", "wind"],
+      "additionalProperties": false
+    },
+    "policies": {
+      "type": "object",
+      "properties": {
+        "adsb_fi_min_interval_s": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 86400
+        },
+        "adsb_lol_min_interval_s": {
+          "type": "number",
+          "minimum": 10,
+          "maximum": 86400
+        },
+        "rainviewer_requests_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "noaa_requests_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "dwd_requests_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        }
+      },
+      "required": [
+        "adsb_fi_min_interval_s",
+        "adsb_lol_min_interval_s",
+        "rainviewer_requests_per_minute",
+        "noaa_requests_per_minute",
+        "dwd_requests_per_minute"
+      ],
+      "additionalProperties": false
+    },
+    "statuses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "layer": {
+            "enum": ["aircraft", "radar", "wind"]
+          },
+          "state": {
+            "enum": [
+              "loading",
+              "current",
+              "stale",
+              "unavailable",
+              "outside-coverage"
+            ]
+          },
+          "provider": {
+            "enum": [
+              "adsb_fi",
+              "adsb_lol",
+              "rainviewer",
+              "noaa_mrms",
+              "noaa_ksox",
+              "dwd_icon_global"
+            ]
+          },
+          "last_success": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "effective_interval_s": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 86400
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "layer",
+          "state",
+          "provider",
+          "last_success",
+          "effective_interval_s",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 3,
+      "minItems": 0
+    },
+    "heartbeat_s": {
+      "const": 20
+    },
+    "lease_s": {
+      "const": 60
+    },
+    "backend_memory_mib": {
+      "const": 64
+    }
+  },
+  "required": [
+    "schema_version",
+    "entry_id",
+    "area",
+    "capabilities",
+    "policies",
+    "statuses",
+    "heartbeat_s",
+    "lease_s",
+    "backend_memory_mib"
+  ],
+  "additionalProperties": false,
+  "definitions": {}
+}

@@ -1,0 +1,405 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Command",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "type": {
+          "const": "aviadilo/info"
+        },
+        "entry_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["schema_version", "id", "type", "entry_id"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "type": {
+          "const": "aviadilo/subscribe"
+        },
+        "entry_id": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "layers": {
+          "$ref": "#/definitions/LayerFlags"
+        },
+        "radar_provider": {
+          "enum": ["rainviewer", "noaa_mrms", "noaa_ksox"]
+        },
+        "viewport": {
+          "$ref": "#/definitions/Viewport"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "type",
+        "entry_id",
+        "layers",
+        "radar_provider",
+        "viewport",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "type": {
+          "const": "aviadilo/update_subscription"
+        },
+        "subscription_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "entry_id": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "layers": {
+          "$ref": "#/definitions/LayerFlags"
+        },
+        "radar_provider": {
+          "enum": ["rainviewer", "noaa_mrms", "noaa_ksox"]
+        },
+        "viewport": {
+          "$ref": "#/definitions/Viewport"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "type",
+        "subscription_id",
+        "entry_id",
+        "layers",
+        "radar_provider",
+        "viewport",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "type": {
+          "const": "aviadilo/heartbeat"
+        },
+        "subscription_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      },
+      "required": ["schema_version", "id", "type", "subscription_id"],
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "Viewport": {
+      "type": "object",
+      "properties": {
+        "south": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "north": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "west": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "east": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "zoom": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 22
+        }
+      },
+      "required": ["south", "north", "west", "east", "zoom"],
+      "additionalProperties": false
+    },
+    "LayerFlags": {
+      "type": "object",
+      "properties": {
+        "aircraft": {
+          "type": "boolean"
+        },
+        "radar": {
+          "type": "boolean"
+        },
+        "wind": {
+          "type": "boolean"
+        }
+      },
+      "required": ["aircraft", "radar", "wind"],
+      "additionalProperties": false
+    },
+    "Coverage": {
+      "type": "object",
+      "properties": {
+        "bounds": {
+          "$ref": "#/definitions/Viewport"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "required": ["bounds", "description"],
+      "additionalProperties": false
+    },
+    "Aircraft": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^(adsb_fi|adsb_lol):[A-Za-z0-9_-]{1,64}$"
+        },
+        "icao": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{6}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "latitude": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "longitude": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "position_age_s": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 86400
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "callsign": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "registration": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "aircraft_type": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "category": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "on_ground": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "altitude_m": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 100000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "speed_mps": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "course_deg": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "exclusiveMaximum": 360
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "vertical_rate_mps": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "squawk": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-7]{4}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "icao",
+        "latitude",
+        "longitude",
+        "position_age_s",
+        "callsign",
+        "registration",
+        "aircraft_type",
+        "category",
+        "on_ground",
+        "altitude_m",
+        "speed_mps",
+        "course_deg",
+        "vertical_rate_mps",
+        "squawk"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

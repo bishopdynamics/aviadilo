@@ -1,0 +1,38 @@
+{
+  "name": "aviadilo",
+  "version": "0.1.0-dev.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.20.0 <25"
+  },
+  "scripts": {
+    "dev": "npm run validators:generate && vite --host 127.0.0.1",
+    "build": "npm run validators:generate && vite build && vite build --mode fixture",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src dev/*.ts tests/frontend *.ts *.js",
+    "format": "prettier --write src dev/*.ts dev/index.html tests/frontend contracts *.json *.ts *.js .github/workflows/*.yml --ignore-path .gitignore",
+    "format:check": "prettier --check src dev/*.ts dev/index.html tests/frontend contracts *.json *.ts *.js .github/workflows/*.yml --ignore-path .gitignore",
+    "contracts:generate": "node --input-type=module -e 'import {compileFromFile} from \"json-schema-to-typescript\"; import {writeFile} from \"node:fs/promises\"; for (const [schemas, output] of [[[\"card-config\"], \"src/config/types.ts\"], [[\"integration-config\"], \"src/config/integration-types.ts\"], [[\"command\", \"event\", \"info\"], \"src/data/types.ts\"]]) { let types = \"\"; for (const schema of schemas) types += await compileFromFile(\"contracts/\" + schema + \".schema.json\", {additionalProperties:false, declareExternallyReferenced:true, maxItems:-1}); await writeFile(output, types); }' && prettier --write src/config/types.ts src/config/integration-types.ts src/data/types.ts",
+    "validators:generate": "node src/config/generate.mjs"
+  },
+  "dependencies": {
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1",
+    "leaflet": "1.9.4",
+    "lit": "3.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.2",
+    "@types/leaflet": "1.9.21",
+    "@types/node": "24.10.1",
+    "eslint": "9.39.2",
+    "json-schema-to-typescript": "15.0.4",
+    "prettier": "3.7.4",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.48.1",
+    "vite": "7.2.4",
+    "vitest": "4.0.14"
+  }
+}

@@ -1,6 +1,6 @@
 # SPEC: Aviadilo household map
 
-- **Status:** approved — user approved the revised specification on 2026-09-06; implementation starts next session.
+- **Status:** approved — user approved the revised specification on 2026-09-06; implementation began with slice 1 on 2026-09-06.
 - **Addenda:** none.
 - **Repository:** public `https://github.com/bishopdynamics/aviadilo`; remote `github`, upstream `github/main`. HACS from the first release is an accepted user requirement.
 - **Compatibility baseline:** Home Assistant Core 2026.9.1, current stable Chromium on a tablet PC. The user reported using latest HA; this patch version is the verified release baseline, not an inspection of their installation.
@@ -10,7 +10,7 @@
 
 Aviadilo replaces separate aircraft, radar, and household-location maps with one large Lovelace map suitable for the user's Chromium kiosk. A Python Home Assistant integration shares external data collection and caching across cards and devices. A TypeScript/Lit/Leaflet card renders aircraft, precipitation radar, wind, and existing household trackers as independent layers. Every supported setting has a graphical editor, and distant travellers cannot pull the home view out to a world map.
 
-The user approved this implementation plan and asked to start implementation next session. First-run local setup remains outstanding; approval does not mark those setup checks complete or deploy anything to the user's HA instance.
+The user approved this implementation plan and implementation began in the following session. First-run local setup and slice 1 verification are complete; nothing has been deployed to the user's HA instance.
 
 ## Goals
 
@@ -240,7 +240,7 @@ The owned paths below were approved with this specification. Directory entries g
    - Owned files: `src/aviadilo-map.ts`, `src/editor/editor.ts`, `custom_components/aviadilo/__init__.py`, `custom_components/aviadilo/static.py`; `scripts/build_release.py`, `scripts/check_release.py`, `dev/ha/**`, `tests/e2e/**`, `playwright.config.ts`, `hacs.json`, `.github/workflows/check.yml`, `.github/workflows/validate.yml`, `.github/workflows/release.yml`, `Makefile`.
    - Verification: `make check`; HACS/hassfest and release ZIP checks; clean HACS install and upgrade in HA 2026.9.1; automatically available card picker/config/options; all four layers; two clients sharing requests; reload/reconnect; browser sizing and a prolonged kiosk run. The orchestrator runs singleton HA/UI verification and updates user/development docs.
 
-Implementation is authorized for the next session. Begin with the remaining first-run trust/setup checks and slice 1 bootstrap work, then proceed through the approved serial slices. Repository creation, connection, and the initial push are already complete. Explain each slice as it begins; do not request renewed approval for this plan or its accepted choices.
+Implementation is authorized. First-run trust/setup and slice 1 bootstrap verification are complete; follow `docs/TASK_QUEUE.md` for the current slice and handoff. Repository creation, connection, and the initial push are already complete. Explain each slice as it begins; do not request renewed approval for this plan or its accepted choices.
 
 ## Open Questions
 
@@ -261,3 +261,4 @@ None. The user approved all remaining engineering choices on 2026-09-06.
 - 2026-09-06 — Drafted from the accepted combined-map direction, source-selection spike, and latest-HA/Chromium tablet compatibility input. Added proposed cache/transport/package choices and serial owned-file slices. No implementation approval inferred.
 - 2026-09-06 — User corrected delivery to HACS from the beginning and created/pushed public `bishopdynamics/aviadilo` with remote `github`. Replaced manual-first/GitLab assumptions with bundled HACS Integration packaging, automatic card-module loading, GitHub Actions, and HACS install/upgrade acceptance.
 - 2026-09-06 — User approved the revised specification in full and requested session wrap, with implementation beginning next session. Cleared open questions and accepted the engineering defaults and deferrals.
+- 2026-09-06 — Implemented and independently verified slice 1 bootstrap in the following session; completed first-run setup. Recorded shared contracts, offline scaffold, packaging and verification in `docs/development.md`. Remaining product slices and live acceptance are pending.

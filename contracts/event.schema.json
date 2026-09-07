@@ -1,0 +1,644 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SnapshotEvent",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "subscription_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "kind": {
+          "const": "aircraft"
+        },
+        "provider": {
+          "enum": ["adsb_fi", "adsb_lol"]
+        },
+        "fetched_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "aircraft": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Aircraft"
+          },
+          "maxItems": 10000,
+          "minItems": 0
+        }
+      },
+      "required": [
+        "schema_version",
+        "subscription_id",
+        "revision",
+        "kind",
+        "provider",
+        "fetched_at",
+        "aircraft"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "subscription_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "kind": {
+          "const": "radar-manifest"
+        },
+        "provider": {
+          "enum": ["rainviewer", "noaa_mrms", "noaa_ksox"]
+        },
+        "product": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "frames": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "time": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+              }
+            },
+            "required": ["id", "time"],
+            "additionalProperties": false
+          },
+          "maxItems": 288,
+          "minItems": 0
+        },
+        "native_max_zoom": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 22
+        },
+        "attribution": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Coverage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "subscription_id",
+        "revision",
+        "kind",
+        "provider",
+        "product",
+        "generated_at",
+        "frames",
+        "native_max_zoom",
+        "attribution",
+        "coverage"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "subscription_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "kind": {
+          "const": "wind-grid"
+        },
+        "provider": {
+          "const": "dwd_icon_global"
+        },
+        "coverage_id": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "valid_time": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "run_time": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "first_latitude": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "first_longitude": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "latitude_step": {
+          "type": "number",
+          "minimum": -180,
+          "exclusiveMaximum": 0
+        },
+        "longitude_step": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 360
+        },
+        "crs": {
+          "const": "EPSG:4326"
+        },
+        "row_order": {
+          "const": "north-to-south"
+        },
+        "u_mps": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": -200,
+                "maximum": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maxItems": 4096,
+          "minItems": 1
+        },
+        "v_mps": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": -200,
+                "maximum": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maxItems": 4096,
+          "minItems": 1
+        },
+        "effective_resolution_deg": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 360
+        },
+        "attribution": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "schema_version",
+        "subscription_id",
+        "revision",
+        "kind",
+        "provider",
+        "coverage_id",
+        "valid_time",
+        "run_time",
+        "width",
+        "height",
+        "first_latitude",
+        "first_longitude",
+        "latitude_step",
+        "longitude_step",
+        "crs",
+        "row_order",
+        "u_mps",
+        "v_mps",
+        "effective_resolution_deg",
+        "attribution"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "subscription_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "kind": {
+          "const": "status"
+        },
+        "statuses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "layer": {
+                "enum": ["aircraft", "radar", "wind"]
+              },
+              "state": {
+                "enum": [
+                  "loading",
+                  "current",
+                  "stale",
+                  "unavailable",
+                  "outside-coverage"
+                ]
+              },
+              "provider": {
+                "enum": [
+                  "adsb_fi",
+                  "adsb_lol",
+                  "rainviewer",
+                  "noaa_mrms",
+                  "noaa_ksox",
+                  "dwd_icon_global"
+                ]
+              },
+              "last_success": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "effective_interval_s": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 86400
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "message": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 256
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "layer",
+              "state",
+              "provider",
+              "last_success",
+              "effective_interval_s",
+              "message"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 3,
+          "minItems": 0
+        }
+      },
+      "required": [
+        "schema_version",
+        "subscription_id",
+        "revision",
+        "kind",
+        "statuses"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "Viewport": {
+      "type": "object",
+      "properties": {
+        "south": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "north": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "west": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "east": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "zoom": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 22
+        }
+      },
+      "required": ["south", "north", "west", "east", "zoom"],
+      "additionalProperties": false
+    },
+    "LayerFlags": {
+      "type": "object",
+      "properties": {
+        "aircraft": {
+          "type": "boolean"
+        },
+        "radar": {
+          "type": "boolean"
+        },
+        "wind": {
+          "type": "boolean"
+        }
+      },
+      "required": ["aircraft", "radar", "wind"],
+      "additionalProperties": false
+    },
+    "Coverage": {
+      "type": "object",
+      "properties": {
+        "bounds": {
+          "$ref": "#/definitions/Viewport"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "required": ["bounds", "description"],
+      "additionalProperties": false
+    },
+    "Aircraft": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^(adsb_fi|adsb_lol):[A-Za-z0-9_-]{1,64}$"
+        },
+        "icao": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{6}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "latitude": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "longitude": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "position_age_s": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 86400
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "callsign": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "registration": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "aircraft_type": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "category": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "on_ground": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "altitude_m": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 100000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "speed_mps": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "course_deg": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "exclusiveMaximum": 360
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "vertical_rate_mps": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "squawk": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-7]{4}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "icao",
+        "latitude",
+        "longitude",
+        "position_age_s",
+        "callsign",
+        "registration",
+        "aircraft_type",
+        "category",
+        "on_ground",
+        "altitude_m",
+        "speed_mps",
+        "course_deg",
+        "vertical_rate_mps",
+        "squawk"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "Aviadilo",
+  "homeassistant": "2026.9.1",
+  "zip_release": true,
+  "filename": "aviadilo.zip",
+  "hide_default_branch": true
+}

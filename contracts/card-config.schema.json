@@ -1,0 +1,526 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CardConfig",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "type": {
+      "const": "custom:aviadilo-map"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "entry_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "map": {
+      "type": "object",
+      "properties": {
+        "layout": {
+          "enum": ["map", "list", "combined"]
+        },
+        "height_px": {
+          "type": "integer",
+          "minimum": 160,
+          "maximum": 2000
+        },
+        "follow_theme": {
+          "type": "boolean"
+        },
+        "anchor": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "home"
+                }
+              },
+              "required": ["kind"],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "zone"
+                },
+                "entity_id": {
+                  "type": "string",
+                  "pattern": "^zone\\.[a-z0-9_]+$",
+                  "maxLength": 256
+                }
+              },
+              "required": ["kind", "entity_id"],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "custom"
+                },
+                "latitude": {
+                  "type": "number",
+                  "minimum": -90,
+                  "maximum": 90
+                },
+                "longitude": {
+                  "type": "number",
+                  "minimum": -180,
+                  "maximum": 180
+                }
+              },
+              "required": ["kind", "latitude", "longitude"],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "extent_m": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 20000000
+        },
+        "mode": {
+          "enum": ["home-area", "fit-visible"]
+        },
+        "min_zoom": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 22
+        },
+        "max_zoom": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 22
+        },
+        "show_recenter": {
+          "type": "boolean"
+        },
+        "idle_return_s": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 10,
+              "maximum": 86400
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "include_zones": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^zone\\.[a-z0-9_]+$"
+          },
+          "maxItems": 100,
+          "minItems": 0
+        },
+        "extent_unit": {
+          "enum": ["km", "mi", "nmi"]
+        }
+      },
+      "required": [],
+      "additionalProperties": true
+    },
+    "layers": {
+      "type": "object",
+      "properties": {
+        "aircraft": {
+          "type": "boolean"
+        },
+        "radar": {
+          "type": "boolean"
+        },
+        "wind": {
+          "type": "boolean"
+        },
+        "people": {
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "additionalProperties": true
+    },
+    "radar": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "enum": ["rainviewer", "noaa_mrms", "noaa_ksox"]
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "mode": {
+          "enum": ["latest", "loop"]
+        },
+        "history_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1440
+        },
+        "frame_duration_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 10000
+        },
+        "show_timestamp": {
+          "type": "boolean"
+        },
+        "show_legend": {
+          "type": "boolean"
+        },
+        "show_coverage": {
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "additionalProperties": true
+    },
+    "wind": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "const": "dwd_icon_global"
+        },
+        "static_style": {
+          "enum": ["off", "arrows", "barbs"]
+        },
+        "particles": {
+          "type": "boolean"
+        },
+        "marker_spacing_px": {
+          "type": "number",
+          "minimum": 16,
+          "maximum": 256
+        },
+        "marker_size_px": {
+          "type": "number",
+          "minimum": 8,
+          "maximum": 96
+        },
+        "particle_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1500
+        },
+        "animation_speed": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 5
+        },
+        "trail_length_s": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 10
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "speed_unit": {
+          "enum": ["km/h", "mph", "knots", "m/s"]
+        }
+      },
+      "required": [],
+      "additionalProperties": true
+    },
+    "people": {
+      "type": "object",
+      "properties": {
+        "trackers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "entity_id": {
+                "type": "string",
+                "pattern": "^device_tracker\\.[a-z0-9_]+$",
+                "maxLength": 256
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 256
+              },
+              "show_photo": {
+                "type": "boolean"
+              },
+              "icon": {
+                "type": "string",
+                "maxLength": 256
+              },
+              "color": {
+                "type": "string",
+                "maxLength": 256
+              }
+            },
+            "required": ["entity_id"],
+            "additionalProperties": true
+          },
+          "maxItems": 100,
+          "minItems": 0
+        },
+        "show_labels": {
+          "type": "boolean"
+        },
+        "radius_enabled": {
+          "type": "boolean"
+        },
+        "radius_m": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 20000000
+        },
+        "radius_unit": {
+          "enum": ["km", "mi", "nmi"]
+        },
+        "anchor": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "const": "home"
+                    }
+                  },
+                  "required": ["kind"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "const": "zone"
+                    },
+                    "entity_id": {
+                      "type": "string",
+                      "pattern": "^zone\\.[a-z0-9_]+$",
+                      "maxLength": 256
+                    }
+                  },
+                  "required": ["kind", "entity_id"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "const": "custom"
+                    },
+                    "latitude": {
+                      "type": "number",
+                      "minimum": -90,
+                      "maximum": 90
+                    },
+                    "longitude": {
+                      "type": "number",
+                      "minimum": -180,
+                      "maximum": 180
+                    }
+                  },
+                  "required": ["kind", "latitude", "longitude"],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          ]
+        },
+        "accuracy_circles": {
+          "type": "boolean"
+        },
+        "max_age_s": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 604800
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "show_stale": {
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "additionalProperties": true
+    },
+    "aircraft": {
+      "type": "object",
+      "properties": {
+        "show_map": {
+          "type": "boolean"
+        },
+        "show_list": {
+          "type": "boolean"
+        },
+        "airborne_only": {
+          "type": "boolean"
+        },
+        "min_altitude_m": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 100000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "max_altitude_m": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 100000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "max_distance_m": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 20000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "distance_unit": {
+          "enum": ["km", "mi", "nmi"]
+        },
+        "altitude_unit": {
+          "enum": ["m", "ft"]
+        },
+        "speed_unit": {
+          "enum": ["km/h", "mph", "knots", "m/s"]
+        },
+        "label_mode": {
+          "enum": ["off", "callsign", "altitude", "callsign-altitude"]
+        },
+        "marker_size_px": {
+          "type": "number",
+          "minimum": 8,
+          "maximum": 96
+        },
+        "marker_color": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "list_columns": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "callsign",
+              "registration",
+              "aircraft_type",
+              "altitude",
+              "speed",
+              "distance",
+              "course",
+              "squawk"
+            ]
+          },
+          "maxItems": 8,
+          "minItems": 0
+        },
+        "sort": {
+          "enum": ["nearest", "callsign", "altitude", "speed"]
+        },
+        "list_rows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "selected_trail_s": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120
+        },
+        "detail_fields": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "callsign",
+              "registration",
+              "icao",
+              "aircraft_type",
+              "category",
+              "altitude",
+              "speed",
+              "course",
+              "vertical_rate",
+              "squawk",
+              "position_age",
+              "distance",
+              "ground"
+            ]
+          },
+          "maxItems": 14,
+          "minItems": 0
+        }
+      },
+      "required": [],
+      "additionalProperties": true
+    },
+    "freshness": {
+      "type": "object",
+      "properties": {
+        "max_position_age_s": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "show_last_update": {
+          "type": "boolean"
+        },
+        "stale_retention_s": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3600
+        },
+        "show_effective_refresh": {
+          "type": "boolean"
+        },
+        "show_source_status": {
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "additionalProperties": true
+    }
+  },
+  "required": ["schema_version", "type"],
+  "additionalProperties": true,
+  "definitions": {}
+}

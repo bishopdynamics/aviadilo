@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://127.0.0.1:*; img-src 'self' data:;"
+    />
+    <title>Aviadilo — offline development harness</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #101923;
+        color: #e6edf5;
+        font-family: system-ui, sans-serif;
+      }
+      main {
+        max-width: 960px;
+        margin: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Aviadilo development harness</h1>
+      <p>
+        Offline synthetic fixtures. No Home Assistant connection or upstream
+        requests.
+      </p>
+      <aviadilo-map></aviadilo-map>
+    </main>
+    <script type="module" src="/fixtures.ts"></script>
+  </body>
+</html>

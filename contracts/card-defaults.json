@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "type": "custom:aviadilo-map",
+  "title": "",
+  "entry_id": null,
+  "map": {
+    "layout": "combined",
+    "height_px": 480,
+    "follow_theme": true,
+    "anchor": {
+      "kind": "home"
+    },
+    "extent_m": 100000,
+    "mode": "home-area",
+    "min_zoom": 2,
+    "max_zoom": 18,
+    "show_recenter": true,
+    "idle_return_s": null,
+    "include_zones": [],
+    "extent_unit": "km"
+  },
+  "layers": {
+    "aircraft": true,
+    "radar": false,
+    "wind": false,
+    "people": true
+  },
+  "radar": {
+    "provider": "rainviewer",
+    "opacity": 0.55,
+    "mode": "latest",
+    "history_minutes": 60,
+    "frame_duration_ms": 800,
+    "show_timestamp": true,
+    "show_legend": true,
+    "show_coverage": true
+  },
+  "wind": {
+    "provider": "dwd_icon_global",
+    "static_style": "off",
+    "particles": false,
+    "marker_spacing_px": 64,
+    "marker_size_px": 24,
+    "particle_count": 500,
+    "animation_speed": 1,
+    "trail_length_s": 2,
+    "opacity": 0.7,
+    "speed_unit": "km/h"
+  },
+  "people": {
+    "trackers": [],
+    "show_labels": true,
+    "radius_enabled": true,
+    "radius_m": 50000,
+    "radius_unit": "km",
+    "anchor": null,
+    "accuracy_circles": false,
+    "max_age_s": null,
+    "show_stale": false
+  },
+  "aircraft": {
+    "show_map": true,
+    "show_list": true,
+    "airborne_only": true,
+    "min_altitude_m": null,
+    "max_altitude_m": null,
+    "max_distance_m": null,
+    "distance_unit": "km",
+    "altitude_unit": "ft",
+    "speed_unit": "knots",
+    "label_mode": "callsign",
+    "marker_size_px": 24,
+    "marker_color": "#4da3ff",
+    "list_columns": ["callsign", "altitude", "speed", "distance"],
+    "sort": "nearest",
+    "list_rows": 10,
+    "selected_trail_s": 120,
+    "detail_fields": [
+      "callsign",
+      "registration",
+      "icao",
+      "aircraft_type",
+      "category",
+      "altitude",
+      "speed",
+      "course",
+      "vertical_rate",
+      "squawk",
+      "position_age",
+      "distance",
+      "ground"
+    ]
+  },
+  "freshness": {
+    "max_position_age_s": 60,
+    "show_last_update": true,
+    "stale_retention_s": 120,
+    "show_effective_refresh": true,
+    "show_source_status": true
+  }
+}

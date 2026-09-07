@@ -1,0 +1,1 @@
+{"domain":"aviadilo","name":"Aviadilo","codeowners":["@bishopdynamics"],"documentation":"https://github.com/bishopdynamics/aviadilo","integration_type":"service","iot_class":"cloud_polling","issue_tracker":"https://github.com/bishopdynamics/aviadilo/issues","requirements":[],"single_config_entry":true,"version":"0.1.0-dev.1"}

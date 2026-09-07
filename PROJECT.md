@@ -19,4 +19,4 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 - All of the user's household locations use `device_tracker` entities. Support these directly; do not require conversion to `person` entities.
 - A configurable people-radius filter is mandatory. Apply it before rendering and automatic fitting so distant travellers cannot force the map to zoom out.
 - The user approved `docs/spec/ROOT_SPEC.md` in full on 2026-09-06, including aircraft providers/defaults, one shared integration area, cache budgets, transport, HACS packaging, display defaults, and deferrals.
-- Start implementation next session as explicitly requested. Begin with remaining first-run trust/setup checks and approved slice 1 bootstrap work; do not reopen accepted decisions. Keep `docs/FIRST_RUN.md` until all remaining setup is actually completed.
+- Implementation began 2026-09-06 with approved slice 1 bootstrap work; do not reopen accepted decisions. First-run setup is complete. Follow the serial slice handoff cadence and use `docs/development.md` for toolchains and verification.

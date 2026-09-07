@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "IntegrationConfig",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "anchor": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "home"
+            }
+          },
+          "required": ["kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "zone"
+            },
+            "entity_id": {
+              "type": "string",
+              "pattern": "^zone\\.[a-z0-9_]+$",
+              "maxLength": 256
+            }
+          },
+          "required": ["kind", "entity_id"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "custom"
+            },
+            "latitude": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "longitude": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            }
+          },
+          "required": ["kind", "latitude", "longitude"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "aircraft_provider": {
+      "enum": ["adsb_fi", "adsb_lol"]
+    },
+    "aircraft_radius_m": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 463000
+    },
+    "aircraft_interval_s": {
+      "type": "number",
+      "minimum": 2,
+      "maximum": 86400
+    },
+    "disk_cache_mib": {
+      "type": "integer",
+      "minimum": 128,
+      "maximum": 4096
+    },
+    "background_collection": {
+      "type": "boolean"
+    },
+    "provider_pacing": {
+      "type": "object",
+      "properties": {
+        "adsb_fi_min_interval_s": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 86400
+        },
+        "adsb_lol_min_interval_s": {
+          "type": "number",
+          "minimum": 10,
+          "maximum": 86400
+        },
+        "rainviewer_requests_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "noaa_requests_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "dwd_requests_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        }
+      },
+      "required": [
+        "adsb_fi_min_interval_s",
+        "adsb_lol_min_interval_s",
+        "rainviewer_requests_per_minute",
+        "noaa_requests_per_minute",
+        "dwd_requests_per_minute"
+      ],
+      "additionalProperties": false
+    },
+    "aircraft_radius_unit": {
+      "enum": ["km", "mi", "nmi"]
+    }
+  },
+  "required": [
+    "schema_version",
+    "anchor",
+    "aircraft_provider",
+    "aircraft_radius_m",
+    "aircraft_interval_s",
+    "disk_cache_mib",
+    "background_collection",
+    "provider_pacing",
+    "aircraft_radius_unit"
+  ],
+  "additionalProperties": false,
+  "definitions": {}
+}
