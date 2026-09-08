@@ -4,7 +4,7 @@ Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assi
 
 ## Installation
 
-1. In HACS, add `https://github.com/bishopdynamics/aviadilo` as a custom repository with type **Integration**. In the download dialog, enable **Show beta versions**, select `v0.1.0-dev.2`, and download it. Restart Home Assistant when requested.
+1. In HACS, add `https://github.com/bishopdynamics/aviadilo` as a custom repository with type **Integration**. Open Download/Redownload, expand **Need a different version?**, and explicitly select `v0.1.0-dev.2` in the Release dropdown. Confirm the dialog names that version before downloading. Restart Home Assistant when requested.
 2. Open **Settings → Devices & services → Add integration → Aviadilo**. Choose the shared collection anchor, aircraft provider, radius, and cache settings. Leave conservative provider pacing at its defaults unless you want slower collection.
 3. Reload the dashboard in your browser. Edit the dashboard, add a card, and select **Aviadilo**. The integration loads its matching card automatically; no manual JavaScript resource is needed.
 4. Use the graphical editor to choose layers and add your `device_tracker` entities under People. Save the card.
@@ -30,7 +30,9 @@ The card editor controls that card's view, filters, units, layers and presentati
 
 ## Updates and troubleshooting
 
-If a download URL contains a commit hash such as `9e09696`, HACS has not selected a published release. Aviadilo requires the compiled `aviadilo.zip` asset attached to a versioned [GitHub Release](https://github.com/bishopdynamics/aviadilo/releases). In HACS, use the repository's three-dot menu → **Update information**, then Download/Redownload and choose the published prerelease under **Need a different version?** A source push, tag alone, or unpublished draft does not provide an installable ZIP. [HACS version rules](https://www.hacs.xyz/docs/publish/start/#versions), [refresh/download controls](https://www.hacs.xyz/docs/use/repositories/dashboard/).
+If a download URL contains a commit hash such as `17c240a`, HACS has not selected a published release. This can happen even after updating repository information: Aviadilo currently has only a prerelease, so HACS's default available version can fall back to the latest commit. Explicitly select `v0.1.0-dev.2` under **Need a different version?**; the user confirmed this resolves the download. HACS 2.0.5's current download dialog lists prereleases in that dropdown and does not require a separate Show beta versions checkbox. A failed GitHub validation workflow does not control this version selection.
+
+Aviadilo requires the compiled `aviadilo.zip` asset attached to a versioned [GitHub Release](https://github.com/bishopdynamics/aviadilo/releases). A source push, tag alone, or unpublished draft does not provide that asset. [HACS version rules](https://www.hacs.xyz/docs/publish/start/#versions), [refresh/download controls](https://www.hacs.xyz/docs/use/repositories/dashboard/).
 
 Update the single integration package through HACS, restart HA when requested, then reload browser dashboards. Backend and card versions travel together. Settings and the bounded public-data cache live outside the replaced integration directory.
 

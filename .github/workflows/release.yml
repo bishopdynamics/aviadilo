@@ -34,4 +34,4 @@ jobs:
           body: |
             Development candidate: physical tablet acceptance is still pending.
 
-            In HACS, add `bishopdynamics/aviadilo` as a custom repository of type Integration, enable prereleases, and select this version. Restart Home Assistant when prompted, then add Aviadilo under Devices & services. The bundled card becomes available automatically in the card picker.
+            In HACS, add `bishopdynamics/aviadilo` as a custom repository of type Integration. Open Download/Redownload, expand "Need a different version?", and explicitly select this release. Restart Home Assistant when prompted, then add Aviadilo under Devices & services. The bundled card becomes available automatically in the card picker.
