@@ -6,6 +6,7 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 
 ## Project-specific rules
 
+- License: MIT, explicitly selected by the user on 2026-09-08. Keep the license notice in the repository and distributed release ZIP.
 - Commit the `.bishop/` folder with the project, including app-generated updates. The user explicitly requires it to remain version-controlled (2026-09-07); do not leave those changes out of project commits merely because the app generated them.
 - Approved stack (2026-09-06): TypeScript + Lit + Vite + Leaflet, with a companion Python Home Assistant integration for shared data collection and caching.
 - HACS installation and updates are required from the first release. Public repository: `https://github.com/bishopdynamics/aviadilo`; use the existing `github` remote and `github/main` upstream. This replaces the template's GitLab/`origin` first-run assumption. CI/release workflows belong in GitHub Actions.

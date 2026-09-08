@@ -1,10 +1,10 @@
 # Using Aviadilo
 
-Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. The local `0.1.0-dev.2` candidate is under acceptance; a published, authenticated HACS installation has not yet been verified.
+Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. Version `0.1.0-dev.2` is a development prerelease under acceptance.
 
-## Installation once the candidate is published
+## Installation
 
-1. In HACS, add `https://github.com/bishopdynamics/aviadilo` as a custom repository with type **Integration**. Download the release, then restart Home Assistant when requested.
+1. In HACS, add `https://github.com/bishopdynamics/aviadilo` as a custom repository with type **Integration**. In the download dialog, enable **Show beta versions**, select `v0.1.0-dev.2`, and download it. Restart Home Assistant when requested.
 2. Open **Settings → Devices & services → Add integration → Aviadilo**. Choose the shared collection anchor, aircraft provider, radius, and cache settings. Leave conservative provider pacing at its defaults unless you want slower collection.
 3. Reload the dashboard in your browser. Edit the dashboard, add a card, and select **Aviadilo**. The integration loads its matching card automatically; no manual JavaScript resource is needed.
 4. Use the graphical editor to choose layers and add your `device_tracker` entities under People. Save the card.
@@ -29,6 +29,8 @@ Dragging or zooming suspends automatic fitting. Recenter returns to the configur
 The card editor controls that card's view, filters, units, layers and presentation. Expanding the view does not enlarge the integration's aircraft collection area. Display changes reuse available data. Multiple viewers share provider queues and cached responses; source limits can make effective refresh slower than the requested interval.
 
 ## Updates and troubleshooting
+
+If a download URL contains a commit hash such as `9e09696`, HACS has not selected a published release. Aviadilo requires the compiled `aviadilo.zip` asset attached to a versioned [GitHub Release](https://github.com/bishopdynamics/aviadilo/releases). In HACS, use the repository's three-dot menu → **Update information**, then Download/Redownload and choose the published prerelease under **Need a different version?** A source push, tag alone, or unpublished draft does not provide an installable ZIP. [HACS version rules](https://www.hacs.xyz/docs/publish/start/#versions), [refresh/download controls](https://www.hacs.xyz/docs/use/repositories/dashboard/).
 
 Update the single integration package through HACS, restart HA when requested, then reload browser dashboards. Backend and card versions travel together. Settings and the bounded public-data cache live outside the replaced integration directory.
 

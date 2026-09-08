@@ -8,11 +8,13 @@ The accepted stack is TypeScript, Lit, Vite, and Leaflet, with a Python Home Ass
 
 The development candidate combines all four layers in one card: live aircraft with a selectable list, radar history and legends, DWD ICON-global wind markers and animation, and household trackers. The people layer filters distant travellers before rendering or fitting the map. A graphical editor covers every supported setting. Shared collection and caching serve multiple cards without multiplying provider requests.
 
-The public repository is [bishopdynamics/aviadilo](https://github.com/bishopdynamics/aviadilo). HACS installation and updates are required from the first release, using one Integration package that includes the card. The first HACS-installable release is still pending.
+The public repository is [bishopdynamics/aviadilo](https://github.com/bishopdynamics/aviadilo). HACS installation and updates use one Integration release package that includes the card. Use a published version from [GitHub Releases](https://github.com/bishopdynamics/aviadilo/releases); pushing source to `main` does not create the downloadable package.
 
-See [the user guide](docs/user-guide.md) for the installation flow, map controls, shared settings, and troubleshooting. Version `0.1.0-dev.2` is a local development candidate; authenticated HACS delivery and acceptance on the user's tablet remain pending.
+See [the user guide](docs/user-guide.md) for the installation flow, map controls, shared settings, and troubleshooting. Version `0.1.0-dev.2` is a development prerelease; enable prerelease versions in HACS to select it. Acceptance on the user's tablet remains pending.
 
 The [approved implementation spec](docs/spec/ROOT_SPEC.md) targets Home Assistant 2026.9.1 and the user's Chromium tablet-PC kiosk.
+
+Licensed under the [MIT License](LICENSE), included in the release package.
 
 See [the revised direction](docs/idea/revised-direction.md), [expanded research and design](docs/research/everything-map.md), and [task queue](docs/TASK_QUEUE.md). The [original idea](docs/idea/initial-idea.md) and [initial research](docs/research/initial-options.md) preserve the aircraft-card starting point.
 

@@ -50,7 +50,7 @@ def test_packaging_validation_and_determinism(tmp_path: Path) -> None:
     sandbox = tmp_path / "source"
     integration = sandbox / "custom_components/aviadilo"
     integration.mkdir(parents=True)
-    for filename in ("package.json", "hacs.json", "pyproject.toml"):
+    for filename in ("LICENSE", "package.json", "hacs.json", "pyproject.toml"):
         shutil.copy(ROOT / filename, sandbox / filename)
     for filename in (
         "__init__.py",
@@ -75,13 +75,21 @@ def test_packaging_validation_and_determinism(tmp_path: Path) -> None:
         build_release.build_release(first, f"v{version}", sandbox)
         build_release.build_release(second, f"v{version}", sandbox)
         assert first.read_bytes() == second.read_bytes()
+        assert json.loads((sandbox / "package.json").read_text())["license"] == "MIT"
         with pytest.raises(ValueError, match="Tag version"):
             check_release.check_release(first, "v99.0.0", sandbox)
         with ZipFile(first) as archive:
+            entries = archive.infolist()
+            assert [item.filename for item in entries] == sorted(item.filename for item in entries)
+            assert all(item.date_time == (1980, 1, 1, 0, 0, 0) for item in entries)
+            assert all(item.external_attr >> 16 == 0o100644 for item in entries)
             files = {item.filename: archive.read(item) for item in archive.infolist()}
+        assert files["LICENSE"] == (sandbox / "LICENSE").read_bytes()
         mutations: list[tuple[str, dict[str, bytes | None], str]] = [
             ("unsafe", {"../escape.py": b""}, "Unsafe"),
             ("missing", {"frontend/aviadilo.js": None}, "missing"),
+            ("missing-license", {"LICENSE": None}, "missing"),
+            ("wrong-license", {"LICENSE": b"not the project license"}, "License content"),
             (
                 "wrong-js",
                 {"frontend/aviadilo.js": b"/*! Aviadilo version: 99.0.0 */"},
@@ -100,6 +108,16 @@ def test_packaging_validation_and_determinism(tmp_path: Path) -> None:
                         archive.writestr(filename, content)
             with pytest.raises(ValueError, match=error):
                 check_release.check_release(bad, root=sandbox)
+        license_path = sandbox / "LICENSE"
+        license_content = license_path.read_bytes()
+        license_path.unlink()
+        with pytest.raises(ValueError, match="LICENSE is missing"):
+            build_release.build_release(tmp_path / "missing-license-source.zip", root=sandbox)
+        license_path.symlink_to(ROOT / "LICENSE")
+        with pytest.raises(ValueError, match="symbolic link"):
+            build_release.build_release(tmp_path / "symlink-license-source.zip", root=sandbox)
+        license_path.unlink()
+        license_path.write_bytes(license_content)
         # Extract only the validated archive and prove model imports are self-contained.
         installed = tmp_path / "installed"
         with ZipFile(first) as archive:
@@ -161,6 +179,7 @@ def test_isolated_ha_install_preserves_settings_and_rejects_unsafe_zip(tmp_path:
     manifest = json.loads((ROOT / "custom_components/aviadilo/manifest.json").read_text())
     archive = tmp_path / "candidate.zip"
     with ZipFile(archive, "w") as zipped:
+        zipped.writestr("LICENSE", (ROOT / "LICENSE").read_bytes())
         zipped.writestr("__init__.py", "")
         zipped.writestr("manifest.json", json.dumps(manifest))
         zipped.writestr("frontend/aviadilo.js", f"/*! Aviadilo version: {manifest['version']} */")
@@ -173,6 +192,12 @@ def test_isolated_ha_install_preserves_settings_and_rejects_unsafe_zip(tmp_path:
     assert (retained / "synthetic-options").read_text() == "retained"
     assert (config / "custom_components/.aviadilo-previous").is_dir()
     assert not (config / "custom_components/aviadilo_fixture").exists()
+    legacy_archive = tmp_path / "legacy-candidate.zip"
+    with ZipFile(archive) as current, ZipFile(legacy_archive, "w") as legacy:
+        for item in current.infolist():
+            if item.filename != "LICENSE":
+                legacy.writestr(item, current.read(item))
+    assert install(legacy_archive, config, False) == manifest["version"]
     with ZipFile(archive, "a") as zipped:
         zipped.writestr("../escape.py", "")
     with pytest.raises(ValueError, match="Unsafe"):

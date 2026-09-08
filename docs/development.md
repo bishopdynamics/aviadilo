@@ -50,7 +50,7 @@ HACS uses the repository as type **Integration**. The archive contains the conte
 
 The GitHub Actions workflows run native/browser checks, HACS/hassfest validation, and version-tag release packaging. Local package installation and mocked HACS transport checks are distinct from authenticated HACS delivery. See the slice 8 evidence and remaining gates below.
 
-Actions are pinned by commit and the HACS/hassfest validator images by digest. The version-tag workflow builds a draft development prerelease for maintainer acceptance before publication.
+Actions are pinned by commit and the HACS/hassfest validator images by digest. An explicit version-tag push runs the checks and publishes a development prerelease with `aviadilo.zip`. A push to `main` runs CI but does not publish an installable release. The earlier draft-only behavior was corrected after the first HACS installation attempt.
 
 HACS also requires a public repository description and topics. At the slice 1 kickoff, `bishopdynamics/aviadilo` had neither; GitHub CLI/API credentials were unavailable in this session. The issue tracker was enabled. Before HACS validation, set the description to “A Home Assistant kiosk map combining aircraft, weather radar, wind, and household locations.” and add appropriate topics such as `home-assistant`, `hacs`, `lovelace-custom-card`, `aircraft`, `weather-radar`, and `leaflet`. These requirements are documented by [HACS](https://www.hacs.xyz/docs/publish/start/).
 
@@ -239,3 +239,13 @@ The actual **HACS 2.0.5** `HacsIntegrationRepository.async_install_repository` i
 This proves installer compatibility with mocked transport. **Authenticated HACS repository validation, a real release download/install/update, and the physical tablet remain unverified.** The pinned HACS validator exited with HTTP 401 because no GitHub token was available (`hacs-validator-initial.log`). Public repository metadata still lacked description/topics. No GitHub CLI credentials, token or usable GitHub connector was available. All code remains local; this session did not push, tag, publish, or deploy to the household instance. Candidate notes are prepared in [the release notes](releases/0.1.0-dev.2.md); these delivery gates remain part of the in-progress ROOT_SPEC, not deferred features.
 
 Final artifact: `dist/aviadilo.zip`, `0.1.0-dev.2`, 23 runtime files, SHA256 `78b7e4d1773f78651ec041d71140413a5e29d438027873d1cf3279830ca17392`. Frontend/manifest/Python/runtime bootstrap versions are checked together; schemas remain version 1.
+
+## HACS release delivery correction — 2026-09-08
+
+After the user pushed `9e09696`, HACS tried downloading `aviadilo.zip` for that commit hash. Public GitHub had no version tags or releases. Native CI and hassfest passed, while HACS reported missing license, description and topics. With `zip_release: true`, source code on `main` does not supply the compiled release asset. The tag workflow also created drafts, which HACS filters out.
+
+The release workflow now publishes a development prerelease after an explicit `v*` tag push, preserving all native/browser gates, exact tag/package validation, pinned actions and limited write permissions. It does not publish on a `main` push. SSH Git access can push the version tag and GitHub Actions can use its own token to publish; a separate local GitHub API token is not required for that route.
+
+The user selected MIT and updated the GitHub description. The root license is included at ZIP root, with matching npm/Python metadata. Packaging checks verify its presence/content and deterministic ordering; the isolated HA installer accepts both new licensed and earlier unlicensed test ZIPs. Independent lint, 39 packaging/contract tests, build and exact `v0.1.0-dev.2` package validation passed. All 23 pre-existing runtime files are byte-identical; the only added ZIP entry is `LICENSE`. The first published archive contains 24 files, SHA256 `90c74ee5333e26331c5fd1b396cac46ae904854ff0d32b4389e8d7f8193b8463`. Evidence lives under `/tmp/aviadilo-release-20260908`.
+
+In HACS, refresh **Update information**, then Download/Redownload → **Show beta versions** and select the versioned prerelease. Do not choose a commit hash. [HACS version selection](https://www.hacs.xyz/docs/publish/start/#versions), [refresh/download controls](https://www.hacs.xyz/docs/use/repositories/dashboard/).

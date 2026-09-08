@@ -11,6 +11,7 @@ from zipfile import BadZipFile, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = {
+    "LICENSE",
     "__init__.py",
     "manifest.json",
     "const.py",
@@ -26,11 +27,15 @@ def check_release(path: Path, tag: str | None = None, root: Path = ROOT) -> None
     """Reject mismatched or unsafe archives without extracting their contents."""
     package = json.loads((root / "package.json").read_text())
     version = package["version"]
+    if package.get("license") != "MIT":
+        raise ValueError("JavaScript package license is not MIT")
     if not SEMVER.fullmatch(version):
         raise ValueError("Invalid package semantic version")
     if tag is not None and tag != f"v{version}":
         raise ValueError("Tag version does not match package")
     project = tomllib.loads((root / "pyproject.toml").read_text())["project"]
+    if project.get("license") != "MIT":
+        raise ValueError("Python package license is not MIT")
     python_version = re.sub(r"-dev\.(\d+)$", r".dev\1", version)
     if project["version"] != python_version:
         raise ValueError("Python package version does not match")
@@ -52,6 +57,7 @@ def check_release(path: Path, tag: str | None = None, root: Path = ROOT) -> None
     if integrations != ["aviadilo"]:
         raise ValueError("Exactly one integration directory is required")
     source_manifest = json.loads((root / "custom_components/aviadilo/manifest.json").read_text())
+    source_license = (root / "LICENSE").read_bytes()
     with ZipFile(path) as archive:
         entries = archive.infolist()
         names = [item.filename for item in entries]
@@ -75,10 +81,16 @@ def check_release(path: Path, tag: str | None = None, root: Path = ROOT) -> None
                 or stat.S_ISLNK(item.external_attr >> 16)
             ):
                 raise ValueError("Unsafe ZIP path or entry")
-            if not (p.suffix in {".py", ".json"} or p.parts[0] in {"brand", "frontend"}):
+            if not (
+                item.filename == "LICENSE"
+                or p.suffix in {".py", ".json"}
+                or p.parts[0] in {"brand", "frontend"}
+            ):
                 raise ValueError("Unexpected non-runtime file")
         if archive.testzip() is not None:
             raise ValueError("Corrupt ZIP content")
+        if archive.read("LICENSE") != source_license:
+            raise ValueError("License content does not match source LICENSE")
         manifest = json.loads(archive.read("manifest.json"))
         if manifest != source_manifest or manifest.get("version") != version:
             raise ValueError("Manifest version/content does not match source package")

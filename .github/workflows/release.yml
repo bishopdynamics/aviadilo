@@ -1,4 +1,4 @@
-name: Build draft release
+name: Publish development prerelease
 on:
   push:
     tags: ['v*']
@@ -29,9 +29,9 @@ jobs:
         with:
           files: dist/aviadilo.zip
           fail_on_unmatched_files: true
-          draft: true
+          draft: false
           prerelease: true
           body: |
-            Development candidate: the bundled Aviadilo card combines aircraft, radar, wind and household trackers with a complete visual editor.
-            One Integration ZIP includes the shared HA collection/cache service and matching compiled card.
-            A maintainer must complete product acceptance and review release notes before publication.
+            Development candidate: physical tablet acceptance is still pending.
+
+            In HACS, add `bishopdynamics/aviadilo` as a custom repository of type Integration, enable prereleases, and select this version. Restart Home Assistant when prompted, then add Aviadilo under Devices & services. The bundled card becomes available automatically in the card picker.

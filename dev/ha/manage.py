@@ -39,7 +39,11 @@ def install(archive: Path, config: Path, fixtures: bool) -> str:
                 or item.filename != path.as_posix()
                 or path.parts[0] == "custom_components"
                 or stat.S_ISLNK(item.external_attr >> 16)
-                or not (path.suffix in {".py", ".json"} or path.parts[0] in {"frontend", "brand"})
+                or not (
+                    item.filename == "LICENSE"
+                    or path.suffix in {".py", ".json"}
+                    or path.parts[0] in {"frontend", "brand"}
+                )
             ):
                 raise ValueError("Unsafe ZIP entry")
         manifest = json.loads(zipped.read("manifest.json"))
