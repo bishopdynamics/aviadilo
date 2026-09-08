@@ -1,0 +1,98 @@
+[
+  {
+    "name": "basemap",
+    "valid": true,
+    "path": "/api/aviadilo/basemap/2/3/1?schema_version=1&generation=0123456789abcdef0123456789abcdef%3A0&entry_id=synthetic-entry",
+    "value": {
+      "kind": "basemap",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry",
+      "z": 2,
+      "x": 3,
+      "y": 1
+    }
+  },
+  {
+    "name": "photo",
+    "valid": true,
+    "path": "/api/aviadilo/photo?schema_version=1&generation=0123456789abcdef0123456789abcdef%3A0&entity_id=device_tracker.synthetic&picture_key=0000000000000000000000000000000000000000000000000000000000000000",
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "device_tracker.synthetic",
+      "picture_key": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "name": "duplicate",
+    "valid": false,
+    "path": "/api/aviadilo/basemap/2/3/1?schema_version=1&schema_version=1&generation=0123456789abcdef0123456789abcdef:0"
+  },
+  {
+    "name": "bad coord",
+    "valid": false,
+    "path": "/api/aviadilo/basemap/02/3/1?schema_version=1&generation=0123456789abcdef0123456789abcdef:0"
+  },
+  {
+    "name": "geometry",
+    "valid": false,
+    "path": "/api/aviadilo/basemap/0/1/0?schema_version=1&generation=0123456789abcdef0123456789abcdef:0"
+  },
+  {
+    "name": "unknown query",
+    "valid": false,
+    "path": "/api/aviadilo/basemap/2/3/1?schema_version=1&generation=0123456789abcdef0123456789abcdef%3A0&entry_id=synthetic-entry&url=https://evil.invalid"
+  },
+  {
+    "name": "traversal",
+    "valid": false,
+    "path": "/api/aviadilo/basemap/2/../1?schema_version=1&generation=0123456789abcdef0123456789abcdef:0"
+  },
+  {
+    "name": "encoded traversal",
+    "valid": false,
+    "path": "/api/aviadilo/basemap/2/%2e%2e/1?schema_version=1&generation=0123456789abcdef0123456789abcdef:0"
+  },
+  {
+    "name": "fragment",
+    "valid": false,
+    "path": "/api/aviadilo/basemap/2/3/1?schema_version=1&generation=0123456789abcdef0123456789abcdef%3A0&entry_id=synthetic-entry#x"
+  },
+  {
+    "name": "absolute",
+    "valid": false,
+    "path": "https://ha.invalid/api/aviadilo/basemap/2/3/1?schema_version=1&generation=0123456789abcdef0123456789abcdef%3A0&entry_id=synthetic-entry"
+  },
+  {
+    "name": "protocol relative",
+    "valid": false,
+    "path": "//ha.invalid/api/aviadilo/basemap/2/3/1?schema_version=1&generation=0123456789abcdef0123456789abcdef%3A0&entry_id=synthetic-entry"
+  },
+  {
+    "name": "prefix",
+    "valid": false,
+    "path": "/api/aviadilo/photo/extra?schema_version=1&generation=0123456789abcdef0123456789abcdef:0"
+  },
+  {
+    "name": "missing",
+    "valid": false,
+    "path": "/api/aviadilo/photo"
+  },
+  {
+    "name": "encoded malformed",
+    "valid": false,
+    "path": "/api/aviadilo/basemap/2/3/1?schema_version=1&generation=0123456789abcdef0123456789abcdef%3A0&entry_id=synthetic-entry&entry_id=%ZZ"
+  },
+  {
+    "name": "raw path newline",
+    "valid": false,
+    "path": "/api/aviadilo/basemap/2/3/1?schema_version=1&generation=0123456789abcdef0123456789abcdef%3A0&entry_id=synthetic-entry\n"
+  },
+  {
+    "name": "raw path CRLF",
+    "valid": false,
+    "path": "/api/aviadilo/basemap/2/3/1?schema_version=1&generation=0123456789abcdef0123456789abcdef%3A0&entry_id=synthetic-entry\r\n"
+  }
+]

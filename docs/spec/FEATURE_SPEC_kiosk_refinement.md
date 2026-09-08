@@ -1,6 +1,6 @@
 # SPEC: Shared map cache, unified data pipeline, and kiosk presentation
 
-- **Status:** draft — product direction approved by the user on 2026-09-08; this detailed implementation spec is ready for review.
+- **Status:** in-progress — the user approved the complete spec on 2026-09-08; slice 1 (asset contracts) implemented and independently verified; next is slice 2.
 - **Parent:** [ROOT_SPEC.md](ROOT_SPEC.md).
 - **Inputs:** `docs/TODO.md`, “Notes from initial completed version,” and the subsequent discussion.
 - **Baseline:** published `v0.1.0-dev.2`; HA 2026.9.1, Node 24.20.0, Python 3.14.2, current pinned Chromium tooling.
@@ -31,7 +31,7 @@ Make Aviadilo work as a quiet kiosk map with fast revisits to cached areas. The 
 
 ## Key Decisions
 
-The user's product choices below are settled. Numeric bounds, API details and migration precedence are implementation decisions proposed by this draft.
+The user approved the product choices, numeric bounds, API details and migration precedence in this specification on 2026-09-08.
 
 | Decision | Choice | Rationale / alternatives considered |
 | --- | --- | --- |
@@ -228,7 +228,7 @@ All slices are **(M), [serial]**. Freeze interfaces in slice 1 before behavior w
 
 ## Open Questions
 
-None about the agreed product behavior. This draft records concrete implementation choices for review; it does not authorize implementation by itself. If a technical constraint would require different editor/live data behavior, a new public provider, weaker cache/auth guarantees or a materially different resource budget, stop and discuss it with the user before changing this design.
+None. The user approved this detailed specification and implementation may proceed in the agreed slices. If a technical constraint would require different editor/live data behavior, a new public provider, weaker cache/auth guarantees or a materially different resource budget, stop and discuss it with the user before changing this design.
 
 ## Deferred / Follow-ups
 
@@ -238,3 +238,7 @@ None about the agreed product behavior. This draft records concrete implementati
 ## Change Log
 
 - 2026-09-08 — Created from user TODO feedback. User confirmed retaining layer buttons, Recenter and the optional aircraft list, accepted the proposed kiosk/cache/theme/wind direction, and explicitly required the same pipeline in edit and live modes. Detailed spec remains draft for review; no implementation started.
+
+- 2026-09-08 — User approved the detailed spec. Began slice 1 asset contracts with card/integration/feed v1 preserved; no renewed approval needed for the recorded choices.
+
+- 2026-09-08 — Implemented and independently verified slice 1. Frozen asset schema/paths/error/header/generation contract, generated TS validation/types, connection-owned client coordinator and opt-in authenticated backend interfaces/stubs. Full checks passed 194 frontend + 332 backend + 11 Chromium tests. Current card/integration/feed v1 preserved; production activation/cache work remains slice 2/3.

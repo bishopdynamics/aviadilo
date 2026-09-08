@@ -12,10 +12,31 @@ from zipfile import ZipFile
 import pytest
 from jsonschema import Draft7Validator, FormatChecker
 
+from custom_components.aviadilo.assets import validate_asset
 from custom_components.aviadilo.models import ContractError, ensure_finite, validate_geometry
 
 ROOT = Path(__file__).resolve().parents[2]
 CASES = json.loads((ROOT / "contracts/fixtures/cases.json").read_text())
+ASSET_CASES = json.loads((ROOT / "contracts/fixtures/asset-cases.json").read_text())
+
+
+@pytest.mark.parametrize("case", ASSET_CASES, ids=[case["name"] for case in ASSET_CASES])
+def test_asset_fixture(case: dict[str, Any]) -> None:
+    from jsonschema import ValidationError
+
+    def check() -> None:
+        schema = json.loads((ROOT / "contracts/assets.schema.json").read_text())
+        Draft7Validator.check_schema(schema)
+        Draft7Validator(schema).validate(case["value"])
+        validate_asset(case["value"])
+
+    if case["valid"]:
+        check()
+    else:
+        with pytest.raises((ValidationError, ValueError)):
+            check()
+        with pytest.raises(ValueError):
+            validate_asset(case["value"])
 
 
 def validate(name: str, value: dict[str, Any]) -> None:

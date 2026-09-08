@@ -1,7 +1,7 @@
 # SPEC: Aviadilo household map
 
-- **Status:** in-progress — initial eight slices implemented; published prerelease installation confirmed by the user. Follow-up kiosk requirements are being specified before further implementation.
-- **Addenda:** [FEATURE_SPEC_kiosk_refinement.md](FEATURE_SPEC_kiosk_refinement.md) — draft; user-approved direction for shared basemap caching, identical edit/live data pipelines, quiet kiosk presentation, themes and wind controls.
+- **Status:** in-progress — initial eight slices implemented; published prerelease installation confirmed by the user. The detailed kiosk refinement spec is approved and slice 1 is in progress.
+- **Addenda:** [FEATURE_SPEC_kiosk_refinement.md](FEATURE_SPEC_kiosk_refinement.md) — approved 2026-09-08; implementation in progress for shared basemap caching, identical edit/live data pipelines, quiet kiosk presentation, themes and wind controls.
 - **Repository:** public `https://github.com/bishopdynamics/aviadilo`; remote `github`, upstream `github/main`. HACS from the first release is an accepted user requirement.
 - **Compatibility baseline:** Home Assistant Core 2026.9.1, current stable Chromium on a tablet PC. The user reported using latest HA; this patch version is the verified release baseline, not an inspection of their installation.
 - **Inputs:** `docs/idea/revised-direction.md`, `docs/research/everything-map.md`, `docs/research/weather-source-quality.md`, and the frozen Claremont spike.
@@ -10,7 +10,7 @@
 
 Aviadilo replaces separate aircraft, radar, and household-location maps with one large Lovelace map suitable for the user's Chromium kiosk. A Python Home Assistant integration shares external data collection and caching across cards and devices. A TypeScript/Lit/Leaflet card renders aircraft, precipitation radar, wind, and existing household trackers as independent layers. Every supported setting has a graphical editor, and distant travellers cannot pull the home view out to a world map.
 
-The initial implementation and composition are complete. The user installed the published `v0.1.0-dev.2` integration, added the card, and supplied feedback after seeing real data outside dashboard edit mode. The draft kiosk addendum records the agreed next direction. Its approved direction supersedes the original production-preview and kiosk-presentation choices below; implementation of its detailed plan has not started.
+The initial implementation and composition are complete. The user installed the published `v0.1.0-dev.2` integration, added the card, and supplied feedback after seeing real data outside dashboard edit mode. The approved kiosk addendum records the next implementation work and supersedes the original production-preview and kiosk-presentation choices below. Slice 1 of that addendum has begun.
 
 ## Goals
 
@@ -246,7 +246,7 @@ The owned paths below were approved with this specification. Directory entries g
    - Owned files: `src/aviadilo-map.ts`, `src/editor/editor.ts`, `custom_components/aviadilo/__init__.py`, `custom_components/aviadilo/static.py`; `scripts/build_release.py`, `scripts/check_release.py`, `dev/ha/**`, `tests/e2e/**`, `playwright.config.ts`, `hacs.json`, `.github/workflows/check.yml`, `.github/workflows/validate.yml`, `.github/workflows/release.yml`, `Makefile`.
    - Verification: `make check`; HACS/hassfest and release ZIP checks; clean HACS install and upgrade in HA 2026.9.1; automatically available card picker/config/options; all four layers; two clients sharing requests; reload/reconnect; browser sizing and a prolonged kiosk run. The orchestrator runs singleton HA/UI verification and updates user/development docs.
 
-The original eight-slice implementation was authorized and delivered. Follow `docs/TASK_QUEUE.md` for remaining acceptance and the draft kiosk addendum before beginning further implementation. Repository setup and published-release installation are already settled. Do not request renewed approval for accepted product choices; the new detailed spec remains available for review.
+The original eight-slice implementation was authorized and delivered. Follow `docs/TASK_QUEUE.md` for remaining acceptance and the approved kiosk addendum for further implementation. Repository setup and published-release installation are already settled. Do not request renewed approval for accepted product choices; the new detailed spec was approved on 2026-09-08.
 
 ## Open Questions
 

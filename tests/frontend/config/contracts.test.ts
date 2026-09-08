@@ -3,6 +3,7 @@ import { compileFromFile } from 'json-schema-to-typescript';
 import { readFile } from 'node:fs/promises';
 import prettier from 'prettier';
 import cases from '../../../contracts/fixtures/cases.json';
+import assetCases from '../../../contracts/fixtures/asset-cases.json';
 import {
   validateContract,
   type SchemaName,
@@ -10,6 +11,13 @@ import {
 import { CARD_DEFAULTS, normalizeConfig } from '../../../src/config/defaults';
 
 describe('shared version 1 contracts', () => {
+  for (const fixture of assetCases) {
+    it(`asset schema ${fixture.name}`, () => {
+      const run = () => validateContract('assets', fixture.value);
+      if (fixture.valid) expect(run).not.toThrow();
+      else expect(run).toThrow();
+    });
+  }
   for (const fixture of cases) {
     it(`${fixture.valid ? 'accepts' : 'rejects'} ${fixture.name}`, () => {
       const run = () =>
@@ -51,6 +59,7 @@ describe('shared version 1 contracts', () => {
       [['card-config'], 'src/config/types.ts'],
       [['integration-config'], 'src/config/integration-types.ts'],
       [['command', 'event', 'info'], 'src/data/types.ts'],
+      [['assets'], 'src/data/asset-types.ts'],
     ] as const) {
       let generated = '';
       for (const schema of schemas)

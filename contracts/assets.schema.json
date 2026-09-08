@@ -1,0 +1,311 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aviadilo.local/contracts/assets.schema.json",
+  "title": "AssetContract",
+  "description": "Asset protocol v1. kind is the parsed route discriminator, never a query parameter. HTTP query keys are schema_version=1, generation, optional entry_id; photo adds entity_id and picture_key. No duplicate or unknown keys. Canonical decimal path components; x,y < 2**z. Event aviadilo/assets_changed data equals AssetInfo; WS aviadilo/assets_info returns AssetInfo via the standard HA result envelope. Success: PNG with X-Aviadilo-Generation, nosniff, bounded cache headers and validators. Errors: JSON AssetErrorBody and no-store; stale_generation also carries the current generation header. Status mapping: {\"invalid_request\": 400, \"unauthorized\": 401, \"forbidden\": 403, \"not_found\": 404, \"stale_generation\": 409, \"picture_changed\": 409, \"busy\": 429, \"upstream_error\": 502, \"unavailable\": 503}. Frontend admission 8 active/128 pending per connection; backend 8/user and 32 total. Image loading, queues and retention are separate implementation layers.",
+  "oneOf": [
+    {
+      "$ref": "#/definitions/BasemapRequest"
+    },
+    {
+      "$ref": "#/definitions/PhotoRequest"
+    },
+    {
+      "$ref": "#/definitions/AssetInfo"
+    },
+    {
+      "$ref": "#/definitions/AssetsInfoCommand"
+    },
+    {
+      "$ref": "#/definitions/AssetErrorBody"
+    }
+  ],
+  "definitions": {
+    "EntryId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}(?![\\s\\S])",
+      "maxLength": 128
+    },
+    "Generation": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}:(0|[1-9][0-9]{0,14})(?![\\s\\S])",
+      "maxLength": 48,
+      "description": "Opaque process-instance UUID hex plus colon and canonical decimal counter (0..999999999999999). Preserve exactly in queries, events and X-Aviadilo-Generation."
+    },
+    "PictureKey": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}(?![\\s\\S])",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "BasemapRequest": {
+      "title": "BasemapRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "basemap"
+        },
+        "schema_version": {
+          "const": 1
+        },
+        "generation": {
+          "$ref": "#/definitions/Generation"
+        },
+        "entry_id": {
+          "$ref": "#/definitions/EntryId"
+        },
+        "z": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 19
+        },
+        "x": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 524287
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 524287
+        }
+      },
+      "required": ["kind", "schema_version", "generation", "z", "x", "y"]
+    },
+    "PhotoRequest": {
+      "title": "PhotoRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "photo"
+        },
+        "schema_version": {
+          "const": 1
+        },
+        "generation": {
+          "$ref": "#/definitions/Generation"
+        },
+        "entry_id": {
+          "$ref": "#/definitions/EntryId"
+        },
+        "entity_id": {
+          "type": "string",
+          "pattern": "^device_tracker\\.[a-z0-9_]+(?![\\s\\S])",
+          "maxLength": 255
+        },
+        "picture_key": {
+          "$ref": "#/definitions/PictureKey"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_version",
+        "generation",
+        "entity_id",
+        "picture_key"
+      ]
+    },
+    "AssetInfo": {
+      "title": "AssetInfo",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "generation": {
+          "$ref": "#/definitions/Generation"
+        },
+        "entry_id": {
+          "$ref": "#/definitions/EntryId"
+        }
+      },
+      "required": ["schema_version", "generation", "entry_id"]
+    },
+    "AssetsInfoCommand": {
+      "title": "AssetsInfoCommand",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "type": {
+          "const": "aviadilo/assets_info"
+        },
+        "entry_id": {
+          "$ref": "#/definitions/EntryId"
+        }
+      },
+      "required": ["schema_version", "id", "type"]
+    },
+    "AssetErrorBody": {
+      "title": "AssetErrorBody",
+      "oneOf": [
+        {
+          "title": "invalid_request",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {
+              "const": 1
+            },
+            "code": {
+              "const": "invalid_request"
+            },
+            "message": {
+              "const": "Invalid asset request"
+            }
+          },
+          "required": ["schema_version", "code", "message"]
+        },
+        {
+          "title": "unauthorized",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {
+              "const": 1
+            },
+            "code": {
+              "const": "unauthorized"
+            },
+            "message": {
+              "const": "Authentication required"
+            }
+          },
+          "required": ["schema_version", "code", "message"]
+        },
+        {
+          "title": "forbidden",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {
+              "const": 1
+            },
+            "code": {
+              "const": "forbidden"
+            },
+            "message": {
+              "const": "Asset access denied"
+            }
+          },
+          "required": ["schema_version", "code", "message"]
+        },
+        {
+          "title": "not_found",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {
+              "const": 1
+            },
+            "code": {
+              "const": "not_found"
+            },
+            "message": {
+              "const": "Asset or entry is unavailable"
+            }
+          },
+          "required": ["schema_version", "code", "message"]
+        },
+        {
+          "title": "stale_generation",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {
+              "const": 1
+            },
+            "code": {
+              "const": "stale_generation"
+            },
+            "message": {
+              "const": "Asset generation has changed"
+            },
+            "generation": {
+              "$ref": "#/definitions/Generation"
+            }
+          },
+          "required": ["schema_version", "code", "message", "generation"]
+        },
+        {
+          "title": "picture_changed",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {
+              "const": 1
+            },
+            "code": {
+              "const": "picture_changed"
+            },
+            "message": {
+              "const": "Entity picture has changed"
+            }
+          },
+          "required": ["schema_version", "code", "message"]
+        },
+        {
+          "title": "busy",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {
+              "const": 1
+            },
+            "code": {
+              "const": "busy"
+            },
+            "message": {
+              "const": "Asset capacity reached"
+            }
+          },
+          "required": ["schema_version", "code", "message"]
+        },
+        {
+          "title": "upstream_error",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {
+              "const": 1
+            },
+            "code": {
+              "const": "upstream_error"
+            },
+            "message": {
+              "const": "Asset source is unavailable"
+            }
+          },
+          "required": ["schema_version", "code", "message"]
+        },
+        {
+          "title": "unavailable",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {
+              "const": 1
+            },
+            "code": {
+              "const": "unavailable"
+            },
+            "message": {
+              "const": "Asset service is unavailable"
+            }
+          },
+          "required": ["schema_version", "code", "message"]
+        }
+      ]
+    }
+  }
+}

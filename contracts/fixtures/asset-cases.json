@@ -1,0 +1,406 @@
+[
+  {
+    "name": "basemap",
+    "valid": true,
+    "value": {
+      "kind": "basemap",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry",
+      "z": 2,
+      "x": 3,
+      "y": 1
+    }
+  },
+  {
+    "name": "auto entry",
+    "valid": true,
+    "value": {
+      "kind": "basemap",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "z": 2,
+      "x": 3,
+      "y": 1
+    }
+  },
+  {
+    "name": "photo",
+    "valid": true,
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "device_tracker.synthetic",
+      "picture_key": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "name": "info",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry"
+    }
+  },
+  {
+    "name": "command",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "type": "aviadilo/assets_info",
+      "id": 1
+    }
+  },
+  {
+    "name": "bool zoom",
+    "valid": false,
+    "value": {
+      "kind": "basemap",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry",
+      "z": true,
+      "x": 3,
+      "y": 1
+    }
+  },
+  {
+    "name": "string zoom",
+    "valid": false,
+    "value": {
+      "kind": "basemap",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry",
+      "z": "2",
+      "x": 3,
+      "y": 1
+    }
+  },
+  {
+    "name": "high zoom",
+    "valid": false,
+    "value": {
+      "kind": "basemap",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry",
+      "z": 20,
+      "x": 3,
+      "y": 1
+    }
+  },
+  {
+    "name": "cross geometry",
+    "valid": false,
+    "value": {
+      "kind": "basemap",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry",
+      "z": 2,
+      "x": 4,
+      "y": 1
+    }
+  },
+  {
+    "name": "version string",
+    "valid": false,
+    "value": {
+      "kind": "basemap",
+      "schema_version": "1",
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry",
+      "z": 2,
+      "x": 3,
+      "y": 1
+    }
+  },
+  {
+    "name": "future version",
+    "valid": false,
+    "value": {
+      "kind": "basemap",
+      "schema_version": 2,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry",
+      "z": 2,
+      "x": 3,
+      "y": 1
+    }
+  },
+  {
+    "name": "generation escape",
+    "valid": false,
+    "value": {
+      "kind": "basemap",
+      "schema_version": 1,
+      "generation": "../1",
+      "entry_id": "synthetic-entry",
+      "z": 2,
+      "x": 3,
+      "y": 1
+    }
+  },
+  {
+    "name": "generation zero padding",
+    "valid": false,
+    "value": {
+      "kind": "basemap",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:01",
+      "entry_id": "synthetic-entry",
+      "z": 2,
+      "x": 3,
+      "y": 1
+    }
+  },
+  {
+    "name": "entry escape",
+    "valid": false,
+    "value": {
+      "kind": "basemap",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "../entry",
+      "z": 2,
+      "x": 3,
+      "y": 1
+    }
+  },
+  {
+    "name": "url input",
+    "valid": false,
+    "value": {
+      "kind": "basemap",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry",
+      "z": 2,
+      "x": 3,
+      "y": 1,
+      "url": "https://example.invalid"
+    }
+  },
+  {
+    "name": "wrong entity",
+    "valid": false,
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "person.synthetic",
+      "picture_key": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "name": "key uppercase",
+    "valid": false,
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "device_tracker.synthetic",
+      "picture_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    }
+  },
+  {
+    "name": "invalid_request",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "code": "invalid_request",
+      "message": "Invalid asset request"
+    }
+  },
+  {
+    "name": "unauthorized",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "code": "unauthorized",
+      "message": "Authentication required"
+    }
+  },
+  {
+    "name": "forbidden",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "code": "forbidden",
+      "message": "Asset access denied"
+    }
+  },
+  {
+    "name": "not_found",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "code": "not_found",
+      "message": "Asset or entry is unavailable"
+    }
+  },
+  {
+    "name": "stale_generation",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "code": "stale_generation",
+      "message": "Asset generation has changed",
+      "generation": "0123456789abcdef0123456789abcdef:0"
+    }
+  },
+  {
+    "name": "picture_changed",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "code": "picture_changed",
+      "message": "Entity picture has changed"
+    }
+  },
+  {
+    "name": "busy",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "code": "busy",
+      "message": "Asset capacity reached"
+    }
+  },
+  {
+    "name": "upstream_error",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "code": "upstream_error",
+      "message": "Asset source is unavailable"
+    }
+  },
+  {
+    "name": "unavailable",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "code": "unavailable",
+      "message": "Asset service is unavailable"
+    }
+  },
+  {
+    "name": "unsafe error",
+    "valid": false,
+    "value": {
+      "schema_version": 1,
+      "code": "upstream_error",
+      "message": "https://private.invalid/?token=secret"
+    }
+  },
+  {
+    "name": "integral JSON numbers",
+    "valid": true,
+    "value": {
+      "kind": "basemap",
+      "schema_version": 1.0,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry",
+      "z": 2.0,
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
+  {
+    "name": "fractional JSON zoom",
+    "valid": false,
+    "value": {
+      "kind": "basemap",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry",
+      "z": 2.5,
+      "x": 3,
+      "y": 1
+    }
+  },
+  {
+    "name": "generation newline",
+    "valid": false,
+    "value": {
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0\n",
+      "entry_id": "synthetic-entry"
+    }
+  },
+  {
+    "name": "generation CRLF",
+    "valid": false,
+    "value": {
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0\r\n",
+      "entry_id": "synthetic-entry"
+    }
+  },
+  {
+    "name": "entry_id newline",
+    "valid": false,
+    "value": {
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry\n"
+    }
+  },
+  {
+    "name": "entry_id CRLF",
+    "valid": false,
+    "value": {
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entry_id": "synthetic-entry\r\n"
+    }
+  },
+  {
+    "name": "entity_id newline",
+    "valid": false,
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "device_tracker.synthetic\n",
+      "picture_key": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "name": "entity_id CRLF",
+    "valid": false,
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "device_tracker.synthetic\r\n",
+      "picture_key": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "name": "picture_key newline",
+    "valid": false,
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "device_tracker.synthetic",
+      "picture_key": "0000000000000000000000000000000000000000000000000000000000000000\n"
+    }
+  },
+  {
+    "name": "picture_key CRLF",
+    "valid": false,
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "device_tracker.synthetic",
+      "picture_key": "0000000000000000000000000000000000000000000000000000000000000000\r\n"
+    }
+  }
+]

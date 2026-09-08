@@ -7,7 +7,7 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 ## Project-specific rules
 
 - Follow-up direction approved 2026-09-08: production card viewing, dashboard editing, card editing and picker previews must use the same real-data clients, integration cache, upstream fetching and refresh rules. A preview flag must not select synthetic data or a cache-only path. Discuss any technical reason for an exception with the user before implementing it. Synthetic feeds remain confined to development/test harnesses.
-- Kiosk refinement retains layer buttons, Recenter, the optional aircraft list and selection popups while removing routine status/weather settings panels. Shared basemap caching, map themes and mutually exclusive wind display modes/color are covered by `docs/spec/FEATURE_SPEC_kiosk_refinement.md` (detailed spec pending review).
+- Kiosk refinement retains layer buttons, Recenter, the optional aircraft list and selection popups while removing routine status/weather settings panels. Shared basemap caching, map themes and mutually exclusive wind display modes/color are covered by `docs/spec/FEATURE_SPEC_kiosk_refinement.md` (approved by the user on 2026-09-08; implementation in progress).
 - License: MIT, explicitly selected by the user on 2026-09-08. Keep the license notice in the repository and distributed release ZIP.
 - Commit the `.bishop/` folder with the project, including app-generated updates. The user explicitly requires it to remain version-controlled (2026-09-07); do not leave those changes out of project commits merely because the app generated them.
 - Approved stack (2026-09-06): TypeScript + Lit + Vite + Leaflet, with a companion Python Home Assistant integration for shared data collection and caching.

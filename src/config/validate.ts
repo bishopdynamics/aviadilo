@@ -6,7 +6,8 @@ export type SchemaName =
   | 'integration-config'
   | 'command'
   | 'event'
-  | 'info';
+  | 'info'
+  | 'assets';
 
 export class ContractError extends Error {}
 
@@ -21,6 +22,11 @@ export function validateContract(name: SchemaName, value: unknown): void {
   if (!validator(value))
     throw new ContractError(JSON.stringify(validator.errors));
   const data = value as Record<string, unknown>;
+  if (name === 'assets' && data.kind === 'basemap') {
+    const tile = data as unknown as { z: number; x: number; y: number };
+    if (tile.x >= 2 ** tile.z || tile.y >= 2 ** tile.z)
+      throw new ContractError('Invalid basemap geometry');
+  }
   const viewport = data.viewport as
     | { south: number; north: number }
     | undefined;

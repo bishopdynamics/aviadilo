@@ -2,6 +2,7 @@
  * HA's subscribeMessage resolves to an unsubscribe function, never an ID.
  * We disable its automatic replay so reconnect uses the client's latest state.
  */
+import { parseAssetPath } from './assets';
 export type Unsubscribe = () => Promise<void>;
 export type WireMessage = { type: string; [key: string]: unknown };
 export type ConnectionEvent = 'ready' | 'disconnected' | 'reconnect-error';
@@ -34,21 +35,34 @@ export interface HaAdapter {
   listen(changed: () => void): () => void;
 }
 
-export function createHaAdapter(hass: HassTransport): HaAdapter {
+export function createHaAdapter(
+  source: HassTransport | (() => HassTransport),
+): HaAdapter {
+  const current = typeof source === 'function' ? source : () => source;
+  const connection = current().connection;
+  const latest = () => {
+    const hass = current();
+    if (hass.connection !== connection)
+      throw new Error('HA connection changed');
+    return hass;
+  };
   return {
     get connected() {
-      return hass.connection.connected;
+      return connection.connected;
     },
-    call: (message) => hass.callWS(message),
+    call: (message) => latest().callWS(message),
     subscribe: (message, event) =>
-      hass.connection.subscribeMessage(event, message, { resubscribe: false }),
+      connection.subscribeMessage(event, message, { resubscribe: false }),
     fetch: (path, signal) => {
-      if (!path.startsWith('/api/aviadilo/radar?'))
-        throw new Error('Unexpected Aviadilo resource path');
-      return hass.fetchWithAuth(path, {
+      // Exact raw route only: URL normalization must never turn an unsafe path
+      // into an allowed one. Radar's opaque query values remain untouched.
+      const radar = /^\/api\/aviadilo\/radar\?[^#\\\r\n]*(?![\s\S])/.test(path);
+      if (!radar) parseAssetPath(path);
+      return latest().fetchWithAuth(path, {
         signal,
         credentials: 'same-origin',
         redirect: 'error',
+        ...(!radar ? { referrerPolicy: 'origin' as const } : {}),
       });
     },
     listen: (changed) => {
@@ -57,12 +71,10 @@ export function createHaAdapter(hass: HassTransport): HaAdapter {
         'disconnected',
         'reconnect-error',
       ];
-      events.forEach((event) =>
-        hass.connection.addEventListener(event, changed),
-      );
+      events.forEach((event) => connection.addEventListener(event, changed));
       return () =>
         events.forEach((event) =>
-          hass.connection.removeEventListener(event, changed),
+          connection.removeEventListener(event, changed),
         );
     },
   };

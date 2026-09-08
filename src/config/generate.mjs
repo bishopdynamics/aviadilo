@@ -10,7 +10,14 @@ const ajv = new Ajv({
   code: { source: true, esm: true },
 });
 addFormats(ajv, { mode: 'full' });
-const names = ['card-config', 'integration-config', 'command', 'event', 'info'];
+const names = [
+  'card-config',
+  'integration-config',
+  'command',
+  'event',
+  'info',
+  'assets',
+];
 for (const name of names)
   ajv.addSchema(
     JSON.parse(await readFile(`contracts/${name}.schema.json`, 'utf8')),
