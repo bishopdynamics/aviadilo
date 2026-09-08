@@ -7,9 +7,29 @@ Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assi
 1. In HACS, add `https://github.com/bishopdynamics/aviadilo` as a custom repository with type **Integration**. Open Download/Redownload, expand **Need a different version?**, and explicitly select `v0.1.0-dev.2` in the Release dropdown. Confirm the dialog names that version before downloading. Restart Home Assistant when requested.
 2. Open **Settings → Devices & services → Add integration → Aviadilo**. Choose the shared collection anchor, aircraft provider, radius, and cache settings. Leave conservative provider pacing at its defaults unless you want slower collection.
 3. Reload the dashboard in your browser. Edit the dashboard, add a card, and select **Aviadilo**. The integration loads its matching card automatically; no manual JavaScript resource is needed.
-4. Use the graphical editor to choose layers and add your `device_tracker` entities under People. Save the card.
+4. Use the graphical editor to choose layers and add your `device_tracker` entities under People. **Save the card, then click Done to leave dashboard edit mode.**
 
-The card picker and editor show synthetic locations and weather. Preview data does not represent your household or current conditions.
+The card picker, card editor and dashboard edit mode show synthetic locations and weather. Saving the card alone can leave you in dashboard edit mode. **Done** returns to the real dashboard. Preview data does not represent your household or current conditions.
+
+## Checking the saved card
+
+Preview-only content includes the **Synthetic · offline preview** badge, numbered schematic tiles, DEMO aircraft and Alex/Sam synthetic trackers. The saved dashboard should load real basemap tiles, selected HA trackers and enabled provider layers. The published integration does not contain the development provider shim. A saved card that remains labelled synthetic after Done and a browser reload needs investigation.
+
+Defaults: aircraft and people layers are enabled; radar and wind are disabled. People has no trackers selected initially. Wind also needs a visible display style: enable arrows/barbs or particles in addition to its layer toggle. Leave provider pacing unchanged while testing, and allow initial loading to finish.
+
+| Check | Action and expected result |
+| --- | --- |
+| Connection and basemap | After Done, look for Integration connected and real roads/place labels around your configured HA home/anchor. Numbered grid tiles indicate preview; Basemap unavailable indicates a tile-loading failure. |
+| Aircraft | Check the source status and last-update/position ages. Select a callsign in the list and its marker; both should select the same aircraft and show details. Confirm distances make sense for your collection area. Empty results can be legitimate; defaults exclude aircraft on the ground. |
+| People | Add known device_tracker entities and compare displayed positions with HA. Start with one nearby tracker. The default 50 km filter intentionally excludes distant people before fitting the map. |
+| Radar | Enable Radar and keep RainViewer for the first check. Check status, displayed frame time and legend; try Loop, Pause and Latest. Historical radar must not rewind people or aircraft. No precipitation over your area can be legitimate; loading/unavailable is a separate state. |
+| Wind | Enable Wind and choose arrows first, then optionally particles. Look for DWD ICON-global, a model-valid time and direction/speed. Wind is forecast data; static markers should remain usable with particles off or reduced motion enabled. |
+| View and persistence | Pan/zoom manually and ensure ordinary updates preserve the view; Recenter should restore the configured view. Save a title/unit/filter change, click Done, reload and verify it persists. Test list collapse and narrow/touch layout without overlapping cards or losing map controls. |
+| Recovery | Navigate away and back or reload the dashboard. Enabled layers should resume without duplicate markers or persistent loading. Repeated cache clearing is unnecessary. |
+
+Missing aircraft metadata, a wind model run marked unknown, and unavailable coverage detail are explicit missing-information states. They are not unimplemented placeholders. Flight route/photo enrichment and synchronized historical people/aircraft replay are outside this release.
+
+The combined-card automated and isolated HA endurance checks used synthetic provider responses; bounded real provider checks were separate. Normal dashboard behavior with the user's actual sources, trackers and tablet remains acceptance work. If a check fails, record whether you were editing or viewing, which layer/source was affected, its exact status text and the action that triggered it.
 
 ## Map and layer controls
 
