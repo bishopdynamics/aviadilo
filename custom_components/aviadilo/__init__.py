@@ -1,4 +1,4 @@
-"""Aviadilo shared integration lifecycle; live providers arrive in later slices."""
+"""Aviadilo shared aircraft/weather service and bundled card lifecycle."""
 
 import asyncio
 

@@ -1,4 +1,5 @@
 import { css, unsafeCSS } from 'lit';
+import type { CardConfig } from '../config/types';
 import leafletCss from 'leaflet/dist/leaflet.css?inline';
 /** Embedded in the card's shadow root and JS bundle; marker imagery is DOM-based. */
 export const mapStyles = [
@@ -75,6 +76,31 @@ export const mapStyles = [
     }
     .map.hidden {
       display: none;
+    }
+    .weather {
+      padding: 12px 16px;
+      overflow-wrap: anywhere;
+    }
+    summary {
+      cursor: pointer;
+      min-height: 44px;
+      line-height: 44px;
+    }
+    .weather label {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 10px 0;
+    }
+    .weather input,
+    .weather select {
+      max-width: 100%;
+      min-height: 44px;
+      font: inherit;
+    }
+    a {
+      color: var(--aviadilo-accent);
     }
     .status,
     .aircraft-list {
@@ -160,3 +186,27 @@ export const mapStyles = [
     }
   `,
 ];
+
+/** Initial masonry estimate before the DOM is measurable. Sections use natural
+ * height instead; expanded disclosures and actual row counts are measured by
+ * the card once rendered. Each aircraft row includes its 44px touch target.
+ */
+export function estimateCardHeight(config?: CardConfig): number {
+  const layout = config?.map?.layout ?? 'combined';
+  let height = 200; // Header, wrapping layer controls and source/people status.
+  if (layout !== 'list') height += config?.map?.height_px ?? 480;
+  if (
+    layout !== 'map' &&
+    config?.layers?.aircraft !== false &&
+    config?.aircraft?.show_list !== false
+  )
+    height += 168 + (config?.aircraft?.list_rows ?? 10) * 52;
+  if (layout !== 'list' && config?.layers?.radar) {
+    height += 144;
+    if (config.radar?.show_timestamp !== false) height += 40;
+    if (config.radar?.show_coverage !== false) height += 40;
+    if (config.radar?.show_legend !== false) height += 64;
+  }
+  if (layout !== 'list' && config?.layers?.wind) height += 68;
+  return height;
+}

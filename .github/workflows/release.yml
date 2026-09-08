@@ -19,6 +19,7 @@ jobs:
         with:
           version: '0.12.8'
       - run: make setup
+      - run: npx playwright install --with-deps chromium
       - run: make check
       - name: Verify tag and packaged runtime versions
         env:
@@ -31,6 +32,6 @@ jobs:
           draft: true
           prerelease: true
           body: |
-            Development scaffold for packaging validation. This draft is not a usable Home Assistant integration.
-            Live collection, configuration flows, the map and HACS installation/upgrade acceptance remain future slices.
+            Development candidate: the bundled Aviadilo card combines aircraft, radar, wind and household trackers with a complete visual editor.
+            One Integration ZIP includes the shared HA collection/cache service and matching compiled card.
             A maintainer must complete product acceptance and review release notes before publication.

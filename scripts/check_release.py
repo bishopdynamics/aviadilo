@@ -1,6 +1,7 @@
 """Validate package identity, versions, bounded safe ZIP content and HACS layout."""
 
 import argparse
+import ast
 import json
 import re
 import stat
@@ -12,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = {
     "__init__.py",
     "manifest.json",
+    "const.py",
     "models.py",
     "providers/base.py",
     "brand/icon.png",
@@ -85,6 +87,18 @@ def check_release(path: Path, tag: str | None = None, root: Path = ROOT) -> None
                 raise ValueError(f"Missing manifest field: {key}")
         if manifest["domain"] != "aviadilo":
             raise ValueError("Incorrect integration domain")
+        constants = ast.parse(archive.read("const.py"))
+        runtime_versions = [
+            node.value.value
+            for node in constants.body
+            if isinstance(node, ast.Assign)
+            and any(
+                isinstance(target, ast.Name) and target.id == "VERSION" for target in node.targets
+            )
+            and isinstance(node.value, ast.Constant)
+        ]
+        if runtime_versions != [version]:
+            raise ValueError("Runtime bootstrap version does not match manifest")
         javascript = archive.read("frontend/aviadilo.js").decode()
         if not javascript.startswith(f"/*! Aviadilo version: {version} */"):
             raise ValueError("JavaScript build version does not match manifest")

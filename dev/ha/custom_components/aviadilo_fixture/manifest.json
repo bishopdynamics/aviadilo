@@ -1,0 +1,8 @@
+{
+  "domain": "aviadilo_fixture",
+  "name": "Aviadilo synthetic provider fixture (development only)",
+  "version": "0.1.0",
+  "documentation": "https://github.com/bishopdynamics/aviadilo",
+  "codeowners": ["@bishopdynamics"],
+  "iot_class": "local_push"
+}

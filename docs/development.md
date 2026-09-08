@@ -1,6 +1,6 @@
 # Development
 
-Aviadilo contains the first seven slices: bootstrap, HA integration foundations, authenticated transport, the map/editor/household-tracker layer, aircraft collection/presentation, selected radar adapters/playback, and DWD wind/static markers/animation. The fixture harness exercises the map, editor and traveller filtering offline. Aircraft/radar/wind frontend composition and full HACS/HA acceptance remain slice 8.
+Aviadilo's `0.1.0-dev.2` candidate composes aircraft, radar, wind and household trackers with the shared HA service and complete graphical editor. The development and browser harnesses use synthetic data. Local HA/package acceptance is recorded below; authenticated HACS delivery and physical tablet acceptance remain pending.
 
 ## Toolchains
 
@@ -35,6 +35,9 @@ The temporary toolchains were absent at the slice 5 session start on 2026-09-07,
 | `make lint` | Check source quality |
 | `make format` | Apply source formatting |
 | `make build` | Build the bundled card and HACS release archive |
+| `make e2e` | Exercise the composed card in Chromium with offline transport |
+| `make ha-prepare` | Prepare the isolated synthetic HA instance in `/tmp` |
+| `make ha-dev` | Run that isolated instance on localhost:18123 |
 | `make clean` | Remove generated build artifacts |
 
 The fixture preview uses synthetic local data and makes no provider requests. Routine tests must remain offline. Live source checks and HA/browser acceptance belong to the orchestrator after their implementation slices.
@@ -45,9 +48,9 @@ The fixture preview uses synthetic local data and makes no provider requests. Ro
 
 HACS uses the repository as type **Integration**. The archive contains the contents of `custom_components/aviadilo/` at ZIP root, including the built card and brand icon. Frontend, manifest, and tag versions must agree. All runtime dependencies must be available within the installed integration or declared in its manifest.
 
-The GitHub Actions workflows prepare native checks, HACS/hassfest validation, and version-tag release packaging. A locally verified bootstrap archive is not proof of a working HACS installation. Clean HACS installation and upgrade, automatic module loading, and the actual tablet kiosk remain acceptance work in later slices.
+The GitHub Actions workflows run native/browser checks, HACS/hassfest validation, and version-tag release packaging. Local package installation and mocked HACS transport checks are distinct from authenticated HACS delivery. See the slice 8 evidence and remaining gates below.
 
-Actions are pinned by commit and the HACS/hassfest validator images by digest. The version-tag workflow builds an explicitly labelled draft development prerelease; it does not automatically publish the stub as a usable product.
+Actions are pinned by commit and the HACS/hassfest validator images by digest. The version-tag workflow builds a draft development prerelease for maintainer acceptance before publication.
 
 HACS also requires a public repository description and topics. At the slice 1 kickoff, `bishopdynamics/aviadilo` had neither; GitHub CLI/API credentials were unavailable in this session. The issue tracker was enabled. Before HACS validation, set the description to “A Home Assistant kiosk map combining aircraft, weather radar, wind, and household locations.” and add appropriate topics such as `home-assistant`, `hacs`, `lovelace-custom-card`, `aircraft`, `weather-radar`, and `leaflet`. These requirements are documented by [HACS](https://www.hacs.xyz/docs/publish/start/).
 
@@ -196,3 +199,43 @@ The browser connector's CDP reduced-motion override did not persist. Reduced-mot
 Three bounded DWD requests through Scheduler used no household location or retries: one DescribeCoverage, an 8×6 ocean subset around 0°,0°, and an additional 16×4 full-longitude/ocean-latitude band to verify the dateline geometry. All returned HTTP200. The description advertised 137 times and u/v m/s; grids returned the requested 48/64 cells with nonzero row indices and actual affine geometry. Both grids were independently normalized and validated against the frozen event schema; longitude aliases on either side of the 360° seam sampled identically. No cache headers or validators were returned. Raw evidence: `live-check.json`, `global-band-check.json`, `dwd-description.xml`, `dwd-scaled-ocean.txt`, `dwd-global-band.txt`, plus normalized `live-grid.json`/`global-grid.json`.
 
 Artifact: `dist/aviadilo.zip`, development version `0.1.0-dev.1`, 23 runtime files, SHA256 `4d7fb180a11cb326d580927826a55f0e77cf92f98e951a0ad4f709ec03ee8c38`. Local browser/server stopped; native worker completed and only main worktree remains. No full HA GUI instance, credential, release or deployment was created. Slice 8 must compose the three new frontend layers with the existing people map and complete HACS/HA/physical-kiosk acceptance.
+
+## Product composition and local acceptance — slice 8, 2026-09-07
+
+The card now composes all four layers with the actual authenticated client. HA's stable connection identifies a client; ordinary reactive state updates do not recreate subscriptions. Passive `aviadilo/info` discovery every five seconds refreshes integration setup/options without provider calls. Disabled layers, list-only layouts, collapsed lists, offscreen/hidden cards and removal release unneeded demand. People remain usable when the external integration is absent. Radar waits for the current revision's manifest before loading tiles, and wind clears when its selection changes. Display edits reuse the existing client and preserve manual view/selection.
+
+The public sizing contract uses natural height in HA sections, so disclosures cannot overlap a following card. Masonry uses rendered height when available and a saved-configuration estimate before rendering. Raw HA picker and editor previews render synthetic aircraft/radar/wind/trackers from bundled local fixtures. The editor preserves supported settings and unknown future fields.
+
+Native implementation used one serial Codex `gpt-6-astra` worker with high reasoning because Hanuman was unavailable. A separate read-heavy installer check used `gpt-5.6-sol` with medium reasoning in a confined `/tmp` directory. The orchestrator reviewed changes and independently reran their checks. `.bishop/` is committed, including app-generated task metadata, per the user's explicit correction.
+
+### Reproducing the offline checks
+
+After `make setup`, run `npx playwright install chromium` once. Linux CI uses `npx playwright install --with-deps chromium`. `make check` now includes the 11 Playwright scenarios. The browser binary can be overridden with `AVIADILO_CHROMIUM_PATH`; this session used `PLAYWRIGHT_BROWSERS_PATH=/tmp/aviadilo-playwright`. Playwright is pinned to 1.63.0 with bundled Chromium 153.0.8010.12.
+
+`dev/index.html` remains the offline preview. `dev/runtime.html` exposes an explicitly fake HA transport for browser tests, using the real card/client/subscription and tile lifecycle. Tests block external endpoints before loading and supply synthetic OSM raster bytes. They cover all four layers, two viewers, responsive/keyboard selection, manual view, local edits, list/hidden demand, initial unavailable/explicit entry discovery, HA reconnect/integration recreation, old-revision races, paused radar refresh, preview isolation, editor round-trip, cleanup, and a following sections card.
+
+Independent full `make check` passed **123 frontend + 258 backend + 11 Chromium tests**, formatting/lint/TypeScript, strict mypy on 36 files, both builds and the 23-file ZIP. Log: `/tmp/aviadilo-slice8/root-final-check-v2.log`. The final helper-only Recorder change also passed the 45 focused configuration/provider-fixture regressions independently (`root-helper-final.log`) and worker lint; it does not affect the distributed ZIP. Official pinned hassfest reported one integration and zero invalid integrations (`hassfest-final.log`).
+
+### Real Home Assistant and package upgrade
+
+The separate instance at `/tmp/aviadilo-slice8/ha` runs HA 2026.9.1 and frontend 20260826.6. Its optional provider shim replaces only provider HTTP responses; HA auth, WebSockets, revision checks, tile HTTP, scheduler, cache and compiled card remain real. Unknown provider hosts fail closed, and browser OSM requests are blocked or mocked. No Aviadilo public provider was queried for these acceptance runs. The shim is a required dependency only in the installed test manifest and is absent from the distribution. See [the isolated HA guide](../dev/ha/README.md).
+
+Native graphical integration setup saved a 75 km collection radius; the graphical options flow saved a 256 MiB disk budget. Replacing development version `0.1.0-dev.1` with `0.1.0-dev.2` and restarting HA retained the entry, settings/options and dashboard. The actual loaded bootstrap and card URLs changed to `/aviadilo_static/0.1.0-dev.2/`. A further package replacement/restart preserved all 17 valid warm cache files byte-for-byte before viewers resumed. An arbitrary invalid sentinel file was correctly removed by cache recovery; the successful retention check used real cache entries.
+
+The native HA dashboard also fit a 390 px browser viewport without horizontal overflow. After explicitly closing its real HA WebSocket, the card was active again at the first one-second observation with three aircraft, two people, radar images and a wind grid. This is a real connection recovery check, distinct from the more detailed controlled disconnect/recreation browser regressions.
+
+Chromium 151.0.7922.34 verified automatic native card-picker availability, synthetic previews, graphical save/reopen of the title, all layer toggles, wind barbs and particles, and real sections sizing. A following markdown card remained 8 px below Aviadilo both with wind controls collapsed and expanded. Real HA rendering showed three synthetic aircraft, radar tiles, wind fields/animation and two selected synthetic trackers. Screenshots include `ha-editor-reopened.png` and `ha-sections.png` under the slice's temporary evidence directory. Initial helper defects—missing sample `schema_version`, handling of `yarl.URL` and separate/repeated request parameters, and missing Recorder for the frontend's `recorder/info` call—were corrected and covered by meaningful configuration/adapter/gateway tests. Optional host FFmpeg/libturbojpeg errors concern HA's camera dependencies; Aviadilo does not use them.
+
+### Twenty-minute HA soak
+
+Two separate Chromium 153.0.8010.12 contexts ran the actual packaged HA card for **1,200 seconds**, with looping radar, 500 wind particles, three aircraft and two trackers each. The 41 periodic samples enforced wind/radar resource limits and allowed up to 15 seconds for normal refresh handoffs. Both clients completed with zero JavaScript errors and zero failed tile responses; 72 authenticated tile responses succeeded and 18 basemap requests were mocked. After initialization the card DOM stayed at 282 nodes per client. Each retained at most three radar frames (3 MiB decoded) and two wind canvases (1,881,600 bytes). Sampled JS heap peaked at 26.1 MiB; final retained heaps after explicit collection were 13.75/13.22 MiB, below the initial 16.02/15.20 MiB.
+
+Final authenticated diagnostics returned HTTP200, package `0.1.0-dev.2`, two viewers, three active products, zero pending provider jobs, current active provider states, and a shared cache of 46 entries/59,569 disk bytes/53,176 memory bytes. Evidence: `/tmp/aviadilo-slice8/ha-soak-{result.json,progress.json,final.png}` and `ha-soak.log`; the standalone runner is `ha-soak.mjs`. This is a 20-minute synthetic-provider Linux/Chromium run, not an overnight or physical-tablet endurance claim. Its browser contexts and the isolated HA server were stopped after completion.
+
+### HACS compatibility and remaining release gates
+
+The actual **HACS 2.0.5** `HacsIntegrationRepository.async_install_repository` installed the baseline and upgraded the candidate in a separate test config. HACS's real download URL normalization, ZIP save/extraction, backup creation/cleanup and version bookkeeping ran. Metadata used `GitHubReleaseModel` fixtures, and only GitHub metadata refresh plus the low-level HTTP response transport were mocked. The HTTP boundary received exact canonical `v0.1.0-dev.1` and `v0.1.0-dev.2` asset URLs. Runtime/brand files landed at the correct integration root without a nested `custom_components`; external settings/cache sentinels survived. A Python audit hook rejected network connections, and HACS's temporary backup directory was confined before import. The orchestrator independently reran the script successfully. Evidence: `/tmp/aviadilo-slice8/hacs-installer-check/{verify_hacs_install.py,REPORT.md,result.json}` and `hacs-installer-parent.log`.
+
+This proves installer compatibility with mocked transport. **Authenticated HACS repository validation, a real release download/install/update, and the physical tablet remain unverified.** The pinned HACS validator exited with HTTP 401 because no GitHub token was available (`hacs-validator-initial.log`). Public repository metadata still lacked description/topics. No GitHub CLI credentials, token or usable GitHub connector was available. All code remains local; this session did not push, tag, publish, or deploy to the household instance. Candidate notes are prepared in [the release notes](releases/0.1.0-dev.2.md); these delivery gates remain part of the in-progress ROOT_SPEC, not deferred features.
+
+Final artifact: `dist/aviadilo.zip`, `0.1.0-dev.2`, 23 runtime files, SHA256 `78b7e4d1773f78651ec041d71140413a5e29d438027873d1cf3279830ca17392`. Frontend/manifest/Python/runtime bootstrap versions are checked together; schemas remain version 1.

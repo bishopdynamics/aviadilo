@@ -126,7 +126,28 @@
       "source": "npm",
       "command": "npm run validators:generate",
       "description": "node src/config/generate.mjs"
+    },
+    {
+      "id": "make:ha-prepare",
+      "name": "ha-prepare",
+      "source": "make",
+      "command": "make ha-prepare",
+      "description": "Prepare an isolated synthetic Home Assistant instance in /tmp"
+    },
+    {
+      "id": "make:ha-dev",
+      "name": "ha-dev",
+      "source": "make",
+      "command": "make ha-dev",
+      "description": "Run the isolated Home Assistant instance on localhost:18123"
+    },
+    {
+      "id": "npm:e2e",
+      "name": "e2e",
+      "source": "npm",
+      "command": "npm run e2e",
+      "description": "playwright test"
     }
   ],
-  "derivedAtMs": 1788743239869
+  "derivedAtMs": 1788842927332
 }

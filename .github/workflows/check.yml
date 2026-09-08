@@ -19,4 +19,5 @@ jobs:
           version: '0.12.8'
           enable-cache: true
       - run: make setup
+      - run: npx playwright install --with-deps chromium
       - run: make check

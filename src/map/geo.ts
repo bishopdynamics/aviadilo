@@ -1,3 +1,4 @@
+import type { HaConnection, HassTransport } from '../data/ha';
 import type { CardConfig } from '../config/types';
 
 export interface Point {
@@ -12,6 +13,8 @@ export interface HaEntity {
   last_changed?: string;
 }
 export interface HomeAssistant {
+  connection?: HaConnection;
+  fetchWithAuth?: HassTransport['fetchWithAuth'];
   states: Record<string, HaEntity>;
   config?: { latitude?: number; longitude?: number };
   callWS?: <T>(message: { type: string; [key: string]: unknown }) => Promise<T>;

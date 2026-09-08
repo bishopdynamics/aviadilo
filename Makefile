@@ -2,7 +2,7 @@
 UV ?= uv
 NPM ?= npm
 
-.PHONY: help setup run build test check lint format clean
+.PHONY: help setup run build test check lint format clean e2e ha-prepare ha-dev
 help: ## List development commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "%-12s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
@@ -32,7 +32,7 @@ lint: ## Check formatting, lint and static types in both languages
 	$(UV) run --frozen ruff check .
 	$(UV) run --frozen mypy
 
-check: lint test build ## Run all native CI checks including release validation
+check: lint test build e2e ## Run CI gates including offline Chromium acceptance
 
 format: ## Format frontend/contracts and Python source
 	$(NPM) run format
@@ -40,3 +40,12 @@ format: ## Format frontend/contracts and Python source
 
 clean: ## Remove generated build artifacts only
 	$(UV) run --frozen python -c 'from pathlib import Path; import shutil; [shutil.rmtree(p) for p in (Path("dist"), Path("custom_components/aviadilo/frontend")) if p.is_dir()]'
+
+e2e: ## Exercise the composed card in Chromium with offline fixtures
+	$(NPM) run e2e
+
+ha-prepare: ## Prepare an isolated synthetic Home Assistant instance in /tmp
+	$(UV) run --frozen python dev/ha/manage.py prepare --fixtures
+
+ha-dev: ## Run the isolated Home Assistant instance on localhost:18123
+	$(UV) run --frozen python dev/ha/manage.py run

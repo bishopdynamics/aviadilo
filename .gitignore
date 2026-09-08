@@ -49,3 +49,7 @@ Elefant-Offline.md
 custom_components/aviadilo/frontend/
 coverage/
 src/config/validators.js
+
+# Offline browser acceptance artifacts (HA instance/auth remains outside repo)
+test-results/
+playwright-report/

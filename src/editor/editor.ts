@@ -243,8 +243,8 @@ export class AviadiloEditor extends LitElement {
   protected render() {
     if (!this.config) return html``;
     return html`<p>
-        Changes update the preview. Aircraft, radar and wind rendering are
-        pending; their saved settings are available below.
+        Changes update the offline preview. Preview positions and weather are
+        synthetic; saved settings apply to your dashboard.
       </p>
       ${this.error ? html`<p role="alert">${this.error}</p>` : ''}
       ${this.field(['title'], fields.title)}${this.field(

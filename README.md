@@ -6,9 +6,11 @@ Originally inspired by the ADS-B Exchange globe view, Aviadilo now aims to repla
 
 The accepted stack is TypeScript, Lit, Vite, and Leaflet, with a Python Home Assistant integration that shares external-data requests and caches across devices. All supported settings must have a visual editor. Public data access should remain free for household use and conservative on provider requests.
 
-The first seven implementation slices are in place: build tooling, shared contracts, HACS packaging, integration setup/options, shared scheduling/cache, authenticated transport, a responsive Leaflet map with a graphical editor and household trackers, aircraft collection/presentation, three radar providers/playback, and DWD ICON-global wind with static markers and local animation. The people layer filters distant travellers before rendering or fitting the map. Aircraft, radar and wind components are verified separately and await final card wiring and HACS/HA acceptance in slice 8.
+The development candidate combines all four layers in one card: live aircraft with a selectable list, radar history and legends, DWD ICON-global wind markers and animation, and household trackers. The people layer filters distant travellers before rendering or fitting the map. A graphical editor covers every supported setting. Shared collection and caching serve multiple cards without multiplying provider requests.
 
 The public repository is [bishopdynamics/aviadilo](https://github.com/bishopdynamics/aviadilo). HACS installation and updates are required from the first release, using one Integration package that includes the card. The first HACS-installable release is still pending.
+
+See [the user guide](docs/user-guide.md) for the installation flow, map controls, shared settings, and troubleshooting. Version `0.1.0-dev.2` is a local development candidate; authenticated HACS delivery and acceptance on the user's tablet remain pending.
 
 The [approved implementation spec](docs/spec/ROOT_SPEC.md) targets Home Assistant 2026.9.1 and the user's Chromium tablet-PC kiosk.
 
@@ -20,11 +22,12 @@ Use Node 24 (pinned in `.node-version`), Python 3.14.2, and [uv](https://docs.as
 
 ```sh
 make setup
+npx playwright install chromium
 make check
 make run
 ```
 
-`make run` serves a synthetic fixture preview. It makes no requests to aircraft, weather, or basemap providers. `make build` prepares the bundled card and HACS archive; `make help` lists the available commands. Development artifacts are not a tested HACS release yet.
+`make run` serves a synthetic fixture preview. It makes no requests to aircraft, weather, or basemap providers. `make check` includes offline Chromium tests; CI installs Chromium's system dependencies with `npx playwright install --with-deps chromium`. `make build` prepares the bundled card and HACS archive; `make help` lists the available commands. The [isolated HA guide](dev/ha/README.md) explains packaged installation and upgrade tests using synthetic provider responses with real HA authentication and transport.
 
 See [the development guide](docs/development.md) for toolchain setup, verification, and packaging details.
 
