@@ -5,6 +5,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 ## Queue
 
 1. [in-progress] Implement `docs/spec/ROOT_SPEC.md` — approved 2026-09-06; slice 1 started 2026-09-06.
+   - **Next work:** review `docs/spec/FEATURE_SPEC_kiosk_refinement.md` (draft, 2026-09-08). Product direction is approved: shared basemap cache; exactly the same real pipeline in editing/live/picker views; quiet card retaining layer buttons/Recenter/optional aircraft list; map themes; one wind display mode and color. Six serial slices specify contracts, backend assets, unified frontend, v2 migration/theme/wind, quiet presentation and packaged acceptance. This remains work under the ROOT_SPEC umbrella; implementation has not begun.
    - Slice 1 implemented and independently verified: Node 24.20.0/Python 3.14.2 setup, v1 schemas/fixtures, offline card stub, HACS layout and deterministic ZIP, pinned CI/release tooling. `make check`: 31 frontend + 32 backend tests passed; Chromium 151.0.7922.34 verified dev, built fixture and extracted packaged module with zero provider requests.
    - First-run setup is complete; `docs/FIRST_RUN.md` removed. Repository/hook trust, identity, stack, GitHub connection and initial upstream push are settled.
    - Slice 2 implemented and independently verified 2026-09-07: integration setup/options, shared scheduler/cache, safe diagnostics and versioned module bootstrap. `make check`: 31 frontend + 97 backend tests passed. Real HA 2026.9.1/Chromium setup, options reload, cache clear, diagnostics and final-ZIP restart/module rendering passed.
@@ -21,3 +22,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 ## Completed
 
 - 2026-09-06 — Initial Planning completed by user approval of the revised `ROOT_SPEC.md`. Combined-map research and the Claremont source-comparison spike are preserved. Selected radar: RainViewer (default), NOAA MRMS, NOAA KSOX; wind: DWD ICON global.
+
+## Repository maintenance
+
+- 2026-09-08 — Investigated repeated Home Assistant/HACS validation failure. Latest inspected run 34270035858: hassfest passed, HACS failed only missing topics (8/9 passed). User has now saved `hacs` and `home-assistant`; GitHub API confirms them along with description and MIT. The next push reruns validation with corrected metadata; no runtime/workflow weakening or feature spec is required for this fix.

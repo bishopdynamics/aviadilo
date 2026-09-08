@@ -1,7 +1,7 @@
 # SPEC: Aviadilo household map
 
-- **Status:** approved — user approved the revised specification on 2026-09-06; slices 1–7 implemented and verified through 2026-09-07.
-- **Addenda:** none.
+- **Status:** in-progress — initial eight slices implemented; published prerelease installation confirmed by the user. Follow-up kiosk requirements are being specified before further implementation.
+- **Addenda:** [FEATURE_SPEC_kiosk_refinement.md](FEATURE_SPEC_kiosk_refinement.md) — draft; user-approved direction for shared basemap caching, identical edit/live data pipelines, quiet kiosk presentation, themes and wind controls.
 - **Repository:** public `https://github.com/bishopdynamics/aviadilo`; remote `github`, upstream `github/main`. HACS from the first release is an accepted user requirement.
 - **Compatibility baseline:** Home Assistant Core 2026.9.1, current stable Chromium on a tablet PC. The user reported using latest HA; this patch version is the verified release baseline, not an inspection of their installation.
 - **Inputs:** `docs/idea/revised-direction.md`, `docs/research/everything-map.md`, `docs/research/weather-source-quality.md`, and the frozen Claremont spike.
@@ -10,7 +10,7 @@
 
 Aviadilo replaces separate aircraft, radar, and household-location maps with one large Lovelace map suitable for the user's Chromium kiosk. A Python Home Assistant integration shares external data collection and caching across cards and devices. A TypeScript/Lit/Leaflet card renders aircraft, precipitation radar, wind, and existing household trackers as independent layers. Every supported setting has a graphical editor, and distant travellers cannot pull the home view out to a world map.
 
-The user approved this implementation plan and implementation began in the following session. First-run setup and slices 1–7 verification are complete; nothing has been deployed to the user's HA instance. Aircraft, radar and wind frontend components are verified separately; final card composition remains slice 8.
+The initial implementation and composition are complete. The user installed the published `v0.1.0-dev.2` integration, added the card, and supplied feedback after seeing real data outside dashboard edit mode. The draft kiosk addendum records the agreed next direction. Its approved direction supersedes the original production-preview and kiosk-presentation choices below; implementation of its detailed plan has not started.
 
 ## Goals
 
@@ -246,7 +246,7 @@ The owned paths below were approved with this specification. Directory entries g
    - Owned files: `src/aviadilo-map.ts`, `src/editor/editor.ts`, `custom_components/aviadilo/__init__.py`, `custom_components/aviadilo/static.py`; `scripts/build_release.py`, `scripts/check_release.py`, `dev/ha/**`, `tests/e2e/**`, `playwright.config.ts`, `hacs.json`, `.github/workflows/check.yml`, `.github/workflows/validate.yml`, `.github/workflows/release.yml`, `Makefile`.
    - Verification: `make check`; HACS/hassfest and release ZIP checks; clean HACS install and upgrade in HA 2026.9.1; automatically available card picker/config/options; all four layers; two clients sharing requests; reload/reconnect; browser sizing and a prolonged kiosk run. The orchestrator runs singleton HA/UI verification and updates user/development docs.
 
-Implementation is authorized. First-run setup and slices 1–7 verification are complete; slice 8 implements the composed product with local HA acceptance, while authenticated HACS delivery and physical tablet acceptance remain pending. Follow `docs/TASK_QUEUE.md` for current state. Repository creation, connection, and the initial push are already complete. Explain each slice as it begins; do not request renewed approval for this plan or its accepted choices.
+The original eight-slice implementation was authorized and delivered. Follow `docs/TASK_QUEUE.md` for remaining acceptance and the draft kiosk addendum before beginning further implementation. Repository setup and published-release installation are already settled. Do not request renewed approval for accepted product choices; the new detailed spec remains available for review.
 
 ## Open Questions
 
@@ -277,3 +277,5 @@ None. The user approved all remaining engineering choices on 2026-09-06.
 - 2026-09-07 — Implemented slice 8 after user continuation: complete card composition, stable HA connection/lifecycle/revision handling, synthetic previews, natural sections sizing, browser regressions, safe isolated HA tooling, coherent 0.1.0-dev.2 candidate and user/release documentation. Local HA graphical setup/options, picker/editor save/reopen, package upgrade and warm cache retention passed; native/browser gates and pinned hassfest passed. HACS's actual installer was verified with mocked GitHub metadata/HTTP transport. Authenticated HACS validation/release delivery and the physical tablet remain required acceptance gates; no change to approved feature scope or deferrals.
 
 - 2026-09-08 — Fixed initial HACS delivery after the user pushed source and encountered a missing commit-hash release ZIP. User selected MIT and updated repository description. Published checked v0.1.0-dev.2 with LICENSE; verified the actual public ZIP checksum and installation layout. Runtime bytes unchanged. Remote native/release/hassfest passed; HACS topics and household/physical-tablet acceptance remain pending.
+
+- 2026-09-08 — Drafted FEATURE_SPEC_kiosk_refinement.md after agreement on user TODO feedback. User explicitly requires identical production data pipelines in edit/live/picker contexts and confirmed retaining layer buttons, Recenter and optional aircraft list. Draft specifies shared cached assets, quiet presentation, themes, wind mode/color and migration; no implementation yet.
