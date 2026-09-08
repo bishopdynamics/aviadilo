@@ -25,4 +25,4 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Repository maintenance
 
-- 2026-09-08 — Investigated repeated Home Assistant/HACS validation failure. Latest inspected run 34270035858: hassfest passed, HACS failed only missing topics (8/9 passed). User has now saved `hacs` and `home-assistant`; GitHub API confirms them along with description and MIT. The next push reruns validation with corrected metadata; no runtime/workflow weakening or feature spec is required for this fix.
+- 2026-09-08 — Investigated repeated Home Assistant/HACS validation failure. Latest inspected run 34270035858: hassfest passed, HACS failed only missing topics (8/9 passed). User has now saved `hacs` and `home-assistant`; GitHub API confirms them along with description and MIT. Validation run [34276525393](https://github.com/bishopdynamics/aviadilo/actions/runs/34276525393) on spec commit dcf57cf passed after the metadata correction. No runtime/workflow weakening or feature spec was needed for this fix.
