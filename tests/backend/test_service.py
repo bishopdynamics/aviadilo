@@ -164,3 +164,125 @@ async def test_concurrent_setup_only_creates_one_runtime(
     assert sum(isinstance(result, ConfigEntryError) for result in results) == 1
     assert entry.runtime_data is hass.data[DOMAIN]
     await async_unload_entry(hass, entry)
+
+
+async def test_clear_cancels_assets_advances_only_after_success_and_retired_service_rejected(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from typing import Any
+    from unittest.mock import MagicMock
+
+    from custom_components.aviadilo.assets import AssetPayload, AssetRequest
+
+    service = AviadiloService(hass, deepcopy(DEFAULTS))
+    service.entry_id = "fixture-entry"
+    await service.start()
+    hass.data[DOMAIN] = service
+    request = AssetRequest("basemap", service.generation.value, z=0, x=0, y=0)
+    started, stopped = asyncio.Event(), asyncio.Event()
+
+    async def fetch(*args: Any) -> AssetPayload:
+        started.set()
+        try:
+            await asyncio.Future[None]()
+        finally:
+            stopped.set()
+        return AssetPayload(b"")
+
+    monkeypatch.setattr(service.osm, "fetch", fetch)
+    task = asyncio.create_task(service.fetch(request, MagicMock(), None))
+    await started.wait()
+    before = service.generation.value
+    await service.clear_cache()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert stopped.is_set() and not service.asset_tasks
+    assert service.generation.value != before
+    assert service.cache.generation == 1 and service.photos.generation == 1
+    current = service.generation.value
+
+    async def fail() -> None:
+        raise OSError("Synthetic filesystem failure")
+
+    monkeypatch.setattr(service.cache, "clear", fail)
+    with pytest.raises(OSError):
+        await service.clear_cache()
+    assert service.generation.value == current and not service.clearing
+    await service.close()
+    with pytest.raises(RuntimeError):
+        await service.clear_cache()
+
+
+async def test_reload_keeps_asset_generation_lanes_and_router_registration(
+    hass: HomeAssistant, entry: ConfigEntry, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from custom_components.aviadilo.assets import AssetGateway
+
+    bundle = tmp_path / "module.js"
+    bundle.write_text("export {}")
+    monkeypatch.setattr(static, "BUNDLE", bundle)
+    await async_setup_entry(hass, entry)
+    first = entry.runtime_data
+    gateway = hass.data["aviadilo_asset_gateway"]
+    assert isinstance(gateway, AssetGateway) and gateway.resolve() is first
+    first.scheduler.buckets["osm_standard"].next_start = 200
+    first.scheduler.buckets["photos"].cooldown = 400
+    await first.clear_cache()
+    generation = first.generation.value
+    hass.http.app.freeze()
+    await async_unload_entry(hass, entry)
+    assert gateway.resolve() is None
+    await async_setup_entry(hass, entry)
+    second = entry.runtime_data
+    assert gateway.resolve() is second and second is not first
+    assert second.generation.value == generation
+    assert second.scheduler.buckets["osm_standard"].next_start == 200
+    assert second.scheduler.buckets["photos"].cooldown == 400
+    assert not second.tasks and second.photos.session is None
+    assert len(second.info()["policies"]) == 5
+    await async_unload_entry(hass, entry)
+
+
+async def test_concurrent_clear_and_close_serialize(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    service = AviadiloService(hass, deepcopy(DEFAULTS))
+    await service.start()
+    started, release = asyncio.Event(), asyncio.Event()
+    original = service.cache.clear
+
+    async def clear() -> None:
+        started.set()
+        await release.wait()
+        await original()
+
+    monkeypatch.setattr(service.cache, "clear", clear)
+    clearing = asyncio.create_task(service.clear_cache())
+    await started.wait()
+    closing = asyncio.create_task(service.close())
+    await asyncio.sleep(0)
+    assert not closing.done()
+    release.set()
+    await asyncio.gather(clearing, closing)
+    assert service.closed and service.cache.fd is None and not service.asset_tasks
+
+
+async def test_whole_asset_deadline_stops_queue_and_preserves_consumed_history(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from unittest.mock import MagicMock
+
+    from custom_components.aviadilo.assets import AssetFailure, AssetRequest
+
+    service = AviadiloService(hass, deepcopy(DEFAULTS))
+    await service.start()
+    service.scheduler.buckets["osm_standard"].cooldown = service.clock() + 1000
+    consumed = service.scheduler.buckets["osm_standard"].cooldown
+    monkeypatch.setattr("custom_components.aviadilo.service.ASSET_TIMEOUT_SECONDS", 0.01)
+    request = AssetRequest("basemap", service.generation.value, z=0, x=0, y=0)
+    with pytest.raises(AssetFailure) as error:
+        await service.fetch(request, MagicMock(), None)
+    assert error.value.code == "upstream_error"
+    assert not service.scheduler.jobs and not service.cache.inflight and not service.asset_tasks
+    assert service.scheduler.buckets["osm_standard"].cooldown == consumed
+    await service.close()

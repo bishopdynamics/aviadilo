@@ -70,6 +70,8 @@ class Scheduler:
         self.max_pending = max_pending
         self.request_timeout = request_timeout
         self.buckets = {
+            "osm_standard": Bucket(max(1, pacing.get("osm_min_interval_s", 1))),
+            "photos": Bucket(max(2, pacing.get("photo_min_interval_s", 2))),
             "adsb_fi": Bucket(max(2, pacing["adsb_fi_min_interval_s"])),
             "adsb_lol": Bucket(max(10, pacing["adsb_lol_min_interval_s"])),
         }
@@ -95,7 +97,9 @@ class Scheduler:
             provider, provider
         )
 
-    async def request[T](self, provider: str, key: str, producer: Callable[[], Awaitable[T]]) -> T:
+    async def request[T](
+        self, provider: str, key: str, producer: Callable[[], Awaitable[T]], *, retry: bool = True
+    ) -> T:
         if self.closed:
             raise RuntimeError("Scheduler is closed")
         bucket_name = self.bucket_name(provider)
@@ -107,7 +111,7 @@ class Scheduler:
         if job is None:
             if len(self.jobs) >= self.max_pending:
                 raise QueueFull("Provider work queue is full")
-            job = Job(asyncio.create_task(self._run(bucket, producer)))
+            job = Job(asyncio.create_task(self._run(bucket, producer, retry)))
             self.jobs[identity] = job
         job.waiters += 1
         try:
@@ -139,7 +143,7 @@ class Scheduler:
                 pass
         return 0
 
-    async def _run[T](self, bucket: Bucket, producer: Callable[[], Awaitable[T]]) -> T:
+    async def _run[T](self, bucket: Bucket, producer: Callable[[], Awaitable[T]], retry: bool) -> T:
         async with bucket.lock:
             while True:
                 if bucket.blocked:
@@ -164,6 +168,11 @@ class Scheduler:
                         result = await producer()
                 except ProviderError as error:
                     if error.status != 429 and error.status < 500:
+                        if not retry:
+                            # Assets fail per resource. One missing/denied tile or
+                            # avatar must not disable unrelated URLs in this lane.
+                            bucket.state = "unavailable"
+                            raise
                         bucket.blocked = True
                         bucket.state = "configuration_required"
                         raise ProviderBlocked(
@@ -176,11 +185,25 @@ class Scheduler:
                         delay, self._retry_seconds(error.retry_after)
                     )
                     bucket.state = "cooldown"
+                    if not retry:
+                        raise
                 except (TimeoutError, OSError):
                     bucket.failures += 1
                     delay = min(900, 30 * 2 ** min(bucket.failures - 1, 5))
                     bucket.cooldown = self.clock() + min(900, delay * (1 + 0.2 * self.jitter()))
                     bucket.state = "cooldown"
+                    if not retry:
+                        raise
+                except asyncio.CancelledError:
+                    if bucket.state == "requesting":
+                        bucket.state = "cooldown" if bucket.cooldown > self.clock() else "idle"
+                    raise
+                except Exception:
+                    if bucket.state == "requesting":
+                        bucket.state = (
+                            "cooldown" if bucket.cooldown > self.clock() else "unavailable"
+                        )
+                    raise
                 else:
                     bucket.failures = 0
                     bucket.state = "current"
@@ -198,7 +221,12 @@ class Scheduler:
         return {
             "pending": len(self.jobs),
             "providers": {
-                name: {"interval_s": bucket.interval, "state": bucket.state}
+                name: {
+                    "interval_s": bucket.interval,
+                    "state": bucket.state,
+                    "backoff_s": max(0, bucket.cooldown - self.clock()),
+                    "failures": bucket.failures,
+                }
                 for name, bucket in self.buckets.items()
             },
         }

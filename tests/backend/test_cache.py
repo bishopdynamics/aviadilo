@@ -250,7 +250,7 @@ async def test_close_during_cache_miss_does_not_start_producer(
     await entered.wait()
     await cache.close()
     release.set()
-    with pytest.raises(RuntimeError, match="closed"):
+    with pytest.raises(asyncio.CancelledError):
         await task
     assert calls == [] and not cache.inflight
 
@@ -276,3 +276,52 @@ async def test_cancelled_start_can_be_closed_safely(
         await task
     await cache.close()
     assert cache.fd is None
+
+
+async def test_last_waiter_owns_even_pending_cache_lookup(tmp_path: Path) -> None:
+    cache = Cache(tmp_path / "cache")
+    await cache.start()
+    started = asyncio.Event()
+    stopped = asyncio.Event()
+
+    async def fetch(stale: Entry | None) -> FetchResult:
+        started.set()
+        try:
+            await asyncio.Future[None]()
+        finally:
+            stopped.set()
+        return FetchResult(entry=sample())
+
+    task = asyncio.create_task(cache.fetch("x", fetch))
+    await started.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert stopped.is_set() and not cache.inflight and not cache.waiters
+    await cache.close()
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("freshness_lifetime", -1),
+        ("freshness_lifetime", True),
+        ("freshness_lifetime", "forever"),
+        ("freshness_lifetime", 7776001),
+        ("age_at_validation", -1),
+        ("age_at_validation", True),
+        ("age_at_validation", "secret"),
+    ],
+)
+def test_asset_policy_metadata_validation(field: str, value: Any) -> None:
+    with pytest.raises(ValueError):
+        Cache._decode(Cache._encode(replace(sample(), **{field: value})))
+
+
+async def test_retained_public_budget_preserves_eight_mib_entry_cap(tmp_path: Path) -> None:
+    cache = Cache(tmp_path / "cache", retained_memory_bytes=24 * 1024 * 1024)
+    assert cache.memory_budget == 24 * 1024 * 1024
+    assert cache.entry_budget == 8 * 1024 * 1024
+    assert cache.max_entries == 4096 and cache.disk_budget == 512 * 1024 * 1024
+    await cache.start()
+    await cache.close()

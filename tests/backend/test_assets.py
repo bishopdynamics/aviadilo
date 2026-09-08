@@ -87,7 +87,11 @@ class Backend(UnavailableAssetService):
 
 
 def request(
-    path: str | None = None, *, authenticated: bool = True, photo: bool = False
+    path: str | None = None,
+    *,
+    authenticated: bool = True,
+    photo: bool = False,
+    extra_headers: dict[str, str] | None = None,
 ) -> web.Request:
     req = make_mocked_request(
         "GET",
@@ -95,8 +99,10 @@ def request(
         headers={
             "Host": "ha.invalid",
             "Referer": "http://ha.invalid/dashboard/secret?token=secret",
+            **(extra_headers or {}),
         },
     )
+    cast(Any, req.transport).is_closing.return_value = False
     hass = MagicMock()
     hass.states.get.return_value.attributes = {"entity_picture": "https://photo.invalid/avatar"}
     req.app[KEY_HASS] = cast(HomeAssistant, hass)
@@ -341,3 +347,106 @@ async def test_real_ha_http_auth_websocket_info_and_generation_event(hass: HomeA
             assert (await stale.json())["generation"] == changed["generation"]
             await ws.send_json({"id": 3, "type": "aviadilo/assets_info", "schema_version": True})
             assert (await ws.receive_json())["success"] is False
+
+
+async def test_conditional_http_checks_auth_and_generation_before_304() -> None:
+    backend = Backend()
+    gateway = AssetGateway(lambda: backend)
+    response = await gateway.get(request())
+    req = request(extra_headers={"If-None-Match": response.headers["ETag"]})
+    assert (await gateway.get(req)).status == 304
+    del req["hass_user"]
+    assert (await gateway.get(req)).status == 401
+    req = request(extra_headers={"If-None-Match": response.headers["ETag"]})
+    backend.generation.counter += 1
+    assert (await gateway.get(req)).status == 409
+
+
+async def test_disconnected_transport_cancels_backend_within_bound() -> None:
+    backend = Backend()
+    backend.wait = asyncio.Event()
+    req = request()
+    gateway = AssetGateway(lambda: backend)
+    task = asyncio.create_task(gateway.get(req))
+    while not backend.calls:
+        await asyncio.sleep(0)
+    cast(Any, req.transport).is_closing.return_value = True
+    with pytest.raises(asyncio.CancelledError):
+        async with asyncio.timeout(1):
+            await task
+    assert not gateway.users
+
+
+async def test_production_registered_http_cache_and_ws_clear(
+    hass: HomeAssistant, entry: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from aiohttp import ClientSession
+    from aiohttp.test_utils import TestClient, TestServer
+    from homeassistant.auth import auth_manager_from_config
+    from homeassistant.components import websocket_api
+    from homeassistant.components.http.auth import async_setup_auth
+    from homeassistant.helpers import device_registry, entity_registry
+
+    from custom_components.aviadilo import async_setup_entry, async_unload_entry, static
+    from tests.backend.providers.test_osm import Response, Session
+
+    device_registry.async_setup(hass)
+    await device_registry.async_load(hass)
+    await entity_registry.async_load(hass)
+    hass.auth = await auth_manager_from_config(hass, [], [])
+    user = await hass.auth.async_create_user("Production asset fixture")
+    refresh = await hass.auth.async_create_refresh_token(user, client_id="http://test.local")
+    token = hass.auth.async_create_access_token(refresh)
+    hass.http.app[KEY_HASS] = hass
+    await async_setup_auth(hass, hass.http.app)
+    await websocket_api.async_setup(hass, {})
+    bundle = tmp_path / "bundle.js"
+    bundle.write_text("export {}")
+    monkeypatch.setattr(static, "BUNDLE", bundle)
+    await async_setup_entry(hass, entry)
+    service = entry.runtime_data
+    upstream = Session(Response({"Cache-Control": "max-age=600"}))
+    service.osm.session = cast(ClientSession, upstream)
+    async with TestClient(TestServer(hass.http.app)) as client:
+        path = f"/api/aviadilo/basemap/0/0/0?schema_version=1&generation={service.generation.value}"
+        assert (await client.get(path)).status == 401
+        headers = {"Authorization": f"Bearer {token}"}
+        first = await client.get(path, headers=headers)
+        assert first.status == 200 and await first.read()
+        condition = {**headers, "If-None-Match": first.headers["ETag"]}
+        assert (await client.get(path, headers=condition)).status == 304
+        assert len(upstream.calls) == 1 and not service.tasks
+        # A real client abort does not automatically cancel HA's server handler.
+        # The gateway must notice transport disappearance and stop its producer.
+        waiting_response = Response()
+        waiting_response.gate = asyncio.Event()
+        upstream.responses.append(waiting_response)
+        service.scheduler.buckets["osm_standard"].next_start = 0
+        waiting = asyncio.create_task(
+            client.get(path.replace("/0/0/0?", "/1/0/0?"), headers=headers)
+        )
+        await waiting_response.started.wait()
+        waiting.cancel()
+        await asyncio.gather(waiting, return_exceptions=True)
+        async with asyncio.timeout(1):
+            while service.asset_tasks:
+                await asyncio.sleep(0.01)
+        assert waiting_response.closed and not service.scheduler.jobs
+        async with client.ws_connect("/api/websocket") as ws:
+            await ws.receive_json()
+            await ws.send_json({"type": "auth", "access_token": token})
+            assert (await ws.receive_json())["type"] == "auth_ok"
+            await ws.send_json({"id": 1, "type": "subscribe_events", "event_type": ASSETS_CHANGED})
+            assert (await ws.receive_json())["success"]
+            await service.clear_cache()
+            assert (await ws.receive_json())["event"]["data"] == service.generation.info(
+                entry.entry_id
+            )
+            assert (await client.get(path, headers=condition)).status == 409
+            await ws.send_json({"id": 2, "type": "aviadilo/assets_info", "schema_version": 1})
+            assert (await ws.receive_json())["result"] == service.generation.info(entry.entry_id)
+        await async_unload_entry(hass, entry)
+        assert (await client.get(path, headers=headers)).status == 503
+        await async_setup_entry(hass, entry)
+        assert entry.runtime_data.generation.value == service.generation.value
+        await async_unload_entry(hass, entry)

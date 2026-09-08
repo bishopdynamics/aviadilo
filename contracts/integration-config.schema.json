@@ -103,6 +103,16 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 10
+        },
+        "osm_min_interval_s": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "photo_min_interval_s": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 3600
         }
       },
       "required": [

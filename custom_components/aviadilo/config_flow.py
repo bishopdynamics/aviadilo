@@ -77,7 +77,9 @@ def validate_settings(hass: HomeAssistant, config: dict[str, Any]) -> None:
         number(
             config["provider_pacing"][key],
             default if interval else 1,
-            86400 if interval else default,
+            (3600 if key in ("osm_min_interval_s", "photo_min_interval_s") else 86400)
+            if interval
+            else default,
             integer=not interval,
         )
 
@@ -234,7 +236,9 @@ class SettingsForm:
             interval = key.endswith("interval_s")
             fields[vol.Required(key, default=self.value["provider_pacing"][key])] = numeric(
                 default if interval else 1,
-                86400 if interval else default,
+                (3600 if key in ("osm_min_interval_s", "photo_min_interval_s") else 86400)
+                if interval
+                else default,
                 "s" if interval else "requests/min",
             )
         return self.owner.async_show_form(
@@ -304,7 +308,10 @@ class AviadiloOptionsFlow(config_entries.OptionsFlowWithReload):
             service = self.hass.data.get(DOMAIN)
             if service is None:
                 return self.async_abort(reason="integration_not_loaded")
-            await service.cache.clear()
+            try:
+                await service.clear_cache()
+            except (OSError, RuntimeError):
+                return self.async_abort(reason="cache_clear_failed")
             return self.async_abort(reason="cache_cleared")
         return self.async_show_form(
             step_id="clear_cache",

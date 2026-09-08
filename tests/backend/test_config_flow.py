@@ -198,3 +198,24 @@ async def test_clear_while_unloaded(hass: HomeAssistant, entry: ConfigEntry) -> 
     )
     result = await hass.config_entries.options.async_configure(result["flow_id"], {"confirm": True})
     assert result["reason"] == "integration_not_loaded"
+
+
+async def test_older_options_fill_asset_defaults_and_keep_other_values(hass: HomeAssistant) -> None:
+    from custom_components.aviadilo.config_flow import settings, validate_settings
+
+    old = deepcopy(DEFAULTS)
+    del old["provider_pacing"]["osm_min_interval_s"]
+    del old["provider_pacing"]["photo_min_interval_s"]
+    old["provider_pacing"]["adsb_fi_min_interval_s"] = 30
+    result = settings(old, {})
+    assert result["provider_pacing"]["osm_min_interval_s"] == 1
+    assert result["provider_pacing"]["photo_min_interval_s"] == 2
+    assert result["provider_pacing"]["adsb_fi_min_interval_s"] == 30
+    validate_settings(hass, result)
+    for key in ("osm_min_interval_s", "photo_min_interval_s"):
+        bad = deepcopy(result)
+        bad["provider_pacing"][key] = 3601
+        with pytest.raises(ValueError):
+            validate_settings(hass, bad)
+        bad["provider_pacing"][key] = 3600
+        validate_settings(hass, bad)

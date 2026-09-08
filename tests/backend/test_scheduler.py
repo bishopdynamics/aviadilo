@@ -219,3 +219,62 @@ async def test_explicit_reload_recovers_permanent_error_without_resetting_slot()
 
     assert await replacement.request("adsb_lol", "corrected", corrected) == 10
     await replacement.close()
+
+
+@pytest.mark.parametrize("provider,interval", [("osm_standard", 1), ("photos", 2)])
+async def test_asset_lanes_serialize_and_backoff_survives_reload(
+    provider: str, interval: int
+) -> None:
+    clock = Clock()
+    scheduler = Scheduler(
+        DEFAULTS["provider_pacing"], clock=clock, sleep=clock.sleep, jitter=lambda: 0
+    )
+
+    async def fetch() -> float:
+        return clock()
+
+    assert await scheduler.request(provider, "one", fetch, retry=False) == 0
+    assert await scheduler.request(provider, "two", fetch, retry=False) == interval
+
+    async def fail() -> None:
+        raise ProviderError(429, "120")
+
+    with pytest.raises(ProviderError):
+        await scheduler.request(provider, "fail", fail, retry=False)
+    assert clock() == 2 * interval
+    await scheduler.close()
+    replacement = Scheduler(
+        DEFAULTS["provider_pacing"], clock=clock, sleep=clock.sleep, history=scheduler.buckets
+    )
+    assert await replacement.request(provider, "three", fetch) == 120 + 2 * interval
+    await replacement.close()
+
+
+@pytest.mark.parametrize("cancelled", [False, True])
+@pytest.mark.parametrize("preserved", [None, "cooldown", "configuration_required"])
+async def test_ended_asset_work_clears_only_requesting_state(
+    cancelled: bool, preserved: str | None
+) -> None:
+    clock = Clock()
+    scheduler = Scheduler(DEFAULTS["provider_pacing"], clock=clock, sleep=clock.sleep)
+    bucket = scheduler.buckets["photos"]
+
+    async def interrupted() -> None:
+        if preserved == "cooldown":
+            bucket.cooldown = 120
+            bucket.state = preserved
+        elif preserved == "configuration_required":
+            bucket.blocked = True
+            bucket.state = preserved
+        if cancelled:
+            raise asyncio.CancelledError
+        raise ValueError("Synthetic unclassified resource error")
+
+    with pytest.raises(asyncio.CancelledError if cancelled else ValueError):
+        await scheduler.request("photos", "resource", interrupted, retry=False)
+    assert bucket.state == (preserved or ("idle" if cancelled else "unavailable"))
+    assert bucket.next_start == 2
+    assert bucket.cooldown == (120 if preserved == "cooldown" else 0)
+    assert bucket.blocked is (preserved == "configuration_required")
+    assert not scheduler.jobs
+    await scheduler.close()

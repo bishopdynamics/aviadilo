@@ -21,6 +21,8 @@ DEFAULTS: dict[str, Any] = {
         "rainviewer_requests_per_minute": 50,
         "noaa_requests_per_minute": 30,
         "dwd_requests_per_minute": 10,
+        "osm_min_interval_s": 1,
+        "photo_min_interval_s": 2,
     },
     "aircraft_radius_unit": "km",
 }

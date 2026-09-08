@@ -1,19 +1,6 @@
-"""Asset v1 contracts and opt-in HA handlers; not registered by production yet.
+"""Authenticated shared asset transport with strict generation and permission guards."""
 
-Wire schemas live in contracts/assets.schema.json. Runtime validation below is
-independent and ships without jsonschema. HTTP parsing accepts only exact raw HA
-paths, canonical decimal coordinates and unique known query keys. Parsed `kind`
-is a route discriminator, never an HTTP parameter. Generation is UUID hex:counter
-(0..999999999999999); preserve it exactly in X-Aviadilo-Generation, queries and
-aviadilo/assets_changed event data. WS uses standard authenticated HA envelopes.
-
-Slice 2 supplies an AssetService through register's resolver. Its fetch method
-must use trusted providers, validate/decode images, handle bounded cancellation,
-cache directives, and return only normalized PNG. This boundary enforces auth,
-entry/generation and photo permission/current-key checks BEFORE every fetch/cache
-hit and again before publication. UnavailableAssetService never fabricates images.
-"""
-
+import asyncio
 import hashlib
 import math
 import re
@@ -215,11 +202,15 @@ class AssetGeneration:
     def info(self, entry_id: str) -> AssetInfo:
         return {"schema_version": 1, "entry_id": _text(entry_id, ENTRY), "generation": self.value}
 
-    def advance(self, hass: HomeAssistant, entry_id: str) -> AssetInfo:
+    def rotate(self) -> None:
+        """Advance the opaque value without inventing an entry for unbound runtimes."""
         if self.counter >= MAX_COUNTER:
             self.instance, self.counter = uuid.uuid4().hex, 0
         else:
             self.counter += 1
+
+    def advance(self, hass: HomeAssistant, entry_id: str) -> AssetInfo:
+        self.rotate()
         info = self.info(entry_id)
         hass.bus.async_fire(ASSETS_CHANGED, dict(info))
         return info
@@ -231,15 +222,23 @@ class AssetPayload:
 
     Backend determines HTTP freshness. max_age_s is bounded by 90-day retention;
     default 0 requires a new authenticated request. ETag derives from the bytes.
-    Conditional requests/Last-Modified and richer cache directives land in slice 2.
+    Conditional responses recheck authentication, entry and generation before 304.
     """
 
     payload: bytes
     max_age_s: int = 0
+    no_store: bool = False
+    no_cache: bool = False
+    must_revalidate: bool = False
+    age_s: int = 0
+    last_modified: str | None = None
+    stale: bool = False
 
 
 class AssetService(Protocol):
-    entry_id: str
+    @property
+    def entry_id(self) -> str | None: ...
+
     closed: bool
     generation: AssetGeneration
 
@@ -259,7 +258,7 @@ class UnavailableAssetService:
 
 
 def selected(service: AssetService | None, entry_id: str | None) -> AssetService:
-    if service is None or service.closed:
+    if service is None or service.closed or service.entry_id is None:
         raise AssetFailure("not_found" if entry_id is not None else "unavailable")
     if entry_id is not None and entry_id != service.entry_id:
         raise AssetFailure("not_found")
@@ -290,7 +289,7 @@ def error_response(error: AssetFailure) -> web.Response:
     return web.json_response(error.body, status=error.status, headers=headers)
 
 
-def png_response(payload: AssetPayload, request: AssetRequest) -> web.Response:
+def png_response(payload: AssetPayload, request: AssetRequest, headers: Any = None) -> web.Response:
     """Bound bytes/framing/dimensions even for buggy future service adapters.
 
     The service owns actual raster decode/normalization, not this transport stub.
@@ -330,17 +329,44 @@ def png_response(payload: AssetPayload, request: AssetRequest) -> web.Response:
         or not 0 <= payload.max_age_s <= 7776000
     ):
         raise AssetFailure("upstream_error")
+    from .providers.asset_http import date, validator
+
+    control = (
+        "no-store"
+        if request.kind == "photo" or payload.no_store
+        else (
+            f"private, max-age={payload.max_age_s}"
+            + (", no-cache" if payload.no_cache else "")
+            + (", must-revalidate" if payload.must_revalidate else "")
+        )
+    )
+    response_headers = {
+        GENERATION_HEADER: request.generation,
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": control,
+        "ETag": '"' + hashlib.sha256(raw).hexdigest() + '"',
+    }
+    if request.kind == "basemap":
+        response_headers["Age"] = str(max(0, min(2147483647, payload.age_s)))
+        response_headers["X-Aviadilo-Cache"] = "stale" if payload.stale else "current"
+        if modified := validator(payload.last_modified, modified=True):
+            response_headers["Last-Modified"] = modified
+    not_modified = False
+    if headers is not None and control != "no-store" and not payload.stale:
+        if (match := headers.get("If-None-Match")) is not None:
+            not_modified = match.strip() == "*" or any(
+                tag.strip().removeprefix("W/") == response_headers["ETag"]
+                for tag in match[:8192].split(",")
+            )
+        elif (since := date(headers.get("If-Modified-Since"))) is not None and (
+            modified_at := date(response_headers.get("Last-Modified"))
+        ) is not None:
+            not_modified = modified_at <= since
     return web.Response(
-        body=raw,
+        status=304 if not_modified else 200,
+        body=None if not_modified else raw,
         content_type="image/png",
-        headers={
-            GENERATION_HEADER: request.generation,
-            "X-Content-Type-Options": "nosniff",
-            "Cache-Control": "no-store"
-            if request.kind == "photo"
-            else f"private, max-age={payload.max_age_s}",
-            "ETag": '"' + hashlib.sha256(raw).hexdigest() + '"',
-        },
+        headers=response_headers,
     )
 
 
@@ -374,13 +400,29 @@ class AssetGateway:
                     url = URL(referer)
                     if url.user is None and url.origin() == request.url.origin():
                         origin = str(url.origin()) + "/"
-                payload = await service.fetch(asset, user, origin)
+                task = asyncio.create_task(
+                    service.fetch(
+                        asset,
+                        user,
+                        origin if asset.kind == "basemap" else str(request.url.origin()) + "/",
+                    )
+                )
+                try:
+                    async with asyncio.timeout(120):
+                        while not task.done():
+                            await asyncio.wait({task}, timeout=0.1)
+                            if request.transport is None or request.transport.is_closing():
+                                raise asyncio.CancelledError
+                        payload = await task
+                finally:
+                    task.cancel()
+                    await asyncio.gather(task, return_exceptions=True)
                 if selected(self.resolve(), asset.entry_id) is not service:
                     raise AssetFailure("unavailable")
                 if asset.generation != service.generation.value:
                     raise AssetFailure("stale_generation", service.generation.value)
                 authorize_photo(hass, user, asset)
-                return png_response(payload, asset)
+                return png_response(payload, asset, request.headers)
             finally:
                 self.users[user.id] -= 1
                 if not self.users[user.id]:
@@ -418,11 +460,13 @@ class PhotoView(HomeAssistantView):
 
 @callback
 def register(hass: HomeAssistant, resolve: Callable[[], AssetService | None]) -> AssetGateway:
-    """Explicit future setup hook. Resolver must always read current loaded entry.
+    """Register once per HA router. Resolver always reads the current loaded entry.
 
-    Register once per HA instance; resolver must survive unload/reload. No callers
-    are added in slice 1. HA authenticates both views and ActiveConnection dispatch.
+    Resolver survives unload/reload. HA authenticates both views and ActiveConnection dispatch.
     """
+    if isinstance(previous := hass.data.get("aviadilo_asset_gateway"), AssetGateway):
+        previous.resolve = resolve
+        return previous
     gateway = AssetGateway(resolve)
     hass.http.register_view(BasemapView(gateway))
     hass.http.register_view(PhotoView(gateway))
@@ -433,7 +477,8 @@ def register(hass: HomeAssistant, resolve: Callable[[], AssetService | None]) ->
             validate_asset(msg)
             if connection.user is None:
                 raise AssetFailure("unauthorized")
-            service = selected(resolve(), msg.get("entry_id"))
+            service = selected(gateway.resolve(), msg.get("entry_id"))
+            assert service.entry_id is not None
             connection.send_result(msg["id"], service.generation.info(service.entry_id))
         except AssetFailure as error:
             connection.send_error(msg["id"], error.code, str(error))
@@ -450,4 +495,5 @@ def register(hass: HomeAssistant, resolve: Callable[[], AssetService | None]) ->
     websocket_api.async_register_command(
         hass, "aviadilo/assets_info", handle, vol.Schema(validate_command)
     )
+    hass.data["aviadilo_asset_gateway"] = gateway
     return gateway

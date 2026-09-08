@@ -1,6 +1,6 @@
 # SPEC: Shared map cache, unified data pipeline, and kiosk presentation
 
-- **Status:** in-progress — the user approved the complete spec on 2026-09-08; slice 1 (asset contracts) implemented and independently verified; next is slice 2.
+- **Status:** in-progress — the user approved the complete spec on 2026-09-08; slices 1 (asset contracts) and 2 (backend assets) implemented and independently verified. Next is slice 3, one frontend pipeline and fast asset rendering.
 - **Parent:** [ROOT_SPEC.md](ROOT_SPEC.md).
 - **Inputs:** `docs/TODO.md`, “Notes from initial completed version,” and the subsequent discussion.
 - **Baseline:** published `v0.1.0-dev.2`; HA 2026.9.1, Node 24.20.0, Python 3.14.2, current pinned Chromium tooling.
@@ -202,7 +202,7 @@ All slices are **(M), [serial]**. Freeze interfaces in slice 1 before behavior w
    - Verify unsupported-version behavior, typed route allowlists and both ends of the HTTP/generation event contract. Regenerate types/validators through native tooling.
 
 2. **Integration basemap cache and bounded external photos.**
-   - Owned files: `custom_components/aviadilo/{__init__,assets,cache,scheduler,service,diagnostics,const,config_flow}.py`; new `custom_components/aviadilo/providers/{osm,photos}.py`; `custom_components/aviadilo/strings.json`, `custom_components/aviadilo/translations/en.json`; `contracts/integration-config.schema.json`, `contracts/integration-defaults.json`, `src/config/integration-types.ts`; `tests/backend/{test_assets,test_cache,test_scheduler,test_service,test_diagnostics,test_config_flow}.py`, new `tests/backend/providers/{test_osm,test_photos}.py`.
+   - Owned files: `custom_components/aviadilo/{__init__,assets,cache,scheduler,service,diagnostics,const,config_flow}.py`; new `custom_components/aviadilo/providers/{osm,photos,asset_http}.py`; `custom_components/aviadilo/strings.json`, `custom_components/aviadilo/translations/en.json`; `contracts/integration-config.schema.json`, `contracts/integration-defaults.json`, `src/config/integration-types.ts`; `tests/backend/{test_assets,test_cache,test_scheduler,test_service,test_diagnostics,test_config_flow}.py`, new `tests/backend/providers/{test_osm,test_photos,test_asset_http}.py`.
    - Implement cache-first routes, source identity/headers, retention, conditional validation, scheduler integration, photo authorization/private caching, bounded requests, invalidation and diagnostics. Expose the specified conservative OSM/photo pacing settings in integration Advanced settings.
    - Verify offline route/provider/cache tests and native lint. Use actual HTTP behavior under mocks, including no-store coalescing without retention; no public tile scans.
 
@@ -242,3 +242,9 @@ None. The user approved this detailed specification and implementation may proce
 - 2026-09-08 — User approved the detailed spec. Began slice 1 asset contracts with card/integration/feed v1 preserved; no renewed approval needed for the recorded choices.
 
 - 2026-09-08 — Implemented and independently verified slice 1. Frozen asset schema/paths/error/header/generation contract, generated TS validation/types, connection-owned client coordinator and opt-in authenticated backend interfaces/stubs. Full checks passed 194 frontend + 332 backend + 11 Chromium tests. Current card/integration/feed v1 preserved; production activation/cache work remains slice 2/3.
+
+- 2026-09-08 — User continued after slice 1; began slice 2 integration basemap cache and external-photo service. Existing asset wire contract remains frozen; renderer migration is still slice 3.
+
+- 2026-09-08 — Slice 2 ownership clarified: providers/asset_http.py and its tests may hold shared HTTP policy and bounded image helpers. Test-contract/fixture support may be updated for additive integration defaults. No design or wire-contract change.
+
+- 2026-09-08 — Implemented and independently verified slice 2: activated authenticated asset routes, shared persistent OSM cache with separate freshness/90-day retention, bounded private external photos, conservative pacing, coordinated clear/reload/cancellation and aggregate diagnostics. Full checks passed 194 frontend + 462 backend + 11 Chromium tests. Additional real HA HTTP/WS acceptance delivered 16 warm tiles in 10 ms and 8 ms after reload with zero further upstream requests; successful clear emitted the new generation and rejected old requests. These are backend delivery timings, not painted-viewport measurements. Frontend integration remains slice 3; no release/version change.

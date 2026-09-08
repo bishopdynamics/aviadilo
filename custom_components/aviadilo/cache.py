@@ -33,6 +33,9 @@ class Entry:
     last_modified: str | None = None
     cache_control: str = ""
     validated_at: float | None = None
+    age_at_validation: float = 0
+    freshness_lifetime: float | None = None
+    stale: bool = False
 
     @property
     def validators(self) -> dict[str, str]:
@@ -52,6 +55,7 @@ class FetchResult:
     not_modified: bool = False
     expires_at: float | None = None
     cache_control: str | None = None
+    store: bool = True
 
 
 class Cache:
@@ -69,12 +73,17 @@ class Cache:
         disk_bytes: int = 512 * 1024 * 1024,
         memory_bytes: int = MEMORY_BYTES,
         max_entries: int = MAX_ENTRIES,
+        retained_memory_bytes: int | None = None,
         clock: Callable[[], float] = time.time,
     ) -> None:
         self.directory = directory.absolute()
         self.disk_budget = disk_bytes
         # Reserve half the memory budget for temporary encode/decode buffers.
-        self.memory_budget = memory_bytes // 2
+        self.memory_budget = (
+            min(memory_bytes // 2, retained_memory_bytes)
+            if retained_memory_bytes is not None
+            else memory_bytes // 2
+        )
         self.entry_budget = min(disk_bytes, memory_bytes // 8)
         self.max_entries = min(max_entries, MAX_ENTRIES)
         self.clock = clock
@@ -85,6 +94,8 @@ class Cache:
         self.fd: int | None = None
         self.lock = asyncio.Lock()
         self.inflight: dict[str, asyncio.Task[Entry]] = {}
+        self.waiters: dict[asyncio.Task[Entry], int] = {}
+        self.counters = {"hits": 0, "misses": 0, "revalidations": 0, "evictions": 0}
         self.generation = 0
         self.closed = False
 
@@ -135,7 +146,7 @@ class Cache:
                         raise ValueError("Unknown or oversized cache entry")
                     raw = self._read_file(name)
                     entry = self._decode(raw)
-                    if self._name(entry.key) != name or self._expired_radar(entry):
+                    if self._name(entry.key) != name or self._retention_expired(entry):
                         raise ValueError("Invalid cache identity or retention")
                     recovered.append((info.st_mtime_ns, name, len(raw)))
                 except (OSError, ValueError, TypeError, KeyError):
@@ -175,6 +186,7 @@ class Cache:
     def _encode(entry: Entry) -> bytes:
         meta = asdict(entry)
         del meta["payload"]
+        del meta["stale"]
         meta.update(
             version=1, size=len(entry.payload), sha256=hashlib.sha256(entry.payload).hexdigest()
         )
@@ -199,13 +211,15 @@ class Cache:
         ):
             raise ValueError("Invalid cache version, size or hash")
         entry = Entry(payload=payload, **meta)
-        for value in (entry.fetched_at, entry.expires_at):
+        for value in (entry.fetched_at, entry.expires_at, entry.age_at_validation):
             if (
                 isinstance(value, bool)
                 or not isinstance(value, (float, int))
                 or not math.isfinite(value)
             ):
                 raise ValueError("Invalid cache timestamp")
+        if entry.age_at_validation < 0:
+            raise ValueError("Invalid corrected age")
         for text_value in (
             entry.key,
             entry.provider,
@@ -221,13 +235,24 @@ class Cache:
             or not math.isfinite(entry.validated_at)
         ):
             raise ValueError("Invalid validation timestamp")
+        if entry.freshness_lifetime is not None and (
+            type(entry.freshness_lifetime) not in (float, int)
+            or not math.isfinite(entry.freshness_lifetime)
+            or not 0 <= entry.freshness_lifetime <= 7776000
+        ):
+            raise ValueError("Invalid freshness lifetime")
         for validator in (entry.etag, entry.last_modified):
             if validator is not None and not isinstance(validator, str):
                 raise ValueError("Invalid validator")
         return entry
 
-    def _expired_radar(self, entry: Entry) -> bool:
+    def _retention_expired(self, entry: Entry) -> bool:
         return (
+            entry.provider == "osm_standard"
+            and self.clock()
+            >= (entry.validated_at if entry.validated_at is not None else entry.fetched_at)
+            + 7776000
+        ) or (
             entry.provider in ("rainviewer", "noaa_mrms", "noaa_ksox")
             and self.clock() >= entry.fetched_at + 86400
         )
@@ -244,6 +269,7 @@ class Cache:
         while self.index and (
             self.disk_size > self.disk_budget or len(self.index) > self.max_entries
         ):
+            self.counters["evictions"] += 1
             self._forget(next(iter(self.index)))
         while self.memory and self.memory_size > self.memory_budget:
             _, raw = self.memory.popitem(last=False)
@@ -260,7 +286,10 @@ class Cache:
         async with self.lock:
             if self.closed:
                 return None
-            return await self._io(self._get, key, stale)
+            entry = await self._io(self._get, key, stale)
+            if not stale:
+                self.counters["hits" if entry is not None else "misses"] += 1
+            return entry
 
     def _get(self, key: str, stale: bool) -> Entry | None:
         name = self._name(key)
@@ -271,7 +300,7 @@ class Cache:
             if raw is None:
                 raw = self._read_file(name)
             entry = self._decode(raw)
-            if entry.key != key or self._expired_radar(entry):
+            if entry.key != key or self._retention_expired(entry):
                 self._forget(name)
                 return None
             self.index.move_to_end(name)
@@ -285,6 +314,12 @@ class Cache:
         except (OSError, ValueError, TypeError, KeyError):
             self._forget(name)
             return None
+
+    async def discard(self, key: str, *, generation: int) -> None:
+        """An upstream no-store directive invalidates an older retained response."""
+        async with self.lock:
+            if not self.closed and generation == self.generation:
+                await self._io(self._forget, self._name(key))
 
     async def put(self, entry: Entry, *, generation: int | None = None) -> bool:
         async with self.lock:
@@ -302,11 +337,11 @@ class Cache:
             return False
         if entry.provider in ("rainviewer", "noaa_mrms", "noaa_ksox"):
             entry = replace(entry, expires_at=min(entry.expires_at, entry.fetched_at + 86400))
-        if self._expired_radar(entry):
+        if self._retention_expired(entry):
             return False
         if "no-cache" in directives:
             entry = replace(entry, expires_at=min(entry.expires_at, self.clock()))
-        for directive in directives.split(","):
+        for directive in directives.split(",") if entry.freshness_lifetime is None else ():
             if directive.strip().startswith("max-age="):
                 try:
                     age = max(0, int(directive.strip()[8:].strip('"')))
@@ -355,10 +390,6 @@ class Cache:
     ) -> Entry:
         if self.closed:
             raise RuntimeError("Cache is closed")
-        if (cached := await self.get(key)) is not None:
-            return cached
-        if self.closed:
-            raise RuntimeError("Cache is closed")
         task = self.inflight.get(key)
         if task is None:
             if len(self.inflight) >= 128:
@@ -366,7 +397,18 @@ class Cache:
             task = asyncio.create_task(self._fetch(key, producer, self.generation))
             self.inflight[key] = task
             task.add_done_callback(lambda done: self._fetch_done(key, done))
-        return await asyncio.shield(task)
+        self.waiters[task] = self.waiters.get(task, 0) + 1
+        try:
+            return await asyncio.shield(task)
+        finally:
+            self.waiters[task] -= 1
+            if not self.waiters[task]:
+                del self.waiters[task]
+                if self.inflight.get(key) is task:
+                    del self.inflight[key]
+                if not task.done():
+                    task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
 
     def _fetch_done(self, key: str, task: asyncio.Task[Entry]) -> None:
         if self.inflight.get(key) is task:
@@ -377,11 +419,14 @@ class Cache:
     async def _fetch(
         self, key: str, producer: Callable[[Entry | None], Awaitable[FetchResult]], generation: int
     ) -> Entry:
+        if (cached := await self.get(key)) is not None:
+            return cached
         stale = await self.get(key, stale=True)
         if self.closed:
             raise RuntimeError("Cache is closed")
         result = await producer(stale)
         if result.not_modified:
+            self.counters["revalidations"] += 1
             if stale is None or result.expires_at is None:
                 raise ValueError("304 requires a cached entry and expiry")
             # Revalidation changes expiry, never the data's original observation time.
@@ -397,7 +442,8 @@ class Cache:
             entry = result.entry
         else:
             raise ValueError("Missing cache response or mismatched key")
-        await self.put(entry, generation=generation)
+        if result.store:
+            await self.put(entry, generation=generation)
         return entry
 
     async def clear(self) -> None:
@@ -427,6 +473,7 @@ class Cache:
 
     def diagnostics(self) -> dict[str, int]:
         return {
+            **self.counters,
             "entries": len(self.index),
             "disk_bytes": self.disk_size,
             "memory_bytes": self.memory_size,

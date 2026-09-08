@@ -6,6 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryError
 
+from .assets import register as register_assets
 from .config_flow import settings, validate_settings
 from .const import DOMAIN
 from .http import register as register_http
@@ -33,23 +34,26 @@ async def _async_setup_entry(hass: HomeAssistant, entry: AviadiloConfigEntry) ->
             "Invalid Aviadilo settings or unavailable location anchor"
         ) from error
     service = AviadiloService(hass, config)
+    service.entry_id = entry.entry_id
     try:
         await service.start()
         await async_register(hass)
         register_websocket(hass)
         register_http(hass)
+        register_assets(hass, lambda: hass.data.get(DOMAIN))
     except BaseException:
         await service.close()
         raise
-    service.entry_id = entry.entry_id
     entry.runtime_data = service
     hass.data[DOMAIN] = service
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: AviadiloConfigEntry) -> bool:
-    await entry.runtime_data.close()
-    async_unregister(hass)
-    if hass.data.get(DOMAIN) is entry.runtime_data:
-        del hass.data[DOMAIN]
+    lock = hass.data.setdefault("aviadilo_setup_lock", asyncio.Lock())
+    async with lock:
+        await entry.runtime_data.close()
+        if hass.data.get(DOMAIN) is entry.runtime_data:
+            async_unregister(hass)
+            del hass.data[DOMAIN]
     return True

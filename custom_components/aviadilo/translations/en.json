@@ -31,7 +31,9 @@
           "adsb_lol_min_interval_s": "ADSB.lol minimum interval",
           "rainviewer_requests_per_minute": "RainViewer requests per minute",
           "noaa_requests_per_minute": "Shared NOAA requests per minute",
-          "dwd_requests_per_minute": "DWD requests per minute"
+          "dwd_requests_per_minute": "DWD requests per minute",
+          "osm_min_interval_s": "OpenStreetMap minimum interval",
+          "photo_min_interval_s": "External photo minimum interval"
         }
       }
     },
@@ -75,7 +77,9 @@
           "adsb_lol_min_interval_s": "ADSB.lol minimum interval",
           "rainviewer_requests_per_minute": "RainViewer requests per minute",
           "noaa_requests_per_minute": "Shared NOAA requests per minute",
-          "dwd_requests_per_minute": "DWD requests per minute"
+          "dwd_requests_per_minute": "DWD requests per minute",
+          "osm_min_interval_s": "OpenStreetMap minimum interval",
+          "photo_min_interval_s": "External photo minimum interval"
         }
       },
       "init": {
@@ -87,7 +91,7 @@
       },
       "clear_cache": {
         "title": "Clear cached data",
-        "description": "Delete locally cached public provider data. Active viewers may fetch it again subject to provider limits. Settings are retained.",
+        "description": "Delete cached public provider data and private photo thumbnails. Active viewers may fetch them again subject to provider limits. Settings are retained.",
         "data": {
           "confirm": "Confirm clearing the cache"
         }
@@ -100,7 +104,8 @@
     "abort": {
       "cache_cleared": "The cache has been cleared.",
       "cache_clear_cancelled": "Cache clearing was cancelled.",
-      "integration_not_loaded": "Load the integration before clearing its cache."
+      "integration_not_loaded": "Load the integration before clearing its cache.",
+      "cache_clear_failed": "The cache could not be fully cleared. Try again."
     }
   }
 }

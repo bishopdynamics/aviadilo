@@ -31,6 +31,8 @@ export interface IntegrationConfig {
     rainviewer_requests_per_minute: number;
     noaa_requests_per_minute: number;
     dwd_requests_per_minute: number;
+    osm_min_interval_s?: number;
+    photo_min_interval_s?: number;
   };
   aircraft_radius_unit: 'km' | 'mi' | 'nmi';
 }

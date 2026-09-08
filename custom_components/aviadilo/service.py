@@ -13,18 +13,25 @@ from pathlib import Path
 from typing import Any
 
 from aiohttp import ClientSession
+from homeassistant.auth.models import User
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from yarl import URL
 
+from .assets import AssetFailure, AssetGeneration, AssetPayload, AssetRequest, authorize_photo
 from .cache import Cache
-from .config_flow import resolve_anchor
+from .config_flow import resolve_anchor, settings
 from .const import HEARTBEAT_SECONDS, LEASE_SECONDS
 from .models import AircraftResult, Viewport
+from .providers.asset_http import InvalidAsset
 from .providers.dwd_icon import DwdIconProvider, Region, region_for
-from .scheduler import ProviderBlocked, Scheduler
+from .providers.osm import OsmProvider
+from .providers.photos import PhotoProvider
+from .scheduler import ProviderBlocked, ProviderError, QueueFull, Scheduler
 
 # The 16 replay slots also hold aircraft and all three radar source manifests.
 MAX_WIND_REGIONS = 12
+ASSET_TIMEOUT_SECONDS = 110
 
 
 @dataclass(frozen=True)
@@ -95,6 +102,7 @@ class AviadiloService:
         clock: Callable[[], float] = time.monotonic,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ) -> None:
+        config = settings(config, {})
         self.hass, self.config, self.clock, self.sleep = hass, config, clock, sleep
         self.session: ClientSession = async_get_clientsession(hass)
         self.scheduler = Scheduler(
@@ -107,7 +115,17 @@ class AviadiloService:
         self.cache = Cache(
             Path(hass.config.config_dir) / "aviadilo_cache",
             disk_bytes=config["disk_cache_mib"] * 1024 * 1024,
+            retained_memory_bytes=24 * 1024 * 1024,
         )
+        self.generation: AssetGeneration = hass.data.setdefault(
+            "aviadilo_asset_generation", AssetGeneration()
+        )
+        self.osm = OsmProvider(self.session, self.cache, self.scheduler)
+        self.photos = PhotoProvider(self.scheduler)
+        self.asset_tasks: set[asyncio.Task[Any]] = set()
+        self.asset_epoch = 0
+        self.clearing = False
+        self.lifecycle_lock = asyncio.Lock()
         self.leases: dict[str, Lease] = {}
         self.producers: dict[str, Producer] = {}
         self.tasks: dict[str, asyncio.Task[None]] = {}
@@ -403,7 +421,16 @@ class AviadiloService:
                 ],
                 "wind": ["dwd_icon_global"] if "wind" in self.producers else [],
             },
-            "policies": dict(self.config["provider_pacing"]),
+            "policies": {
+                key: self.config["provider_pacing"][key]
+                for key in (
+                    "adsb_fi_min_interval_s",
+                    "adsb_lol_min_interval_s",
+                    "rainviewer_requests_per_minute",
+                    "noaa_requests_per_minute",
+                    "dwd_requests_per_minute",
+                )
+            },
             "statuses": self.status_event(viewer)["statuses"],
             "heartbeat_s": 20,
             "lease_s": 60,
@@ -722,10 +749,86 @@ class AviadiloService:
             self.reconcile()
             self._broadcast_status()
 
+    async def fetch(self, request: AssetRequest, user: User, referer: str | None) -> AssetPayload:
+        if self.closed or self.clearing:
+            raise AssetFailure("unavailable")
+        if request.generation != self.generation.value:
+            raise AssetFailure("stale_generation", self.generation.value)
+        epoch = self.asset_epoch
+        task = asyncio.current_task()
+        assert task is not None
+        self.asset_tasks.add(task)
+        try:
+            async with asyncio.timeout(ASSET_TIMEOUT_SECONDS):
+                if request.kind == "basemap":
+                    result = await self.osm.fetch(request, referer)
+                else:
+                    authorize_photo(self.hass, user, request)
+                    assert request.entity_id is not None and request.picture_key is not None
+                    state = self.hass.states.get(request.entity_id)
+                    assert state is not None
+                    picture = state.attributes["entity_picture"]
+                    origins = set()
+                    for value in (
+                        self.hass.config.internal_url,
+                        self.hass.config.external_url,
+                        referer,
+                    ):
+                        if value:
+                            origins.add(str(URL(value).origin()))
+                    result = await self.photos.fetch(
+                        user.id,
+                        request.entity_id,
+                        request.picture_key,
+                        picture,
+                        origins,
+                        lambda: authorize_photo(self.hass, user, request),
+                    )
+                if self.closed or self.clearing or epoch != self.asset_epoch:
+                    raise AssetFailure("unavailable")
+                authorize_photo(self.hass, user, request)
+                return result
+        except QueueFull:
+            raise AssetFailure("busy") from None
+        except (InvalidAsset, ProviderError, ProviderBlocked, TimeoutError, OSError):
+            raise AssetFailure("upstream_error") from None
+        finally:
+            self.asset_tasks.discard(task)
+
+    async def _stop_assets(self) -> None:
+        self.asset_epoch += 1
+        tasks = list(self.asset_tasks)
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def clear_cache(self) -> None:
+        async with self.lifecycle_lock:
+            if self.closed or (self.hass.data.get("aviadilo") not in (None, self)):
+                raise RuntimeError("Service is no longer current")
+            self.clearing = True
+            try:
+                await self._stop_assets()
+                await self.photos.clear()
+                await self.cache.clear()
+                if self.entry_id is not None:
+                    self.generation.advance(self.hass, self.entry_id)
+                else:
+                    # Directly constructed test/services have no published entry.
+                    self.generation.rotate()
+            finally:
+                self.clearing = False
+
     async def close(self) -> None:
+        async with self.lifecycle_lock:
+            await self._close()
+
+    async def _close(self) -> None:
         if self.closed:
             return
         self.closed = True
+        await self._stop_assets()
+        await self.photos.close()
         for viewer in list(self.viewers.values()):
             viewer.end("aviadilo:closed")
         self.viewers.clear()
@@ -757,4 +860,10 @@ class AviadiloService:
             "anchor_state": self.anchor_state,
             "scheduler": self.scheduler.diagnostics(),
             "cache": self.cache.diagnostics(),
+            "assets": {
+                "generation": self.generation.value,
+                "active": len(self.asset_tasks),
+                "basemap": dict(self.osm.counters),
+                "photos": self.photos.diagnostics(),
+            },
         }
