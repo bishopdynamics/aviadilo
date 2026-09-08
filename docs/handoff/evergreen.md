@@ -4,6 +4,7 @@ Durable handoff info — the kind of stuff that should be read at the start of e
 
 ## Evergreen Entries
 
+- User rule (2026-09-07): `.bishop/` must always be committed with the project, including generated task updates. This supersedes earlier handoff instructions to leave its changes unstaged.
 - Project: Aviadilo (`aviadilo`), one larger Lovelace kiosk map combining optional aircraft, radar, wind, and household locations. Original idea: `docs/idea/initial-idea.md`; current user decisions: `docs/idea/revised-direction.md`.
 - Full `docs/spec/ROOT_SPEC.md` approved by the user on 2026-09-06. Implementation began with slice 1 that day. All documented engineering defaults and deferrals are accepted; do not request repeated approval.
 - HACS is required from the first release (user correction). Public GitHub repository: `bishopdynamics/aviadilo`; remote `github`, upstream `github/main`. User committed/pushed existing work as `0a91da2`. Keep this remote name; no GitLab repository or `origin` is needed.

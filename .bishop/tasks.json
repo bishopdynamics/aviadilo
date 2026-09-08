@@ -1,5 +1,132 @@
 {
   "version": 1,
-  "tasks": [],
-  "derivedAtMs": 1786577148627
+  "tasks": [
+    {
+      "id": "make:help",
+      "name": "help",
+      "source": "make",
+      "command": "make help",
+      "description": "List development commands"
+    },
+    {
+      "id": "make:setup",
+      "name": "setup",
+      "source": "make",
+      "command": "make setup",
+      "description": "Install locked dependencies using pinned Node and Python"
+    },
+    {
+      "id": "make:run",
+      "name": "run",
+      "source": "make",
+      "command": "make run",
+      "description": "Serve the offline synthetic fixture harness locally"
+    },
+    {
+      "id": "make:build",
+      "name": "build",
+      "source": "make",
+      "command": "make build",
+      "description": "Build card, offline harness and deterministic HACS ZIP"
+    },
+    {
+      "id": "make:test",
+      "name": "test",
+      "source": "make",
+      "command": "make test",
+      "description": "Run shared-contract and packaging regression tests"
+    },
+    {
+      "id": "make:lint",
+      "name": "lint",
+      "source": "make",
+      "command": "make lint",
+      "description": "Check formatting, lint and static types in both languages"
+    },
+    {
+      "id": "make:check",
+      "name": "check",
+      "source": "make",
+      "command": "make check",
+      "description": "Run all native CI checks including release validation"
+    },
+    {
+      "id": "make:format",
+      "name": "format",
+      "source": "make",
+      "command": "make format",
+      "description": "Format frontend/contracts and Python source"
+    },
+    {
+      "id": "make:clean",
+      "name": "clean",
+      "source": "make",
+      "command": "make clean",
+      "description": "Remove generated build artifacts only"
+    },
+    {
+      "id": "npm:dev",
+      "name": "dev",
+      "source": "npm",
+      "command": "npm run dev",
+      "description": "npm run validators:generate && vite --host 127.0.0.1"
+    },
+    {
+      "id": "npm:build",
+      "name": "build",
+      "source": "npm",
+      "command": "npm run build",
+      "description": "npm run validators:generate && vite build && vite build --mode fixture"
+    },
+    {
+      "id": "npm:test",
+      "name": "test",
+      "source": "npm",
+      "command": "npm run test",
+      "description": "vitest run"
+    },
+    {
+      "id": "npm:typecheck",
+      "name": "typecheck",
+      "source": "npm",
+      "command": "npm run typecheck",
+      "description": "tsc --noEmit"
+    },
+    {
+      "id": "npm:lint",
+      "name": "lint",
+      "source": "npm",
+      "command": "npm run lint",
+      "description": "eslint src dev/*.ts tests/frontend *.ts *.js"
+    },
+    {
+      "id": "npm:format",
+      "name": "format",
+      "source": "npm",
+      "command": "npm run format",
+      "description": "prettier --write src dev/*.ts dev/index.html tests/frontend contracts *.json *.ts *.js .github/workflows/*.yml --ignore-path .gitignore"
+    },
+    {
+      "id": "npm:format:check",
+      "name": "format:check",
+      "source": "npm",
+      "command": "npm run format:check",
+      "description": "prettier --check src dev/*.ts dev/index.html tests/frontend contracts *.json *.ts *.js .github/workflows/*.yml --ignore-path .gitignore"
+    },
+    {
+      "id": "npm:contracts:generate",
+      "name": "contracts:generate",
+      "source": "npm",
+      "command": "npm run contracts:generate",
+      "description": "node --input-type=module -e 'import {compileFromFile} from \"json-schema-to-typescript\"; import {writeFile} from \"node:fs/promises\"; for (const [schemas, output]"
+    },
+    {
+      "id": "npm:validators:generate",
+      "name": "validators:generate",
+      "source": "npm",
+      "command": "npm run validators:generate",
+      "description": "node src/config/generate.mjs"
+    }
+  ],
+  "derivedAtMs": 1788743239869
 }

@@ -6,6 +6,7 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 
 ## Project-specific rules
 
+- Commit the `.bishop/` folder with the project, including app-generated updates. The user explicitly requires it to remain version-controlled (2026-09-07); do not leave those changes out of project commits merely because the app generated them.
 - Approved stack (2026-09-06): TypeScript + Lit + Vite + Leaflet, with a companion Python Home Assistant integration for shared data collection and caching.
 - HACS installation and updates are required from the first release. Public repository: `https://github.com/bishopdynamics/aviadilo`; use the existing `github` remote and `github/main` upstream. This replaces the template's GitLab/`origin` first-run assumption. CI/release workflows belong in GitHub Actions.
 - Compatibility target: the user runs latest Home Assistant and a tablet PC showing the HA dashboard in Chromium. Use HA 2026.9.1 as the current verified stable test baseline (2026-09-06); record the tested Chromium build during acceptance. Support touch and responsive resizing.
