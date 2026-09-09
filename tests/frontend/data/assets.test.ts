@@ -459,3 +459,259 @@ it('maps HA middleware auth and missing-route responses without exposing their b
   }
   client.dispose();
 });
+
+// Raster decoding is the browser's responsibility; the fake records lifecycle
+// while real byte/header bounds, transport, scheduling and owners run unchanged.
+import { afterEach, beforeEach } from 'vitest';
+import { DecodedAssets, DECODED_LIMITS } from '../../../src/data/assets';
+function pngResponse(
+  size = 256,
+  control = 'public,max-age=3600',
+  extra: Record<string, string> = {},
+) {
+  const bytes = new Uint8Array(33);
+  bytes.set([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82]);
+  new DataView(bytes.buffer).setUint32(16, size);
+  new DataView(bytes.buffer).setUint32(20, size);
+  return new Response(bytes, {
+    headers: {
+      'Content-Type': 'image/png',
+      [GENERATION_HEADER]: generation,
+      'Cache-Control': control,
+      ...extra,
+    },
+  });
+}
+const need = { kind: 'basemap' as const, z: 8, x: 0, y: 1 };
+describe('shared bounded decoded resources', () => {
+  let create: ReturnType<typeof vi.spyOn>, revoke: ReturnType<typeof vi.spyOn>;
+  let width = 256;
+  let decode: () => Promise<void>;
+  beforeEach(() => {
+    width = 256;
+    decode = () => Promise.resolve();
+    let id = 0;
+    create = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockImplementation(() => `blob:fixture-${++id}`);
+    revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    vi.stubGlobal(
+      'Image',
+      class {
+        src = '';
+        naturalWidth = width;
+        naturalHeight = width;
+        decode() {
+          return decode();
+        }
+        removeAttribute() {
+          this.src = '';
+        }
+      },
+    );
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+  async function cache() {
+    const { ha, client } = await setup();
+    ha.fetch.mockImplementation(async () => pngResponse());
+    return { ha, client, decoded: new DecodedAssets(client) };
+  }
+  it('bounds waiting owners before HA metadata exists and cancels their admission', async () => {
+    const ha = new FakeHa(),
+      client = new AssetClient(ha),
+      decoded = new DecodedAssets(client);
+    const controller = new AbortController();
+    const requests = Array.from({ length: 128 }, (_, x) =>
+      decoded.acquire({ ...need, x }, controller.signal).catch(() => null),
+    );
+    await expect(
+      decoded.acquire({ ...need, x: 129 }, controller.signal),
+    ).rejects.toMatchObject({ code: 'busy', localCapacity: true });
+    expect(decoded.diagnostics().pending).toBe(128);
+    expect(ha.fetch).not.toHaveBeenCalled();
+    controller.abort();
+    await Promise.all(requests);
+    expect(decoded.diagnostics()).toMatchObject({
+      pending: 0,
+      active: 0,
+      entries: 0,
+    });
+    decoded.dispose();
+    client.dispose();
+  });
+  it('coalesces wrapped aliases, charges active images and revokes every resource on clear', async () => {
+    const { ha, client, decoded } = await cache();
+    const controller = new AbortController();
+    const [a, b] = await Promise.all([
+      decoded.acquire(need, controller.signal),
+      decoded.acquire({ ...need, x: 256 }, controller.signal),
+    ]);
+    expect(a.url).toBe(b.url);
+    expect(ha.fetch).toHaveBeenCalledOnce();
+    expect(decoded.diagnostics()).toMatchObject({
+      entries: 1,
+      owners: 2,
+      bytes: 256 * 256 * 4,
+      active: 0,
+    });
+    a.release();
+    expect(b.current()).toBe(true);
+    ha.event({ ...info, generation: generation.slice(0, -1) + '1' });
+    expect(b.current()).toBe(false);
+    expect(b.signal.aborted).toBe(true);
+    expect(revoke).toHaveBeenCalledOnce();
+    expect(decoded.diagnostics().bytes).toBe(0);
+    b.release();
+    decoded.dispose();
+    client.dispose();
+  });
+  it('starts eight immediately, cancels obsolete queued work and fills released slots without pacing timers', async () => {
+    const { ha, client, decoded } = await cache();
+    const responses: ReturnType<typeof deferred<Response>>[] = [];
+    ha.fetch.mockImplementation(() => {
+      const d = deferred<Response>();
+      responses.push(d);
+      return d.promise;
+    });
+    const controllers = Array.from({ length: 10 }, () => new AbortController());
+    const promises = controllers.map((c, x) =>
+      decoded.acquire({ ...need, x }, c.signal).catch(() => null),
+    );
+    await flush();
+    expect(ha.fetch).toHaveBeenCalledTimes(8);
+    expect(decoded.diagnostics()).toMatchObject({ active: 8, pending: 2 });
+    controllers[8].abort();
+    responses[0].resolve(pngResponse());
+    await promises[0];
+    await flush();
+    expect(ha.fetch).toHaveBeenCalledTimes(9);
+    expect(ha.fetch.mock.calls.map(([path]) => path)).not.toContain(
+      expect.stringContaining('/8/8/1'),
+    );
+    controllers.forEach((c) => c.abort());
+    await Promise.all(promises);
+    responses.forEach((r) => r.resolve(pngResponse()));
+    await flush();
+    expect(decoded.diagnostics()).toMatchObject({
+      active: 0,
+      pending: 0,
+      entries: 1,
+      bytes: 262144,
+      owners: 0,
+    });
+    decoded.dispose();
+    client.dispose();
+  });
+  it('retains old active references while a new owner revalidates expired or no-cache data', async () => {
+    for (const [control, extra] of [
+      ['no-store', {}],
+      ['no-cache,max-age=3600', {}],
+      ['max-age=0', {}],
+      ['max-age=20', { Age: '21' }],
+      ['max-age=3600', { Date: 'bad-date' }],
+      ['max-age=3600', { Age: 'bad-age' }],
+    ] as [string, Record<string, string>][]) {
+      const { ha, client, decoded } = await cache();
+      ha.fetch.mockImplementation(async () => pngResponse(256, control, extra));
+      const signal = new AbortController().signal;
+      const a = await decoded.acquire(need, signal),
+        b = await decoded.acquire(need, signal);
+      expect(ha.fetch).toHaveBeenCalledTimes(2);
+      expect(a.current()).toBe(true);
+      expect(a.url).not.toBe(b.url);
+      expect(decoded.diagnostics().entries).toBe(2);
+      a.release();
+      b.release();
+      expect(decoded.diagnostics().bytes).toBe(0);
+      decoded.dispose();
+      client.dispose();
+    }
+  });
+  it('enforces combined active admission then evicts idle LRU for capacity recovery', async () => {
+    const { ha, client, decoded } = await cache();
+    const signal = new AbortController().signal;
+    const held = await Promise.all(
+      Array.from({ length: 128 }, (_, x) =>
+        decoded.acquire({ ...need, x }, signal),
+      ),
+    );
+    expect(decoded.diagnostics()).toMatchObject({
+      entries: 128,
+      bytes: DECODED_LIMITS.bytes,
+      pending: 0,
+    });
+    await expect(
+      decoded.acquire({ ...need, x: 129 }, signal),
+    ).rejects.toMatchObject({ code: 'busy' });
+    held[0].release();
+    const next = await decoded.acquire({ ...need, x: 129 }, signal);
+    expect(revoke).toHaveBeenCalledTimes(1);
+    expect(decoded.diagnostics().bytes).toBe(DECODED_LIMITS.bytes);
+    expect(ha.fetch).toHaveBeenCalledTimes(129);
+    held.forEach((a) => a.release());
+    next.release();
+    decoded.dispose();
+    client.dispose();
+    expect(revoke).toHaveBeenCalledTimes(create.mock.calls.length);
+  });
+  it('external photos reauthorize on revisit, validate current entity and have a 128px decode bound', async () => {
+    const { ha, client, decoded } = await cache();
+    width = 128;
+    ha.fetch.mockImplementation(async () => pngResponse(128, 'no-store'));
+    const signal = new AbortController().signal;
+    const photo = {
+      kind: 'photo' as const,
+      entity_id: 'device_tracker.synthetic',
+      picture_key: pictureKey('https://example.invalid/photo'),
+    };
+    let valid = true;
+    const a = await decoded.acquire(photo, signal, () => valid);
+    expect(decoded.diagnostics().bytes).toBe(128 * 128 * 4);
+    a.release();
+    expect(decoded.diagnostics().bytes).toBe(0);
+    const b = await decoded.acquire(photo, signal, () => valid);
+    expect(ha.fetch).toHaveBeenCalledTimes(2);
+    valid = false;
+    expect(b.current()).toBe(false);
+    b.release();
+    await expect(
+      decoded.acquire(photo, signal, () => valid),
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    width = 256;
+    ha.fetch.mockImplementation(async () => pngResponse(256));
+    await expect(decoded.acquire(photo, signal)).rejects.toMatchObject({
+      code: 'upstream_error',
+    });
+    decoded.dispose();
+    client.dispose();
+  });
+  it('aborts late decode and oversized bodies without publishing or retaining buffers', async () => {
+    const { ha, client, decoded } = await cache();
+    const pending = deferred<void>();
+    decode = () => pending.promise;
+    const controller = new AbortController();
+    const acquiring = decoded.acquire(need, controller.signal);
+    await flush();
+    controller.abort();
+    await expect(acquiring).rejects.toMatchObject({ name: 'AbortError' });
+    pending.resolve();
+    await flush();
+    expect(revoke).toHaveBeenCalledOnce();
+    expect(decoded.diagnostics()).toMatchObject({
+      active: 0,
+      entries: 0,
+      bytes: 0,
+    });
+    ha.fetch.mockImplementation(async () =>
+      pngResponse(256, 'max-age=3600', { 'Content-Length': '2097153' }),
+    );
+    await expect(
+      decoded.acquire(need, new AbortController().signal),
+    ).rejects.toMatchObject({ code: 'upstream_error' });
+    decoded.dispose();
+    client.dispose();
+  });
+});

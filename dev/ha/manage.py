@@ -92,15 +92,21 @@ def install(archive: Path, config: Path, fixtures: bool) -> str:
         return version
 
 
-def supervise(command: list[str], lock_fd: int) -> int:
+def supervise(command: list[str], lock_fd: int, config: Path) -> int:
     """Honor HA's normal restart request while keeping this instance locked.
 
     HA has its own process group so Ctrl-C reaches it exactly once through this
     supervisor. The inherited lock also survives an unexpected supervisor exit.
     """
+    # HA temporarily mounts the config directory while importing its namespace.
+    # Once it removes that sys.path entry, cwd must still resolve the installed
+    # custom_components, never the source checkout from which this helper ran.
+    config = config.resolve()
     try:
         while True:
-            with subprocess.Popen(command, start_new_session=True, pass_fds=(lock_fd,)) as process:
+            with subprocess.Popen(
+                command, cwd=config, start_new_session=True, pass_fds=(lock_fd,)
+            ) as process:
                 try:
                     code = process.wait()
                 except KeyboardInterrupt:
@@ -170,9 +176,15 @@ def main() -> None:
                 supervise(
                     [sys.executable, "-m", "homeassistant", "--config", str(config)],
                     lock.fileno(),
+                    config,
                 )
             )
         version = install(args.archive.resolve(), config, args.fixtures)
+        if args.fixtures:
+            # HA frontend registers /local only when www exists at its setup.
+            # The fixture writes its avatar during dependency setup, before the
+            # Aviadilo entry can serve any viewer, but must not create www late.
+            (config / "www").mkdir(exist_ok=True)
         yaml = f"""# Generated isolated Aviadilo instance. Synthetic coordinates, no credentials.
 homeassistant:
   name: Aviadilo SYNTHETIC acceptance
@@ -190,6 +202,7 @@ websocket_api:
 config:
 recorder:
   purge_keep_days: 1
+energy:
 lovelace:
   mode: yaml
 """

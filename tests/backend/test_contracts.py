@@ -256,6 +256,7 @@ def test_ha_supervisor_restarts_only_normal_restart_requests(tmp_path: Path, end
             supervise(
                 [sys.executable, str(child), str(lock_path), str(attempts), str(ending)],
                 lock.fileno(),
+                tmp_path,
             )
             == ending
         )
@@ -264,6 +265,7 @@ def test_ha_supervisor_restarts_only_normal_restart_requests(tmp_path: Path, end
 
 def test_ha_supervisor_ctrl_c_reaps_child_without_restarting(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     import runpy
     import signal
@@ -275,7 +277,7 @@ def test_ha_supervisor_ctrl_c_reaps_child_without_restarting(
     process.wait.side_effect = [KeyboardInterrupt, 100]
     popen = MagicMock(return_value=process)
     monkeypatch.setattr(subprocess, "Popen", popen)
-    assert supervise(["synthetic-ha"], 11) == 130
+    assert supervise(["synthetic-ha"], 11, tmp_path) == 130
     process.send_signal.assert_called_once_with(signal.SIGINT)
     assert popen.call_count == 1
     assert process.wait.call_count == 2
@@ -307,6 +309,7 @@ def test_generated_ha_dashboard_validates_card_schema_and_survives_upgrade(
     if fixtures:
         command.append("--fixtures")
     subprocess.run(command, check=True, capture_output=True, text=True)
+    assert (config / "www").is_dir() is fixtures
     dashboard = config / "ui-lovelace.yaml"
     configuration = load_yaml_dict(str(config / "configuration.yaml"))
     from homeassistant.components.recorder import CONFIG_SCHEMA as RECORDER_CONFIG_SCHEMA
@@ -322,3 +325,56 @@ def test_generated_ha_dashboard_validates_card_schema_and_survives_upgrade(
     dashboard.write_text(previous)
     subprocess.run(command, check=True, capture_output=True, text=True)
     assert dashboard.read_text() == previous
+
+
+def test_ha_supervisor_uses_installed_namespace_after_config_unmount_and_restart(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import runpy
+
+    supervise = runpy.run_path(str(ROOT / "dev/ha/manage.py"))["supervise"]
+    checkout, config = tmp_path / "checkout", tmp_path / "instance"
+    for base, source in [(checkout, "checkout"), (config, "installed")]:
+        integration = base / "custom_components" / "aviadilo"
+        integration.mkdir(parents=True)
+        (integration / "__init__.py").write_text(f'SOURCE = "{source}"\n')
+        (integration / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "dependencies": ["aviadilo_fixture"] if source == "installed" else [],
+                }
+            )
+        )
+    fixture = config / "custom_components" / "aviadilo_fixture"
+    fixture.mkdir()
+    (fixture / "__init__.py").write_text('SOURCE = "fixture"\n')
+    observations = tmp_path / "observations.json"
+    child = """import importlib, json, os, pathlib, sys
+config, output = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+# HA2026.9.1 loader temporarily mounts config while importing the namespace.
+sys.path.insert(0, str(config))
+import custom_components
+sys.path.remove(str(config))
+from custom_components import aviadilo, aviadilo_fixture
+manifest = pathlib.Path(aviadilo.__file__).with_name("manifest.json")
+record = {"cwd": os.getcwd(), "integration": aviadilo.__file__,
+          "fixture": aviadilo_fixture.__file__, "manifest": json.loads(manifest.read_text())}
+previous = json.loads(output.read_text()) if output.exists() else []
+output.write_text(json.dumps([*previous, record]))
+sys.exit(100 if not previous else 0)
+"""
+    command = [sys.executable, "-c", child, str(config), str(observations)]
+    # Demonstrate this scenario actually reproduces the unsafe inherited-cwd bug.
+    broken = subprocess.run(command, cwd=checkout, capture_output=True, text=True, check=False)
+    assert broken.returncode != 0 and "aviadilo_fixture" in broken.stderr
+    monkeypatch.chdir(checkout)
+    with (tmp_path / "lock").open("w") as lock:
+        assert supervise(command, lock.fileno(), config) == 0
+    records = json.loads(observations.read_text())
+    assert len(records) == 2
+    for record in records:
+        assert record["cwd"] == str(config.resolve())
+        assert record["integration"] == str(config / "custom_components/aviadilo/__init__.py")
+        assert record["fixture"] == str(fixture / "__init__.py")
+        assert record["manifest"]["dependencies"] == ["aviadilo_fixture"]

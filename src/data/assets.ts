@@ -1,8 +1,7 @@
-/** Asset transport v1; no image decoder, object-URL retention or pending queue.
- * Slice 3 renderers must share acquireAssets per HA connection, schedule at most
- * 128 pending visible requests, and release every opened response after decode.
- * This boundary already caps active opens at 8 and invalidates their signals on
- * generation/connection change. A 409 reconciles once; it never retries a GET.
+/** Asset transport v1 and connection-scoped decoded resource ownership.
+ * Renderers share acquireAssets per HA connection and release decoded leases.
+ * Transport and decoded retention have independent bounded lifetimes.
+ * A 409 reconciles once; it never retries a GET.
  */
 import { validateContract } from '../config/validate';
 import type {
@@ -38,7 +37,10 @@ export const ERROR_STATUS = Object.freeze({
   unavailable: 503,
 });
 export class AssetFailure extends Error {
-  constructor(readonly code: AssetErrorBody['code']) {
+  constructor(
+    readonly code: AssetErrorBody['code'],
+    readonly localCapacity = false,
+  ) {
     super(
       {
         invalid_request: 'Invalid asset request',
@@ -227,7 +229,14 @@ function bounded<T>(
     };
     signal.addEventListener('abort', abort, { once: true });
     if (signal.aborted) abort();
-    promise.then(resolve, () => reject(new AssetFailure('unavailable')));
+    promise.then(resolve, (error: unknown) =>
+      reject(
+        error instanceof AssetFailure ||
+          (error instanceof DOMException && error.name === 'AbortError')
+          ? error
+          : new AssetFailure('unavailable'),
+      ),
+    );
   }).finally(() => cleanup());
 }
 
@@ -417,6 +426,8 @@ export class AssetClient {
         // become UI error text. A renderer must similarly bound PNG consumption.
         const body = await readError(response, combined);
         if (body.code === 'stale_generation') {
+          if (body.generation === info.generation)
+            throw new AssetFailure('upstream_error');
           if (response.headers.get(GENERATION_HEADER) !== body.generation)
             throw new AssetFailure('upstream_error');
           this.publish(undefined);
@@ -506,7 +517,12 @@ async function readError(
 
 const connections = new WeakMap<
   object,
-  { client: AssetClient; owners: Map<object, () => HassTransport> }
+  {
+    userId?: string;
+    client: AssetClient;
+    decoded: DecodedAssets;
+    owners: Map<object, () => HassTransport>;
+  }
 >();
 /** One owner per visible renderer. Last release cancels transport and forgets all
  * state. A new HA connection/user gets a different coordinator. An active owner's
@@ -514,11 +530,19 @@ const connections = new WeakMap<
  */
 export function acquireAssets(current: () => HassTransport): {
   client: AssetClient;
+  decoded: DecodedAssets;
   release(): void;
 } {
   const connection = current().connection;
   const owner = {};
+  const userId = current().user?.id;
   let shared = connections.get(connection);
+  if (shared && shared.userId !== userId) {
+    shared.decoded.dispose();
+    shared.client.dispose();
+    connections.delete(connection);
+    shared = undefined;
+  }
   if (!shared) {
     const owners = new Map([[owner, current]]);
     const client = new AssetClient(
@@ -528,21 +552,364 @@ export function acquireAssets(current: () => HassTransport): {
         return getter();
       }),
     );
-    shared = { client, owners };
+    shared = { userId, client, decoded: new DecodedAssets(client), owners };
     connections.set(connection, shared);
   }
   shared.owners.set(owner, current);
   let released = false;
   return {
     client: shared.client,
+    decoded: shared.decoded,
     release() {
       if (released) return;
       released = true;
       shared.owners.delete(owner);
       if (shared.owners.size === 0) {
+        shared.decoded.dispose();
         shared.client.dispose();
-        connections.delete(connection);
+        if (connections.get(connection) === shared)
+          connections.delete(connection);
       }
     },
   };
+}
+
+export const DECODED_LIMITS = Object.freeze({
+  bytes: 32 * 1024 * 1024,
+  entries: 128,
+});
+export type AssetNeed =
+  | { kind: 'basemap'; z: number; x: number; y: number; entry_id?: string }
+  | {
+      kind: 'photo';
+      entity_id: string;
+      picture_key: string;
+      entry_id?: string;
+    };
+export interface DecodedAsset {
+  readonly url: string;
+  readonly signal: AbortSignal;
+  current(): boolean;
+  release(): void;
+}
+interface DecodedEntry {
+  key: string;
+  need: AssetNeed;
+  controller: AbortController;
+  owners: number;
+  bytes: number;
+  url?: string;
+  image?: HTMLImageElement;
+  expires: number;
+  settled: boolean;
+  promise: Promise<void>;
+  resolve(): void;
+  reject(error: unknown): void;
+}
+/** Connection-scoped admission, coalescing and decoded-image LRU. Active images
+ * count against exactly the same budget as idle entries. Consumers share the URL
+ * and browser image decode; no canvas copies or per-view cache is created. */
+export class DecodedAssets {
+  private entries = new Map<DecodedEntry, DecodedEntry>();
+  private queue: DecodedEntry[] = [];
+  private active = 0;
+  private bytes = 0;
+  private disposed = false;
+  private revision = 0;
+  private pendingReady = 0;
+  private capacityListeners = new Set<() => void>();
+  private capacityQueued = false;
+  private unobserve: () => void;
+  constructor(readonly client: AssetClient) {
+    this.unobserve = client.observe(() => {
+      this.revision++;
+      this.clear();
+    });
+  }
+  observeCapacity(listener: () => void): () => void {
+    this.capacityListeners.add(listener);
+    return () => this.capacityListeners.delete(listener);
+  }
+  private capacity(): void {
+    if (this.capacityQueued || this.disposed) return;
+    this.capacityQueued = true;
+    queueMicrotask(() => {
+      this.capacityQueued = false;
+      if (!this.disposed)
+        for (const listener of this.capacityListeners) listener();
+    });
+  }
+  diagnostics() {
+    return {
+      active: this.active,
+      pending: this.queue.length + this.pendingReady,
+      entries: this.entries.size,
+      bytes: this.bytes,
+      owners: [...this.entries.values()].reduce((n, e) => n + e.owners, 0),
+    };
+  }
+  async acquire(
+    need: AssetNeed,
+    signal: AbortSignal,
+    valid: () => boolean = () => true,
+  ): Promise<DecodedAsset> {
+    if (signal.aborted || this.disposed || !valid()) throw abortError();
+    let info = this.client.currentInfo;
+    if (!info) {
+      if (this.pendingReady + this.queue.length >= ASSET_LIMITS.pending)
+        throw new AssetFailure('busy', true);
+      this.pendingReady++;
+      try {
+        info = await bounded(this.client.ready(), signal);
+      } finally {
+        this.pendingReady--;
+        this.capacity();
+      }
+    }
+    if (signal.aborted || this.disposed || !valid()) throw abortError();
+    if (need.entry_id !== undefined && need.entry_id !== info.entry_id)
+      throw new AssetFailure('not_found');
+    if (need.kind === 'basemap') {
+      const size = 2 ** need.z;
+      need = { ...need, x: ((need.x % size) + size) % size };
+    }
+    const request = {
+      ...need,
+      schema_version: 1 as const,
+      generation: info.generation,
+      entry_id: info.entry_id,
+    } as AssetRequest;
+    const key = buildAssetPath(request);
+    let entry = [...this.entries.values()]
+      .reverse()
+      .find(
+        (item) =>
+          item.key === key && (!item.settled || Date.now() < item.expires),
+      );
+    for (const idle of this.entries.values())
+      if (!idle.owners && idle.settled && Date.now() >= idle.expires)
+        this.drop(idle);
+    if (!entry) {
+      if (
+        this.active >= ASSET_LIMITS.active &&
+        this.queue.length >= ASSET_LIMITS.pending
+      )
+        throw new AssetFailure('busy', true);
+      // Reserve the maximum normalized decode before starting transport.
+      const bytes = (need.kind === 'photo' ? 128 : 256) ** 2 * 4;
+      while (
+        this.entries.size >= DECODED_LIMITS.entries ||
+        this.bytes + bytes > DECODED_LIMITS.bytes
+      ) {
+        const idle = [...this.entries.values()].find(
+          (item) => item.settled && !item.owners,
+        );
+        if (!idle) throw new AssetFailure('busy', true);
+        this.drop(idle);
+      }
+      let resolve!: () => void, reject!: (error: unknown) => void;
+      const promise = new Promise<void>((yes, no) => {
+        resolve = yes;
+        reject = no;
+      });
+      entry = {
+        key,
+        need,
+        controller: new AbortController(),
+        owners: 0,
+        bytes,
+        expires: 0,
+        settled: false,
+        promise,
+        resolve,
+        reject,
+      };
+      this.entries.set(entry, entry);
+      this.bytes += bytes;
+      this.queue.push(entry);
+    }
+    const item = entry;
+    this.entries.delete(item);
+    this.entries.set(item, item);
+    item.owners++;
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      signal.removeEventListener('abort', release);
+      item.owners--;
+      if (!item.owners) this.capacity();
+      if (
+        !item.owners &&
+        (!item.settled ||
+          item.need.kind === 'photo' ||
+          item.expires <= Date.now())
+      )
+        this.drop(item);
+    };
+    signal.addEventListener('abort', release, { once: true });
+    this.pump();
+    try {
+      await bounded(item.promise, signal, 150000);
+      if (released || item.controller.signal.aborted || !valid())
+        throw abortError();
+      return {
+        url: item.url!,
+        signal: item.controller.signal,
+        current: () => !released && !item.controller.signal.aborted && valid(),
+        release,
+      };
+    } catch (error) {
+      release();
+      throw error;
+    }
+  }
+  private pump(): void {
+    while (
+      !this.disposed &&
+      this.active < ASSET_LIMITS.active &&
+      this.queue.length
+    ) {
+      const entry = this.queue.shift()!;
+      if (entry.controller.signal.aborted) continue;
+      this.active++;
+      void this.load(entry)
+        .then(entry.resolve, (error) => {
+          entry.reject(error);
+          this.drop(entry);
+        })
+        .finally(() => {
+          this.active--;
+          this.pump();
+        });
+    }
+  }
+  private async load(entry: DecodedEntry): Promise<void> {
+    const revision = this.revision;
+    const opened = await this.client.open(
+      parseAssetPath(entry.key),
+      entry.controller.signal,
+    );
+    try {
+      const bytes = await readPng(
+        opened.response,
+        opened.signal,
+        entry.need.kind === 'photo' ? 128 : 256,
+      );
+      if (!opened.current() || revision !== this.revision) throw abortError();
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
+      entry.url = url;
+      const image = new Image();
+      entry.image = image;
+      image.src = url;
+      await bounded(image.decode(), opened.signal);
+      if (
+        !opened.current() ||
+        revision !== this.revision ||
+        entry.controller.signal.aborted
+      )
+        throw abortError();
+      if (image.naturalWidth !== 256 || image.naturalHeight !== 256) {
+        if (
+          entry.need.kind === 'basemap' ||
+          image.naturalWidth > 128 ||
+          image.naturalHeight > 128 ||
+          !image.naturalWidth ||
+          !image.naturalHeight
+        )
+          throw new AssetFailure('upstream_error');
+      }
+      const headers = opened.response.headers;
+      const control = headers.get('Cache-Control') ?? '';
+      const maxAge = /(?:^|,)\s*max-age\s*=\s*"?(\d+)/i.exec(control);
+      const rawAge = Number(headers.get('Age') ?? 0);
+      const age = Number.isFinite(rawAge) && rawAge >= 0 ? rawAge : Infinity;
+      const parsedDate = headers.has('Date')
+        ? Date.parse(headers.get('Date')!)
+        : Date.now();
+      const dateAge = Number.isFinite(parsedDate)
+        ? Math.max(0, (Date.now() - parsedDate) / 1000)
+        : Infinity;
+      const seconds = maxAge ? Number(maxAge[1]) - Math.max(age, dateAge) : 0;
+      const freshness = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+      entry.expires =
+        /(?:^|,)\s*(?:no-store|no-cache)(?:\s|,|=|$)/i.test(control) ||
+        entry.need.kind === 'photo'
+          ? 0
+          : Date.now() + freshness * 1000;
+      entry.settled = true;
+    } finally {
+      opened.release();
+    }
+  }
+  private drop(entry: DecodedEntry): void {
+    if (!this.entries.has(entry)) return;
+    this.entries.delete(entry);
+    this.bytes -= entry.bytes;
+    this.capacity();
+    this.queue = this.queue.filter((item) => item !== entry);
+    entry.controller.abort();
+    entry.reject(abortError());
+    entry.image?.removeAttribute('src');
+    entry.image = undefined;
+    if (entry.url) URL.revokeObjectURL(entry.url);
+    entry.url = undefined;
+  }
+  clear(): void {
+    for (const entry of this.entries.values()) this.drop(entry);
+  }
+  dispose(): void {
+    this.disposed = true;
+    this.unobserve();
+    this.capacityListeners.clear();
+    this.clear();
+  }
+}
+async function readPng(
+  response: Response,
+  signal: AbortSignal,
+  dimension: number,
+): Promise<Uint8Array<ArrayBuffer>> {
+  if (
+    !response.body ||
+    Number(response.headers.get('Content-Length') ?? 0) > ASSET_LIMITS.bytes
+  )
+    throw new AssetFailure('upstream_error');
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const chunk = await bounded(reader.read(), signal);
+      if (chunk.done) break;
+      size += chunk.value.length;
+      if (size > ASSET_LIMITS.bytes) throw new AssetFailure('upstream_error');
+      chunks.push(chunk.value);
+    }
+  } finally {
+    void reader.cancel().catch(() => undefined);
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+  if (
+    size < 33 ||
+    [137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82].some(
+      (value, index) => bytes[index] !== value,
+    )
+  )
+    throw new AssetFailure('upstream_error');
+  const view = new DataView(bytes.buffer);
+  if (
+    !view.getUint32(16) ||
+    !view.getUint32(20) ||
+    view.getUint32(16) > dimension ||
+    view.getUint32(20) > dimension
+  )
+    throw new AssetFailure('upstream_error');
+  return bytes;
 }

@@ -19,6 +19,7 @@ export interface HaConnection {
 }
 
 export interface HassTransport {
+  user?: { id: string };
   connection: HaConnection;
   callWS<T>(message: WireMessage): Promise<T>;
   fetchWithAuth(path: string, init?: RequestInit): Promise<Response>;
@@ -40,9 +41,10 @@ export function createHaAdapter(
 ): HaAdapter {
   const current = typeof source === 'function' ? source : () => source;
   const connection = current().connection;
+  const userId = current().user?.id;
   const latest = () => {
     const hass = current();
-    if (hass.connection !== connection)
+    if (hass.connection !== connection || hass.user?.id !== userId)
       throw new Error('HA connection changed');
     return hass;
   };

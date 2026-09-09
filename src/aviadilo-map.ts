@@ -22,8 +22,7 @@ import {
 import { ViewportController } from './map/viewport';
 import { createBasemap } from './map/basemap';
 import { estimateCardHeight, mapStyles } from './map/styles';
-import { previewHass, previewEvents, previewTileClient } from './map/preview';
-import { isCardPickerPreview } from './map/ha-preview';
+import { acquireAssets } from './data/assets';
 import { selectPeople, type PeopleResult } from './layers/people/model';
 import { PeopleLayer } from './layers/people/layer';
 import { LAYER_PANES, type LayerName } from './layers/types';
@@ -34,9 +33,7 @@ export const AVIADILO_VERSION = __AVIADILO_VERSION__;
 export class AviadiloMap extends LitElement {
   static properties = {
     hass: { attribute: false },
-    fixtureHass: { attribute: false },
     preview: { type: Boolean },
-    pickerPreview: { state: true },
     config: { state: true },
     sessionLayers: { state: true },
     peopleResult: { state: true },
@@ -45,13 +42,7 @@ export class AviadiloMap extends LitElement {
   };
   static styles = mapStyles;
   declare hass?: HomeAssistant;
-  declare fixtureHass?: HomeAssistant;
-  private readonly syntheticState = previewHass();
   declare preview: boolean;
-  declare private pickerPreview: boolean;
-  private get effectivePreview(): boolean {
-    return this.preview || this.pickerPreview;
-  }
   declare config: CardConfig;
   declare private sessionLayers: Record<LayerName, boolean>;
   declare private peopleResult: PeopleResult;
@@ -59,6 +50,11 @@ export class AviadiloMap extends LitElement {
   private map?: L.Map;
   private people?: PeopleLayer;
   private basemap?: L.GridLayer;
+  private assets?: ReturnType<typeof acquireAssets>;
+  private assetConnection?: object;
+  private assetUser?: string;
+  private assetEntry?: string;
+  private assetServiceEntry?: string | null;
   private viewport?: ViewportController;
   private resize?: ResizeObserver;
   private intersection?: IntersectionObserver;
@@ -89,13 +85,10 @@ export class AviadiloMap extends LitElement {
   private discovering = false;
   private discoveryTimeout?: ReturnType<typeof setTimeout>;
   private holdFitUntilData = false;
-  private previewDataKey = '';
-  private composedPreview?: boolean;
   private radarReady = false;
   private radarConfigKey = '';
   private refreshing = false;
   private inViewportUpdate = false;
-  private previewMode?: boolean;
   private readonly visibility = () => {
     this.syncBasemap();
     if (!this.activeVisible) this.suspendWeather();
@@ -106,7 +99,6 @@ export class AviadiloMap extends LitElement {
     super();
     this.preview = false;
     this.listExpanded = true;
-    this.pickerPreview = false;
     this.peopleResult = { points: [], excluded: 0, anchorMissing: false };
     this.integrationStatus = 'Integration not connected';
     this.sessionLayers = {
@@ -152,7 +144,6 @@ export class AviadiloMap extends LitElement {
     };
   }
   connectedCallback(): void {
-    this.pickerPreview = isCardPickerPreview(this);
     super.connectedCallback();
     document.addEventListener('visibilitychange', this.visibility);
     this.cardVisible = false;
@@ -183,6 +174,8 @@ export class AviadiloMap extends LitElement {
     this.transportUnlisten?.();
     this.transportUnlisten = undefined;
     this.controllerConnection = undefined;
+    this.assets?.release();
+    this.assets = undefined;
     this.people?.dispose();
     this.map?.remove();
     this.map = undefined;
@@ -197,28 +190,18 @@ export class AviadiloMap extends LitElement {
   }
   protected updated(changed: PropertyValues): void {
     if (!this.config || !this.isConnected) return;
-    if (changed.has('hass') || changed.has('fixtureHass'))
-      this.holdFitUntilData = false;
+    if (changed.has('hass')) this.holdFitUntilData = false;
     if (!this.map) this.initializeMap();
     if (changed.has('config')) {
       this.map?.setMinZoom(this.config.map!.min_zoom!);
       this.map?.setMaxZoom(this.config.map!.max_zoom!);
     }
-    if (
-      changed.has('hass') ||
-      changed.has('config') ||
-      changed.has('preview') ||
-      changed.has('pickerPreview')
-    )
-      void this.discover();
+    if (changed.has('hass') || changed.has('config')) void this.discover();
     if (
       changed.has('config') ||
       changed.has('hass') ||
-      changed.has('preview') ||
-      changed.has('pickerPreview') ||
       changed.has('sessionLayers') ||
-      changed.has('listExpanded') ||
-      changed.has('fixtureHass')
+      changed.has('listExpanded')
     ) {
       this.syncBasemap();
       this.refresh();
@@ -243,7 +226,10 @@ export class AviadiloMap extends LitElement {
     this.viewport = new ViewportController(this.map);
     // Registered before weather layers: revoke old revision work before their
     // own moveend handlers can use a new viewport with the previous manifest.
-    this.map.on('moveend resize', () => this.syncDemand());
+    this.map.on('moveend resize', () => {
+      this.syncDemand();
+      this.refresh();
+    });
     this.interactionListeners = new AbortController();
     const signal = this.interactionListeners.signal;
     // Leaflet only emits dragstart for user drags; capture zoom/keyboard/touch intent.
@@ -306,44 +292,54 @@ export class AviadiloMap extends LitElement {
   }
   private syncBasemap(): void {
     if (!this.map) return;
+    const visible = this.activeVisible && this.config.map!.layout !== 'list';
+    const connection = this.hasTransport(this.hass)
+      ? this.hass.connection
+      : undefined;
+    const entry = this.config.entry_id ?? undefined;
     if (
-      !this.activeVisible ||
-      this.config.map!.layout === 'list' ||
-      this.previewMode !== this.effectivePreview
+      !visible ||
+      connection !== this.assetConnection ||
+      this.hass?.user?.id !== this.assetUser ||
+      entry !== this.assetEntry ||
+      this.integration?.entry_id !== this.assetServiceEntry
     ) {
       this.basemap?.remove();
       this.basemap = undefined;
+      this.people?.setAssets(undefined);
+      this.assets?.release();
+      this.assets = undefined;
+    }
+    this.assetConnection = connection;
+    this.assetUser = this.hass?.user?.id;
+    this.assetEntry = entry;
+    this.assetServiceEntry = this.integration?.entry_id;
+    if (visible && connection && this.integration?.entry_id && !this.assets) {
+      this.assets = acquireAssets(
+        () => this.hass as HomeAssistant & HassTransport,
+      );
+      this.people?.setAssets(this.assets.decoded, entry, () => this.hass);
+      void this.assets.client.ready().catch(() => undefined);
     }
     if (
-      this.activeVisible &&
-      this.config.map!.layout !== 'list' &&
-      !this.basemap
-    ) {
-      this.basemap = createBasemap(this.effectivePreview).addTo(this.map);
-      this.previewMode = this.effectivePreview;
-    }
+      visible &&
+      this.assets &&
+      !this.basemap &&
+      this.map.getZoom() !== undefined
+    )
+      this.basemap = createBasemap(this.assets.decoded, entry).addTo(this.map);
   }
   private async discover(force = false): Promise<void> {
-    if (this.effectivePreview) {
-      this.discoveryGeneration++;
-      clearTimeout(this.discoveryTimeout);
-      this.discoveryKey = undefined;
-      this.integration = undefined;
-      this.integrationStatus = 'Offline preview';
-      this.transportUnlisten?.();
-      this.transportUnlisten = undefined;
-      this.controllerConnection = undefined;
-      this.discovering = false;
-      return;
-    }
     const hass = this.hass;
     if (!hass?.callWS) {
+      this.disposeComposition();
+      this.integration = undefined;
       this.integrationStatus =
         'Add the Aviadilo integration to enable external layers.';
       return;
     }
     const identity = hass.connection ?? hass.callWS;
-    const key = String(this.config.entry_id ?? 'auto');
+    const key = JSON.stringify([this.config.entry_id ?? 'auto', hass.user?.id]);
     const changed =
       key !== this.discoveryKey || identity !== this.controllerConnection;
     if (changed) {
@@ -383,12 +379,7 @@ export class AviadiloMap extends LitElement {
           }),
         ]),
       );
-      if (
-        generation !== this.discoveryGeneration ||
-        !this.isConnected ||
-        this.effectivePreview
-      )
-        return;
+      if (generation !== this.discoveryGeneration || !this.isConnected) return;
       if (this.integration?.entry_id !== info.entry_id)
         this.disposeComposition();
       this.integration = info;
@@ -397,6 +388,7 @@ export class AviadiloMap extends LitElement {
         : 'Add the Aviadilo integration to enable external layers.';
     } catch {
       if (generation !== this.discoveryGeneration) return;
+      this.integration = undefined;
       this.integrationStatus =
         'Integration unavailable · people still use Home Assistant';
     } finally {
@@ -433,7 +425,6 @@ export class AviadiloMap extends LitElement {
     this.aircraftLayer = undefined;
     this.selectionKey = '';
     this.aircraftConfigKey = '';
-    this.previewDataKey = '';
     this.radarConfigKey = '';
     this.radarReady = false;
   }
@@ -445,26 +436,17 @@ export class AviadiloMap extends LitElement {
   }
   private compose(): void {
     if (!this.map || this.map.getZoom() === undefined) return;
-    if (this.composedPreview !== this.effectivePreview) {
-      this.disposeComposition();
-      this.composedPreview = this.effectivePreview;
-    }
     if (this.aircraft) return;
     this.aircraft = new AircraftController(this.config);
     this.aircraftLayer = new AircraftLayer(this.map, this.aircraft);
     this.wind = new WindController();
     this.windLayer = new WindLayer(this.map, this.wind);
-    const synthetic = previewTileClient();
-    this.radar = new RadarController(
-      this.effectivePreview
-        ? synthetic
-        : {
-            loadTile: (tile, signal) =>
-              this.client?.loadTile(tile, signal) ??
-              Promise.reject(new Error('Integration not connected')),
-            releaseTile: (url) => this.client?.releaseTile(url),
-          },
-    );
+    this.radar = new RadarController({
+      loadTile: (tile, signal) =>
+        this.client?.loadTile(tile, signal) ??
+        Promise.reject(new Error('Integration not connected')),
+      releaseTile: (url) => this.client?.releaseTile(url),
+    });
     this.radarLayer = new RadarLayer(this.radar);
     this.radarLayer.attach(this.map);
     this.radar.setVisible(false);
@@ -533,11 +515,6 @@ export class AviadiloMap extends LitElement {
       return;
     }
     this.wind?.setVisible(visible && layers.wind);
-    if (this.effectivePreview) {
-      this.radar?.setViewport(viewport);
-      this.radar?.setVisible(visible && layers.radar);
-      return;
-    }
     if (!this.integration?.entry_id || !this.hasTransport(this.hass)) return;
     // Aircraft-only demand has no viewport semantics. Keep its selection stable
     // on local filter/fit changes; the integration owns the collection area.
@@ -612,34 +589,14 @@ export class AviadiloMap extends LitElement {
     this.config = editConfig(this.config, path, value);
   };
   private state(): HomeAssistant | undefined {
-    if (!this.effectivePreview) return this.hass;
-    if (this.fixtureHass) return this.fixtureHass;
-    const states = { ...this.syntheticState.states };
-    for (const [index, tracker] of (
-      this.config.people?.trackers ?? []
-    ).entries()) {
-      states[tracker.entity_id] =
-        this.syntheticState.states[
-          index % 2 ? 'device_tracker.traveller' : 'device_tracker.synthetic'
-        ];
-    }
-    return { ...this.syntheticState, states };
+    return this.hass;
   }
   private refresh(resized = false): void {
     if (!this.config || !this.map || this.refreshing) return;
     this.refreshing = true;
     try {
       const hass = this.state();
-      const peopleConfig =
-        this.effectivePreview && !this.config.people!.trackers!.length
-          ? {
-              ...this.config.people,
-              trackers: [
-                { entity_id: 'device_tracker.synthetic' },
-                { entity_id: 'device_tracker.traveller' },
-              ],
-            }
-          : this.config.people!;
+      const peopleConfig = this.config.people!;
       const result = this.sessionLayers.people
         ? selectPeople(peopleConfig, hass, this.integration?.area)
         : { points: [], excluded: 0, anchorMissing: false };
@@ -705,9 +662,10 @@ export class AviadiloMap extends LitElement {
         }
       }
       this.people?.update(
-        this.config.map!.layout === 'list' ? [] : result.points,
+        !this.activeVisible || this.config.map!.layout === 'list'
+          ? []
+          : result.points,
         peopleConfig,
-        this.effectivePreview,
       );
       const uncomposed = !this.aircraft;
       this.compose();
@@ -722,17 +680,7 @@ export class AviadiloMap extends LitElement {
       }
       this.wind?.configure(this.config.wind!);
       this.syncDemand();
-      if (this.effectivePreview && this.aircraft) {
-        const key = JSON.stringify([
-          this.config.radar!.provider,
-          Math.floor(Date.now() / 10000),
-        ]);
-        if (key !== this.previewDataKey) {
-          this.previewDataKey = key;
-          for (const event of previewEvents(this.config.radar!.provider!))
-            this.receive(event);
-        }
-      }
+      this.syncBasemap();
     } finally {
       this.refreshing = false;
     }
@@ -755,9 +703,6 @@ export class AviadiloMap extends LitElement {
     >
       <header>
         <h2>${this.config.title || 'Aviadilo'}</h2>
-        ${this.effectivePreview
-          ? html`<span class="preview-label">Synthetic · offline preview</span>`
-          : ''}
       </header>
       <nav aria-label="Map layers">
         ${(['aircraft', 'radar', 'wind', 'people'] as const).map(
@@ -795,11 +740,7 @@ export class AviadiloMap extends LitElement {
               location.
             </p>`
           : ''}
-        <p>
-          ${this.effectivePreview
-            ? 'Offline synthetic locations. No provider, tile, photo or backend requests.'
-            : this.integrationStatus}
-        </p>
+        <p>${this.integrationStatus}</p>
         ${this.flags().aircraft && this.aircraft
           ? html`<p>
               Aircraft:

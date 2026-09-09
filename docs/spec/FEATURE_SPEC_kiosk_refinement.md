@@ -1,6 +1,6 @@
 # SPEC: Shared map cache, unified data pipeline, and kiosk presentation
 
-- **Status:** in-progress — the user approved the complete spec on 2026-09-08; slices 1 (asset contracts) and 2 (backend assets) implemented and independently verified. Next is slice 3, one frontend pipeline and fast asset rendering.
+- **Status:** in-progress — the user approved the complete spec on 2026-09-08; slices 1 (asset contracts) and 2 (backend assets) implemented and independently verified. Slice 3 is implemented with automated and native evidence; acceptance awaits the HA preview-remount decision described under Open Questions.
 - **Parent:** [ROOT_SPEC.md](ROOT_SPEC.md).
 - **Inputs:** `docs/TODO.md`, “Notes from initial completed version,” and the subsequent discussion.
 - **Baseline:** published `v0.1.0-dev.2`; HA 2026.9.1, Node 24.20.0, Python 3.14.2, current pinned Chromium tooling.
@@ -207,7 +207,7 @@ All slices are **(M), [serial]**. Freeze interfaces in slice 1 before behavior w
    - Verify offline route/provider/cache tests and native lint. Use actual HTTP behavior under mocks, including no-store coalescing without retention; no public tile scans.
 
 3. **One frontend pipeline and fast asset rendering.**
-   - Owned files: `src/aviadilo-map.ts`, `src/data/{assets,ha}.ts`, `src/map/{basemap,tile-queue,ha-preview,preview,geo}.ts` (delete production preview helpers when unused), `src/layers/people/{layer,model}.ts`; `dev/{fixtures,runtime}.ts`, `dev/{index,runtime}.html`, `dev/ha/custom_components/aviadilo_fixture/**`; `tests/frontend/{data,map,people}/**`, `tests/e2e/card.spec.ts`, new `tests/e2e/assets.spec.ts`; `vite.config.ts` if required for the isolated offline harness.
+   - Owned files: `src/aviadilo-map.ts`, `src/data/{assets,ha}.ts`, `src/map/{basemap,tile-queue,ha-preview,preview,geo}.ts` (delete production preview helpers when unused), `src/layers/people/{layer,model}.ts`; `dev/{fixtures,runtime}.ts`, `dev/{index,runtime}.html`, `dev/ha/custom_components/aviadilo_fixture/**`; `tests/frontend/{data,map,people}/**`, `tests/e2e/card.spec.ts`, new `tests/e2e/assets.spec.ts`; `vite.config.ts` if required for the isolated offline harness; `src/editor/editor.ts` for the copy-only correction describing shared real preview data; `dev/ha/manage.py` and `tests/backend/test_contracts.py` for isolated launcher working-directory verification.
    - Remove synthetic and mode-based production branches, connect asset client/HA state to every context, implement concurrent local hits/LRU/cancellation, route external avatars, and keep standalone fixtures exclusively at test boundaries. Preserve existing weather client revision/lifecycle semantics.
    - Worker verification: unit/lint/build only. Orchestrator verifies warm-cache timing, cold requests, direct-request absence, native picker/editor/view equivalence and reconnect.
 
@@ -228,7 +228,7 @@ All slices are **(M), [serial]**. Freeze interfaces in slice 1 before behavior w
 
 ## Open Questions
 
-None. The user approved this detailed specification and implementation may proceed in the agreed slices. If a technical constraint would require different editor/live data behavior, a new public provider, weaker cache/auth guarantees or a materially different resource budget, stop and discuss it with the user before changing this design.
+The user approved the design, but native slice 3 verification found one platform constraint requiring clarification: HA frontend 20260826.6 replaces custom-card preview elements on every changed configuration, so each replacement gets a new per-element weather client. The shared real-data pipeline and connection-owned asset cache remain unchanged. The user has been asked whether to accept native replacement semantics or specify a general session handoff; the answer is pending. See [HA preview lifecycle](../research/ha-preview-lifecycle.md). If a technical constraint would require different editor/live data behavior, a new public provider, weaker cache/auth guarantees or a materially different resource budget, stop and discuss it with the user before changing this design.
 
 ## Deferred / Follow-ups
 
@@ -248,3 +248,11 @@ None. The user approved this detailed specification and implementation may proce
 - 2026-09-08 — Slice 2 ownership clarified: providers/asset_http.py and its tests may hold shared HTTP policy and bounded image helpers. Test-contract/fixture support may be updated for additive integration defaults. No design or wire-contract change.
 
 - 2026-09-08 — Implemented and independently verified slice 2: activated authenticated asset routes, shared persistent OSM cache with separate freshness/90-day retention, bounded private external photos, conservative pacing, coordinated clear/reload/cancellation and aggregate diagnostics. Full checks passed 194 frontend + 462 backend + 11 Chromium tests. Additional real HA HTTP/WS acceptance delivered 16 warm tiles in 10 ms and 8 ms after reload with zero further upstream requests; successful clear emitted the new generation and rejected old requests. These are backend delivery timings, not painted-viewport measurements. Frontend integration remains slice 3; no release/version change.
+
+- 2026-09-08 — User continued after committed slice 2 (7eb7340); began slice 3, one production frontend pipeline and fast asset rendering. Theme/config migration and quiet presentation remain slices 4/5.
+
+- 2026-09-08 — Slice 3 ownership clarification: correct the obsolete synthetic-preview explanatory text in src/editor/editor.ts; no editor configuration or design change.
+
+- 2026-09-08 — Native slice 3 acceptance found that the dev launcher inherited repository cwd, allowing HA namespace resolution to select checkout modules instead of the installed package/fixture. Added narrow launcher cwd isolation and regression to this slice; stopped the affected run and require confirmed fixture/module origin before repeating native acceptance.
+
+- 2026-09-08 — Slice 3 implementation and parent automated gates passed 201 frontend + 463 backend + 15 Chromium scenarios. Native same-data/photo/picker/Done/reconnect, warm cache/second-browser/restart and real clear evidence recorded in development guide. HA itself recreates preview elements for changed configs; user asked whether to accept native remount semantics or specify a general runtime handoff. No decision assumed and no preview-specific pipeline introduced. One early cold-load anomaly was not reproduced across three additional fresh 32-tile pairs; retain that case for packaged acceptance. No release/version change.

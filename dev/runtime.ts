@@ -2,8 +2,15 @@
  * Public requests must be intercepted by Playwright before this page is loaded.
  */
 import '../src/aviadilo-map';
+import type { AviadiloEditor } from '../src/editor/editor';
+import { parseAssetPath, pictureKey } from '../src/data/assets';
 import type { AviadiloMap } from '../src/aviadilo-map';
-import { previewEvents, previewHass, syntheticTile } from '../src/map/preview';
+import {
+  previewEvents,
+  previewHass,
+  syntheticTile,
+  fixtureBlob,
+} from './fixtures';
 import { parseInfo } from '../src/data/client';
 import type { CardConfig } from '../src/config/types';
 import type {
@@ -25,6 +32,14 @@ interface Subscription {
 const subscriptions = new Map<number, Subscription>();
 const listeners = new Map<ConnectionEvent, Set<() => void>>();
 let nextId = 1;
+let generation = '0123456789abcdef0123456789abcdef:0';
+let assetDelay = 0;
+let assetFailure = false;
+let assetCacheControl = 'public,max-age=3600';
+const assetCalls: string[] = [];
+let assetActive = 0,
+  assetPeak = 0,
+  assetAborts = 0;
 let entryId: string | null = 'synthetic-entry';
 let unavailable = false;
 let tileDelay = 0;
@@ -61,6 +76,7 @@ function info(): Info {
 }
 function emit(id: number, subscription: Subscription) {
   const m = subscription.message;
+  if (m.type === 'subscribe_events') return;
   const events = previewEvents(m.radar_provider as 'rainviewer');
   const status = events.find((event) => event.kind === 'status')!;
   const aircraft = snapshot.find((event) => event.kind === 'aircraft')!;
@@ -91,7 +107,11 @@ const connection: HaConnection = {
     message: WireMessage,
   ) {
     calls.push(structuredClone(message));
-    if (unavailable || !entryId || message.entry_id !== entryId)
+    if (
+      unavailable ||
+      !entryId ||
+      (message.type !== 'subscribe_events' && message.entry_id !== entryId)
+    )
       throw new Error('Integration unavailable');
     const id = nextId++;
     const subscription = {
@@ -121,6 +141,10 @@ const hass = {
     calls.push(structuredClone(message));
     if (unavailable || !connection.connected)
       throw new Error('Synthetic integration unavailable');
+    if (message.type === 'aviadilo/assets_info') {
+      if (!entryId) throw new Error('Integration unavailable');
+      return { schema_version: 1, generation, entry_id: entryId } as T;
+    }
     if (message.type === 'aviadilo/info') {
       const result = info();
       if (message.entry_id && message.entry_id !== entryId)
@@ -139,6 +163,97 @@ const hass = {
     return {} as T;
   },
   async fetchWithAuth(path: string, init?: RequestInit): Promise<Response> {
+    if (!path.startsWith('/api/aviadilo/radar?')) {
+      if (init?.signal?.aborted)
+        throw new DOMException('Cancelled', 'AbortError');
+      const request = parseAssetPath(path);
+      assetCalls.push(path);
+      assetActive++;
+      assetPeak = Math.max(assetPeak, assetActive);
+      try {
+        if (assetDelay)
+          await new Promise<void>((resolve, reject) => {
+            const signal = init?.signal;
+            const timer = setTimeout(() => {
+              signal?.removeEventListener('abort', abort);
+              resolve();
+            }, assetDelay);
+            const abort = () => {
+              clearTimeout(timer);
+              reject(new DOMException('Cancelled', 'AbortError'));
+            };
+            signal?.addEventListener('abort', abort, { once: true });
+            if (signal?.aborted) abort();
+          });
+        const fail = (status: number, code: string) =>
+          new Response(
+            JSON.stringify({
+              schema_version: 1,
+              code,
+              message: (
+                {
+                  upstream_error: 'Asset source is unavailable',
+                  picture_changed: 'Entity picture has changed',
+                  stale_generation: 'Asset generation has changed',
+                } as Record<string, string>
+              )[code],
+              ...(code === 'stale_generation' ? { generation } : {}),
+            }),
+            {
+              status,
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Aviadilo-Generation': generation,
+              },
+            },
+          );
+        if (request.generation !== generation)
+          return fail(409, 'stale_generation');
+        if (assetFailure) return fail(502, 'upstream_error');
+        if (request.kind === 'photo') {
+          const picture =
+            hass.states[request.entity_id]?.attributes.entity_picture;
+          if (
+            typeof picture !== 'string' ||
+            pictureKey(picture) !== request.picture_key
+          )
+            return fail(409, 'picture_changed');
+        }
+        const canvas = syntheticTile(
+          request.kind === 'basemap' ? 'basemap' : 'photo',
+        );
+        if (request.kind === 'photo') {
+          canvas.width = canvas.height = 128;
+          const context = canvas.getContext('2d')!;
+          context.fillStyle = '#e1c745';
+          context.fillRect(0, 0, 128, 128);
+        }
+        if (request.kind === 'basemap') {
+          const context = canvas.getContext('2d')!;
+          context.fillStyle = '#263d49';
+          context.fillRect(0, 0, 256, 256);
+          context.strokeStyle = '#49636c';
+          context.strokeRect(1, 1, 254, 254);
+          context.fillStyle = '#a8c0c6';
+          context.fillText(`${request.z}/${request.x}/${request.y}`, 12, 24);
+        }
+        const blob = await fixtureBlob(canvas, init?.signal);
+        return new Response(blob, {
+          headers: {
+            'Content-Type': 'image/png',
+            'X-Aviadilo-Generation': generation,
+            'Cache-Control':
+              request.kind === 'photo' ? 'no-store' : assetCacheControl,
+          },
+        });
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError')
+          assetAborts++;
+        throw error;
+      } finally {
+        assetActive--;
+      }
+    }
     tiles.push(path);
     if (!path.startsWith('/api/aviadilo/radar?'))
       throw new Error('Unexpected path');
@@ -190,11 +305,14 @@ const defaultConfig: CardConfig = {
   },
 };
 function add(config: CardConfig = defaultConfig, hidden = false) {
-  const card = document.createElement('aviadilo-map') as AviadiloMap;
+  const card =
+    (cards.length === 0
+      ? document.querySelector<AviadiloMap>('aviadilo-map')
+      : null) ?? (document.createElement('aviadilo-map') as AviadiloMap);
   if (hidden) card.style.display = 'none';
   card.setConfig(config);
   card.hass = hass;
-  document.querySelector('main')!.append(card);
+  if (!card.isConnected) document.querySelector('main')!.append(card);
   cards.push(card);
   if (cards.length > 1) {
     document.querySelector('main')!.style.cssText =
@@ -209,6 +327,17 @@ function connectionEvent(connected: boolean) {
     callback();
 }
 type Inspection = {
+  assets?: {
+    decoded: {
+      diagnostics(): {
+        active: number;
+        pending: number;
+        entries: number;
+        bytes: number;
+        owners: number;
+      };
+    };
+  };
   map?: LeafletMap;
   aircraft?: AircraftController;
   radar?: RadarController;
@@ -227,12 +356,36 @@ const timer = setInterval(() => {
 }, 10000);
 const api = {
   add,
+  assets(delay = 0, failure = false, cacheControl = 'public,max-age=3600') {
+    assetDelay = delay;
+    assetFailure = failure;
+    assetCacheControl = cacheControl;
+  },
+  clearAssets() {
+    generation =
+      generation.split(':')[0] + ':' + (Number(generation.split(':')[1]) + 1);
+    for (const subscription of subscriptions.values())
+      if (subscription.message.type === 'subscribe_events')
+        subscription.callback({
+          event_type: 'aviadilo/assets_changed',
+          data: { schema_version: 1, entry_id: entryId, generation },
+        });
+  },
+  photo(entityId: string, value?: string) {
+    hass.states[entityId].attributes.entity_picture = value;
+    for (const card of cards) card.hass = { ...hass };
+  },
   config(index: number, patch: Partial<CardConfig>) {
     cards[index].setConfig({ ...cards[index].config, ...patch });
   },
   updateHass(tokyo = false) {
     const state = previewHass(tokyo);
-    for (const card of cards) card.hass = { ...hass, ...state };
+    Object.assign(hass, state);
+    for (const card of cards) card.hass = { ...hass };
+    const editor = document.querySelector<AviadiloEditor>(
+      'aviadilo-map-editor',
+    );
+    if (editor) editor.hass = hass;
   },
   detach(index: number) {
     cards[index].remove();
@@ -297,7 +450,16 @@ const api = {
   },
   stats() {
     return {
-      subscriptions: subscriptions.size,
+      subscriptions: [...subscriptions.values()].filter(
+        (s) => s.message.type !== 'subscribe_events',
+      ).length,
+      assetSubscriptions: [...subscriptions.values()].filter(
+        (s) => s.message.type === 'subscribe_events',
+      ).length,
+      assets: [...assetCalls],
+      assetActive,
+      assetPeak,
+      assetAborts,
       listeners: [...listeners.values()].reduce((n, set) => n + set.size, 0),
       calls: structuredClone(calls),
       tiles: [...tiles],
@@ -308,6 +470,7 @@ const api = {
   inspect(index: number) {
     const c = inspect(index);
     return {
+      assets: c.assets?.decoded.diagnostics(),
       center: c.map?.getCenter(),
       zoom: c.map?.getZoom(),
       suspended: c.viewport?.suspended,
@@ -333,4 +496,20 @@ const api = {
 };
 Object.assign(window, { aviadiloTest: api });
 add();
+const editor = document.querySelector<AviadiloEditor>('aviadilo-map-editor');
+if (editor) {
+  editor.hass = hass;
+  editor.setConfig(cards[0].config);
+  editor.addEventListener('config-changed', (event) =>
+    cards[0].setConfig(
+      (event as CustomEvent<{ config: CardConfig }>).detail.config,
+    ),
+  );
+  document
+    .querySelector('#tokyo')
+    ?.addEventListener('click', () => api.updateHass(true));
+  document
+    .querySelector('#return')
+    ?.addEventListener('click', () => api.updateHass(false));
+}
 export type RuntimeApi = typeof api;

@@ -3,14 +3,17 @@
 import json
 import math
 import struct
+import sys
 import time
 import zlib
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from typing import Any, cast
 
+import voluptuous as vol
 from aiohttp import ClientSession
-from homeassistant.core import HomeAssistant
+from homeassistant.components import websocket_api
+from homeassistant.core import HomeAssistant, callback
 from yarl import URL
 
 DOMAIN = "aviadilo_fixture"
@@ -108,6 +111,9 @@ class FixtureSession:
     def __init__(self) -> None:
         self.requests: dict[str, int] = {}
 
+    async def close(self) -> None:
+        pass
+
     def get(self, url: str | URL, **kwargs: Any) -> Response:
         # Match aiohttp's URL + params convention, preserving repeated WCS subset
         # keys and any query already present in a resolved tile URL.
@@ -118,6 +124,13 @@ class FixtureSession:
         self.requests[host] = self.requests.get(host, 0) + 1
         now = time.time()
         query = {key: parsed.query.getall(key) for key in parsed.query}
+        if host == "tile.openstreetmap.org":
+            response = Response(png(), "image/png")
+            response.headers["Cache-Control"] = "public,max-age=604800"
+            response.headers["ETag"] = '"fixture-basemap-v1"'
+            return response
+        if host == "photos.aviadilo.invalid":
+            return Response(png(128), "image/png")
         if host in {"opendata.adsb.fi", "api.adsb.lol"}:
             body = json.dumps(
                 {
@@ -186,6 +199,7 @@ class FixtureSession:
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     from custom_components.aviadilo import service
+    from custom_components.aviadilo.providers import photos
 
     session = FixtureSession()
 
@@ -193,6 +207,36 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         return cast(ClientSession, session)
 
     vars(service)["async_get_clientsession"] = provider_session
+
+    # Only replace upstream HTTP, preserving authorization, URL policy, image
+    # normalization, scheduler and private/public production caches.
+    def photo_session(_provider: Any) -> ClientSession:
+        return cast(ClientSession, session)
+
+    cast(Any, photos.PhotoProvider)._session = photo_session
+
+    @callback
+    def fixture_stats(_hass: HomeAssistant, connection: Any, message: dict[str, Any]) -> None:
+        current = hass.data.get("aviadilo")
+        integration = sys.modules.get("custom_components.aviadilo")
+        connection.send_result(
+            message["id"],
+            {
+                "upstream_requests": dict(session.requests),
+                "integration_module_path": getattr(integration, "__file__", None),
+                "fixture_module_path": __file__,
+                "service_session_is_fixture": getattr(current, "session", None) is session,
+                "osm_session_is_fixture": getattr(getattr(current, "osm", None), "session", None)
+                is session,
+            },
+        )
+
+    websocket_api.async_register_command(
+        hass,
+        "aviadilo_fixture/stats",
+        fixture_stats,
+        vol.Schema({vol.Required("id"): int, vol.Required("type"): "aviadilo_fixture/stats"}),
+    )
     hass.data[DOMAIN] = session
     for index, name in enumerate(["Alex", "Sam"]):
         hass.states.async_set(
@@ -203,6 +247,30 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
                 "longitude": -117.7 + index * 0.04,
                 "friendly_name": f"{name} · SYNTHETIC",
                 "gps_accuracy": 100,
+                "entity_picture": (
+                    "https://photos.aviadilo.invalid/avatar.png?fixture=alex"
+                    if index == 0
+                    else "/local/aviadilo-fixture-avatar.png"
+                ),
             },
         )
+    # First-party resource is written only into this isolated dev HA instance.
+    from pathlib import Path
+
+    def write_avatar() -> None:
+        target = Path(hass.config.path("www", "aviadilo-fixture-avatar.png"))
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(png(128))
+
+    await hass.async_add_executor_job(write_avatar)
+    hass.states.async_set(
+        "device_tracker.synthetic_unsupported",
+        "home",
+        {
+            "latitude": 34.13,
+            "longitude": -117.71,
+            "friendly_name": "Unsupported photo · SYNTHETIC",
+            "entity_picture": "http://192.168.1.1/avatar.png?private=fixture",
+        },
+    )
     return True

@@ -13,16 +13,6 @@ test.beforeEach(async ({ page }) => {
     const url = new URL(route.request().url());
     if (url.hostname === '127.0.0.1') return route.continue();
     external.push(url.href);
-    // Raster bytes are synthetic and never reach the public tile endpoint.
-    if (url.hostname === 'tile.openstreetmap.org')
-      return route.fulfill({
-        status: 200,
-        contentType: 'image/png',
-        body: Buffer.from(
-          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==',
-          'base64',
-        ),
-      });
     return route.abort();
   });
 });
@@ -232,7 +222,7 @@ test('recovers HA reconnect and integration recreation while people remain usabl
       .getByText('Aircraft: unavailable', { exact: true }),
   ).toBeVisible();
 });
-test('raw HA picker and editor previews are entirely synthetic and settings round trip', async ({
+test('raw HA picker without transport is honestly unavailable and settings round trip', async ({
   page,
 }) => {
   await page.goto('/');
@@ -250,7 +240,7 @@ test('raw HA picker and editor previews are entirely synthetic and settings roun
       config: { latitude: 0, longitude: 0 },
       states: {},
       callWS: async () => {
-        throw new Error('Preview accessed HA');
+        throw new Error('Integration unavailable');
       },
     };
     original.remove();
@@ -261,14 +251,16 @@ test('raw HA picker and editor previews are entirely synthetic and settings roun
   await expect(
     page
       .locator('hui-card-picker')
-      .getByText('Synthetic · offline preview', { exact: true }),
+      .getByText('Integration unavailable · people still use Home Assistant', {
+        exact: true,
+      }),
   ).toBeVisible();
   await expect(
     page
       .locator('hui-card-picker')
       .locator('aviadilo-aircraft-list')
       .getByRole('button', { name: 'DEMO1', exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   expect(external).toEqual([]);
   const editor = page.locator('aviadilo-map-editor');
   await editor.locator('#title').fill('Saved synthetic map');
@@ -372,7 +364,6 @@ test('people-only runtime works without an HA transport and never requests exter
   await page.evaluate(async () => {
     const card = document.querySelector('aviadilo-map') as AviadiloMap;
     card.preview = false;
-    card.fixtureHass = undefined;
     card.setConfig({
       schema_version: 1,
       type: 'custom:aviadilo-map',

@@ -13,6 +13,7 @@ export interface HaEntity {
   last_changed?: string;
 }
 export interface HomeAssistant {
+  user?: { id: string };
   connection?: HaConnection;
   fetchWithAuth?: HassTransport['fetchWithAuth'];
   states: Record<string, HaEntity>;

@@ -1,14 +1,56 @@
 import * as L from 'leaflet';
-import { visibleLongitude } from '../../map/geo';
+import { type HomeAssistant, visibleLongitude } from '../../map/geo';
+import {
+  AssetFailure,
+  pictureKey,
+  type DecodedAssets,
+  type DecodedAsset,
+} from '../../data/assets';
 import type { PeopleConfig, PersonPoint } from './model';
 /** DOM APIs keep user-controlled entity names out of HTML interpolation. */
 export class PeopleLayer {
   private group = L.layerGroup();
   private signature = '';
+  private assets?: DecodedAssets;
+  private entryId?: string;
+  private currentHass?: () => HomeAssistant | undefined;
+  private cleanups: (() => void)[] = [];
+  private unobserve?: () => void;
+  private uncapacity?: () => void;
+  private blocked = false;
+  setAssets(
+    assets?: DecodedAssets,
+    entryId?: string,
+    currentHass?: () => HomeAssistant | undefined,
+  ): void {
+    if (this.assets === assets && this.entryId === entryId) return;
+    this.clear();
+    this.unobserve?.();
+    this.uncapacity?.();
+    this.assets = assets;
+    this.entryId = entryId;
+    this.currentHass = currentHass;
+    this.unobserve = assets?.client.observe(() => this.clear());
+    this.uncapacity = assets?.observeCapacity(() => {
+      if (this.blocked) {
+        this.blocked = false;
+        this.signature = '';
+      }
+    });
+  }
+  private clear(): void {
+    this.signature = '';
+    this.cleanups.splice(0).forEach((stop) => stop());
+    this.group.clearLayers();
+  }
   constructor(private map: L.Map) {
     this.group.addTo(map);
   }
-  update(points: PersonPoint[], config: PeopleConfig, preview: boolean): void {
+  update(points: PersonPoint[], config: PeopleConfig): void {
+    if (this.map.getZoom() === undefined) {
+      this.clear();
+      return;
+    }
     const centerLongitude =
       this.map.getZoom() === undefined ? 0 : this.map.getCenter().lng;
     points = points.map((person) => ({
@@ -19,11 +61,11 @@ export class PeopleLayer {
       points,
       config.show_labels,
       config.accuracy_circles,
-      preview,
+      this.map.getBounds().toBBoxString(),
     ]);
     if (signature === this.signature) return;
+    this.clear();
     this.signature = signature;
-    this.group.clearLayers();
     for (const person of points) {
       if (config.accuracy_circles && person.accuracyM !== null)
         L.circle([person.latitude, person.longitude], {
@@ -37,24 +79,92 @@ export class PeopleLayer {
       const icon = document.createElement('span');
       icon.className = `person-marker${person.stale ? ' stale' : ''}`;
       icon.style.backgroundColor = person.color;
-      if (person.photo && !preview && safePhoto(person.photo)) {
+      icon.textContent = person.name.slice(0, 2).toUpperCase();
+      const reason = document.createElement('p');
+      if (
+        person.photo &&
+        this.map.getBounds().contains([person.latitude, person.longitude])
+      ) {
+        const kind = photoKind(person.photo);
+        const controller = new AbortController();
+        let held: DecodedAsset | undefined;
         const img = document.createElement('img');
-        img.src = person.photo;
         img.alt = '';
-        img.addEventListener(
-          'error',
-          () => {
-            img.remove();
-            icon.textContent = person.name.slice(0, 2).toUpperCase();
-          },
-          { once: true },
-        );
-        icon.append(img);
-      } else if (person.icon && !preview && customElements.get('ha-icon')) {
+        const clear = () => {
+          if (held) held.signal.removeEventListener('abort', clear);
+          img.onload = null;
+          img.onerror = null;
+          img.removeAttribute('src');
+          img.remove();
+          icon.textContent = person.name.slice(0, 2).toUpperCase();
+          held?.release();
+          held = undefined;
+        };
+        this.cleanups.push(() => {
+          controller.abort();
+          clear();
+        });
+        const failure = (message: string) => {
+          clear();
+          reason.textContent = message;
+        };
+        img.onerror = () => failure('Entity picture unavailable');
+        if (kind === 'first-party') {
+          img.src = person.photo;
+          icon.replaceChildren(img);
+        } else if (kind === 'external' && this.assets) {
+          const key = pictureKey(person.photo);
+          const valid = () => {
+            const picture =
+              this.currentHass?.()?.states[person.entityId]?.attributes
+                .entity_picture;
+            return typeof picture === 'string' && pictureKey(picture) === key;
+          };
+          void this.assets
+            .acquire(
+              {
+                kind: 'photo',
+                entity_id: person.entityId,
+                picture_key: key,
+                ...(this.entryId ? { entry_id: this.entryId } : {}),
+              },
+              controller.signal,
+              valid,
+            )
+            .then((asset) => {
+              held = asset;
+              if (!asset.current() || controller.signal.aborted) {
+                clear();
+                return;
+              }
+              asset.signal.addEventListener('abort', clear, { once: true });
+              img.src = asset.url;
+              icon.replaceChildren(img);
+            })
+            .catch((error: unknown) => {
+              if (error instanceof AssetFailure && error.localCapacity)
+                this.blocked = true;
+              if (!controller.signal.aborted)
+                failure(
+                  error instanceof AssetFailure
+                    ? error.message
+                    : 'Entity picture unavailable',
+                );
+            });
+        } else
+          reason.textContent =
+            kind === 'unsupported'
+              ? 'Entity picture address is unsupported'
+              : 'Entity picture service unavailable';
+      } else if (
+        !person.photo &&
+        person.icon &&
+        customElements.get('ha-icon')
+      ) {
         const haIcon = document.createElement('ha-icon');
         haIcon.setAttribute('icon', person.icon);
-        icon.append(haIcon);
-      } else icon.textContent = person.name.slice(0, 2).toUpperCase();
+        icon.replaceChildren(haIcon);
+      }
       const marker = L.marker([person.latitude, person.longitude], {
         pane: 'people',
         icon: L.divIcon({
@@ -74,7 +184,7 @@ export class PeopleLayer {
       details.append(title);
       const status = document.createElement('p');
       status.textContent = `${person.stale ? 'Stale / unavailable · ' : ''}${person.timestampKind === 'unknown' ? 'Position freshness unknown' : `${person.timestampKind === 'position' ? 'Position time' : 'Entity updated (GPS age unknown)'}: ${new Date(person.timestamp!).toLocaleString()}`}`;
-      details.append(status);
+      details.append(status, reason);
       marker.bindPopup(details, { autoPan: false });
       if (config.show_labels) {
         const label = document.createElement('span');
@@ -88,15 +198,32 @@ export class PeopleLayer {
     }
   }
   dispose(): void {
+    this.unobserve?.();
+    this.uncapacity?.();
+    this.clear();
     this.group.remove();
-    this.group.clearLayers();
   }
 }
-function safePhoto(value: string): boolean {
+/** Same-origin/relative HA pictures remain first-party; every external URL goes
+ * through the authorized entity route. Never expose the raw external URL. */
+export function photoKind(
+  value: string,
+  origin = location.origin,
+): 'first-party' | 'external' | 'unsupported' {
+  if (!value || /[\\\s]/.test(value) || value.startsWith('//'))
+    return 'unsupported';
   try {
-    const url = new URL(value, location.href);
-    return ['http:', 'https:'].includes(url.protocol);
+    const url = new URL(value, origin);
+    if (
+      !['http:', 'https:'].includes(url.protocol) ||
+      url.username ||
+      url.password ||
+      url.hash
+    )
+      return 'unsupported';
+    if (url.origin === origin) return 'first-party';
+    return url.protocol === 'https:' ? 'external' : 'unsupported';
   } catch {
-    return false;
+    return 'unsupported';
   }
 }

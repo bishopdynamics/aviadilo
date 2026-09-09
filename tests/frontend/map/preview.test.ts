@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
-import { previewEvents, previewHass } from '../../../src/map/preview';
+import { previewEvents, previewHass } from '../../../dev/fixtures';
 import { parseEvent } from '../../../src/data/client';
-it('bundled picker weather/aircraft are valid synthetic current snapshots for every radar source', () => {
+it('offline harness weather/aircraft are valid synthetic current snapshots for every radar source', () => {
   for (const provider of ['rainviewer', 'noaa_mrms', 'noaa_ksox'] as const) {
     const events = previewEvents(provider, Date.parse('2026-09-07T12:00:00Z'));
     expect(events.map((event) => parseEvent(event).kind)).toEqual([

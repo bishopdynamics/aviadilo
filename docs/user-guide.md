@@ -2,6 +2,8 @@
 
 Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. Version `0.1.0-dev.2` is a development prerelease under acceptance.
 
+The installation instructions below describe the published `v0.1.0-dev.2`. The current development branch is adding shared basemap caching and the same real data in saved, editor and picker views. That work has not been published as a new HACS release; its previews do not substitute synthetic locations or weather. Synthetic data is confined to the developer test harness.
+
 ## Installation
 
 1. In HACS, add `https://github.com/bishopdynamics/aviadilo` as a custom repository with type **Integration**. Open Download/Redownload, expand **Need a different version?**, and explicitly select `v0.1.0-dev.2` in the Release dropdown. Confirm the dialog names that version before downloading. Restart Home Assistant when requested.
