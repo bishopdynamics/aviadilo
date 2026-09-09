@@ -1,6 +1,6 @@
 # SPEC: Aircraft icons and type filters
 
-- **Status:** implemented and locally verified — preparing v0.2.0-dev.5 publication; user assessment follows.
+- **Status:** implemented, verified and published as v0.2.0-dev.5 from c686f72; awaiting user assessment.
 
 ## Summary
 
@@ -54,6 +54,8 @@ None added to the backlog. Exact-model silhouettes or supplemental classificatio
 
 ## Change Log
 
-- 2026-09-09 — Parent360 frontend/546 backend/26 browser checks pass. Native3roles, saved filters, editor/picker and actual HACS candidate upgrade pass. Acceptance also repaired popup teardown and keyboard selection; unknown classification and provider policy remain unchanged.
+- 2026-09-09 — Published [v0.2.0-dev.5](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.0-dev.5) from c686f72 after all remote workflows passed. Public ZIP exactly matches the native-tested candidate; actual HACS installation with published metadata/bytes passed. Normal v0.1.0 remains Latest.
+
+- 2026-09-09 — Parent 360 frontend/546 backend/26 browser checks pass. Native three-role, saved filters, editor/picker and actual HACS candidate upgrade pass. Acceptance also repaired popup teardown and keyboard selection; unknown classification and provider policy remain unchanged.
 
 - 2026-09-09 — User confirms previous reference-marker release and requests aircraft-kind icons and type checkboxes. Verified existing category transport and recorded local filtering design.

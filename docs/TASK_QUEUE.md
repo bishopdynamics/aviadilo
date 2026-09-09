@@ -4,7 +4,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-Current follow-up [in-progress]: aircraft-kind icons and type checkboxes under docs/spec/FEATURE_SPEC_aircraft_types.md are implemented and locally verified:360 frontend/546 backend/26 browser tests, native admin/regular/read-only all/none/heli/unknown filters, graphical save/reopen, editor/picker and actual HACS candidate install. Preparing v0.2.0-dev.5 publication; user assessment follows.
+Current follow-up implemented and delivered: aircraft-kind icons and type checkboxes under docs/spec/FEATURE_SPEC_aircraft_types.md, commit c686f72, published v0.2.0-dev.5. Parent 360 frontend/546 backend/26 browser tests, native admin/regular/read-only filters and keyboard/popup checks, graphical save/reopen, editor/picker, all remote workflows and actual published-bytes HACS installation passed. Await user assessment; keep ROOT_SPEC in progress.
 
 Current follow-up implemented and delivered: optional default-enabled You are here icon under docs/spec/FEATURE_SPEC_reference_marker.md, commit 8b89254, published v0.2.0-dev.4. Parent 308 frontend/515 backend/24 browser tests, native HA admin/regular/read-only, all remote workflows, exact public ZIP and actual published-bytes HACS installation passed. Configured map anchor, HA home by default; graphical Map checkbox. User confirmed on 2026-09-09 that it works and looks good. ROOT_SPEC stays in progress for the aircraft-icon follow-up.
 
