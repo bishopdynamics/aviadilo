@@ -4,7 +4,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-Current bug repair [in-progress]: dedicated non-admin asset subscription implemented under docs/spec/FEATURE_SPEC_kiosk_permissions.md. Parent301 frontend/512 backend/23 browser gates and actual regular/read-only native clear/reconnect passed. Published dev.2 failure reproduced with no basemap requests. Candidate0.2.0-dev.3 awaits remote validation/publication; no MQTT, role escalation or browser-profile reset needed.
+Current bug repair delivered: non-admin kiosk asset subscription fixed in v0.2.0-dev.3 (6c95c0e). Parent 301 frontend/512 backend/23 browser gates, regular/read-only native loading/clear/reconnect, remote workflows, actual public ZIP and HACS installation passed. Await the user's kiosk confirmation. Keep existing HA roles; no MQTT or repeated profile/cache reset is needed.
 
 Current follow-up implemented and delivered: optional layer buttons and page auto height under docs/spec/FEATURE_SPEC_map_layout.md, commit 9d714aa, published v0.2.0-dev.2. Parent 282 frontend/489 backend/23 browser checks, native HA layouts/editor/120-second stability, all remote workflows, public ZIP verification and actual published-bytes HACS installation passed. Await user assessment; keep ROOT_SPEC in progress. User TODO remains untouched.
 

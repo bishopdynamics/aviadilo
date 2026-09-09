@@ -1,6 +1,6 @@
 # SPEC: Asset subscriptions for ordinary kiosk users
 
-- **Status:** in-progress — user-reported blank kiosk maps; fix authorized by the report.
+- **Status:** implemented and verified — published v0.2.0-dev.3; awaiting user kiosk confirmation.
 
 ## Summary
 
@@ -48,6 +48,8 @@ None. The source and frontend dependency explain the reported log and blank map;
 No new deferred work.
 
 ## Change Log
+
+- 2026-09-08 — Published v0.2.0-dev.3 from 6c95c0e. Actual downloaded bytes match native-tested candidate; published-bytes HACS install and all remote workflows passed. Kiosk user permissions and HA's global restrictions remain unchanged; user confirmation follows.
 
 - 2026-09-08 — Implemented and independently verified: 301 frontend + 512 backend + 23 browser tests, old-version non-admin reproduction, and fixed regular/read-only native HA loading/clear/reconnect. Candidate 0.2.0-dev.3 is ready for remote validation/publication.
 
