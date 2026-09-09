@@ -72,23 +72,16 @@ def test_reject_nonfinite(value: float) -> None:
 
 
 def test_packaging_validation_and_determinism(tmp_path: Path) -> None:
-    # A minimal isolated source tree tests packaging without relying on a prior build.
+    # An isolated source tree tests packaging without relying on a prior build.
     sandbox = tmp_path / "source"
     integration = sandbox / "custom_components/aviadilo"
-    integration.mkdir(parents=True)
+    shutil.copytree(
+        ROOT / "custom_components/aviadilo",
+        integration,
+        ignore=shutil.ignore_patterns("__pycache__", "frontend"),
+    )
     for filename in ("LICENSE", "package.json", "hacs.json", "pyproject.toml"):
         shutil.copy(ROOT / filename, sandbox / filename)
-    for filename in (
-        "__init__.py",
-        "models.py",
-        "const.py",
-        "providers/base.py",
-        "manifest.json",
-        "brand/icon.png",
-    ):
-        target = integration / filename
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(ROOT / "custom_components/aviadilo" / filename, target)
     version = json.loads((sandbox / "package.json").read_text())["version"]
     (integration / "frontend").mkdir()
     (integration / "frontend/aviadilo.js").write_text(f"/*! Aviadilo version: {version} */\n")
@@ -124,6 +117,11 @@ def test_packaging_validation_and_determinism(tmp_path: Path) -> None:
             ("wrong-constant", {"const.py": b'VERSION = "99.0.0"'}, "bootstrap version"),
             ("wrong-manifest", {"manifest.json": b'{"version":"99.0.0"}'}, "Manifest"),
         ]
+        mutations.extend(
+            (f"missing-{filename.replace('/', '-')}", {filename: None}, "missing")
+            for filename in sorted(check_release.REQUIRED)
+            if filename.endswith((".py", ".json"))
+        )
         for name, mutation, error in mutations:
             changed: dict[str, bytes | None] = dict(files)
             changed.update(mutation)
@@ -144,18 +142,38 @@ def test_packaging_validation_and_determinism(tmp_path: Path) -> None:
             build_release.build_release(tmp_path / "symlink-license-source.zip", root=sandbox)
         license_path.unlink()
         license_path.write_bytes(license_content)
-        # Extract only the validated archive and prove model imports are self-contained.
+        # Import the extracted runtime, with no checkout on the isolated Python path.
         installed = tmp_path / "installed"
+        installed_integration = installed / "custom_components/aviadilo"
         with ZipFile(first) as archive:
-            archive.extractall(installed)
+            archive.extractall(installed_integration)
+        modules = [
+            "custom_components.aviadilo"
+            + ("" if name == "__init__.py" else "." + name[:-3].replace("/", "."))
+            for name in sorted(files)
+            if name.endswith(".py")
+        ]
         result = subprocess.run(
-            [sys.executable, "-I", "-c", "import runpy; runpy.run_path('models.py')"],
+            [
+                sys.executable,
+                "-I",
+                "-c",
+                "import importlib, json, pathlib, sys; "
+                "sys.path.insert(0, sys.argv[1]); "
+                "modules = [importlib.import_module(name) for name in json.loads(sys.argv[2])]; "
+                "assert all(pathlib.Path(m.__file__).is_relative_to(sys.argv[1]) "
+                "for m in modules); "
+                "print(f'Imported {len(modules)} packaged runtime modules')",
+                str(installed),
+                json.dumps(modules),
+            ],
             cwd=installed,
             capture_output=True,
             text=True,
             check=False,
         )
         assert result.returncode == 0, result.stderr
+        assert result.stdout.strip() == f"Imported {len(modules)} packaged runtime modules"
     finally:
         sys.path.pop(0)
 
@@ -202,6 +220,16 @@ def test_isolated_ha_install_preserves_settings_and_rejects_unsafe_zip(tmp_path:
     retained = config / ".storage"
     retained.mkdir()
     (retained / "synthetic-options").write_text("retained")
+    cache = retained / "aviadilo/public/basemap/tile"
+    cache.parent.mkdir(parents=True)
+    cache.write_bytes(b"retained public cache entry")
+    dashboard = config / "ui-lovelace.yaml"
+    legacy_dashboard = (
+        "views:\n  - cards:\n      - type: custom:aviadilo-map\n"
+        "        schema_version: 1\n        wind:\n"
+        "          static_style: barbs\n          particles: true\n"
+    )
+    dashboard.write_text(legacy_dashboard)
     manifest = json.loads((ROOT / "custom_components/aviadilo/manifest.json").read_text())
     archive = tmp_path / "candidate.zip"
     with ZipFile(archive, "w") as zipped:
@@ -210,7 +238,27 @@ def test_isolated_ha_install_preserves_settings_and_rejects_unsafe_zip(tmp_path:
         zipped.writestr("manifest.json", json.dumps(manifest))
         zipped.writestr("frontend/aviadilo.js", f"/*! Aviadilo version: {manifest['version']} */")
         zipped.writestr("brand/icon.png", b"\x89PNG\r\n\x1a\n")
+    previous_archive = tmp_path / "previous.zip"
+    previous_manifest = {**manifest, "version": "0.1.0"}
+    with ZipFile(archive) as current, ZipFile(previous_archive, "w") as previous:
+        for item in current.infolist():
+            content = current.read(item)
+            if item.filename == "manifest.json":
+                content = json.dumps(previous_manifest).encode()
+            elif item.filename == "frontend/aviadilo.js":
+                content = b"/*! Aviadilo version: 0.1.0 */"
+            previous.writestr(item, content)
+    assert install(previous_archive, config, True) == "0.1.0"
     assert install(archive, config, True) == manifest["version"]
+    assert (retained / "synthetic-options").read_text() == "retained"
+    assert cache.read_bytes() == b"retained public cache entry"
+    assert dashboard.read_text() == legacy_dashboard
+    assert (
+        json.loads((config / "custom_components/.aviadilo-previous/manifest.json").read_text())[
+            "version"
+        ]
+        == "0.1.0"
+    )
     installed = config / "custom_components/aviadilo/manifest.json"
     assert "aviadilo_fixture" in json.loads(installed.read_text())["dependencies"]
     assert install(archive, config, False) == manifest["version"]

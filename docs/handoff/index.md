@@ -2,14 +2,16 @@
 
 ## Current
 
-- **2026-09-08 — Continuous kiosk implementation.** User requested proceeding through remaining slices without routine pauses. Slice 4 committed faefc77. Slice 5 quiet presentation/inspection is implemented and independently verified; next slice 6 packaging/upgrade/endurance/publication. ROOT_SPEC remains in progress pending user assessment.
-- Slice 5 parent gates: 273 frontend + 482 backend + 20 Chromium tests; native HA 2026.9.1 / Chromium 153.0.8010.12 quiet controls/list/popups/credits, 390px sizing, actual missing-entry error UI and matched read-only editor inspection passed. Emulated touch drag/Recenter/toggles and short-list popover passed. See docs/development.md and /tmp/aviadilo-kiosk-remaining.
-- Inspection shares existing state through bounded connection/user/config/DOM-owner matching; hidden mounted sources retain scalar timestamps marked paused, no collector or image/grid retention. Stale basemap metadata reaches status. Popovers use the browser top layer to avoid short-card clipping. This does not add cross-remount client continuity.
-- Native preview-remount question remains pending via async question; user-confirmed v0.1.0 HACS/cache/real-preview behavior stays accepted. Do not infer the stronger cross-remount guarantee.
-- Public v0.1.0 remains Latest. Planned v0.2.0-dev.1 release and tag are unused (public metadata and git ls-remote checked); never overwrite old releases. Prepared notes: docs/releases/0.2.0-dev.1.md. Local slice-5 ZIP still says 0.1.0, not a distributable replacement for published bytes.
-- Only main worktree; native slice-4/5 workers completed. Parent-owned isolated HA continues at /tmp/aviadilo-slice8/ha; stop gracefully before package replacement/end. Private test auth stays outside git. User docs/TODO.md unchanged dirty blob c1bcc1bf91d680cb700819071583fa066d5914a5; include .bishop changes in commits.
+- **2026-09-08 — Slice 6 acceptance underway; keep working without routine pauses.** User authorized remaining kiosk slices. Slice 4 faefc77 and slice 5 9ec36b8 are implemented/verified. Slice 6 code is ready as 0.2.0-dev.1; parent full checks passed 273 frontend + 486 backend + 20 Chromium tests. ROOT_SPEC remains in progress pending final release checks and user assessment.
+- Candidate ZIP: 28 files, 1,202,244 bytes, SHA256 f4a1126cbdb6e87dcd592e5daa609b3f4a3c4109bd0ef555737fd764e568e6ea. Independent rebuild and served native frontend match candidate bytes. Actual local HACS installer passed; native published-0.1.0→candidate upgrade preserved entry/options, four dashboard documents and 80 byte-identical public cache files before viewers resumed. Untouched v1 dashboard loads migrated v2 in memory, without storage writes; new module URL verified.
+- **ACTIVE endurance:** /tmp/aviadilo-kiosk-remaining/soak.mjs, log/progress/result alongside it. Twenty-minute two-context run began 2026-09-09T03:00:16Z with saved card and actual native editor, looping radar and 500 particles. Parent exec session 46440 owns runner; HA session 80525 owns /tmp/aviadilo-slice8/ha. Do not stop/reinstall HA while it runs. Check actual completion/evidence; do not infer success from startup. Remote CI and published release verification remain pending.
+- Planned publication is development v0.2.0-dev.1; public normal v0.1.0 remains Latest. Tag/release checked unused. Never move/replace old published tags/assets. Docs/releases/0.2.0-dev.1.md has migration/reload guidance and native-preview reset behavior.
+- Separate native-preview-remount user question remains unanswered; no cross-remount weather-client/state guarantee is claimed. Shared real pipeline/cache and the user's positive v0.1.0 report remain accepted.
+- Only main worktree, all three native workers completed. User docs/TODO.md unchanged dirty blob c1bcc1bf91d680cb700819071583fa066d5914a5; include .bishop changes. Private test auth/evidence remain under /tmp. At completion close browsers/HA and audit processes/worktrees.
 
 ## Archives
+
+- `archive_24.md` — slice-5 verification before packaged upgrade.
 
 - `archive_23.md` — slice-4 checkpoint before quiet presentation.
 

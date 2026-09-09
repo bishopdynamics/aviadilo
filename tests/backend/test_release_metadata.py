@@ -18,6 +18,7 @@ write_github_output = MODULE["write_github_output"]
     [
         ("v0.1.0", False, True),
         ("v0.1.1-dev.1", True, False),
+        ("v0.2.0-dev.1", True, False),
         ("v0.2.0-rc.1", True, False),
         ("v0.2.0-1rc.1", True, False),
     ],
@@ -60,3 +61,49 @@ def test_github_outputs_are_lowercase_booleans(tmp_path: Path, tag: str, expecte
     output.write_text("existing=value\n")
     write_github_output(output, classify_release(tag, tag[1:]))
     assert output.read_text() == f"existing=value\n{expected}"
+
+
+@pytest.mark.parametrize("tag", ["v0.1.0", "v0.2.0-dev.1"])
+def test_version_notes_append_without_changing_channel_guidance(tmp_path: Path, tag: str) -> None:
+    metadata = classify_release(tag, tag[1:])
+    guidance = metadata.notes(root=tmp_path)
+    releases = tmp_path / "docs/releases"
+    releases.mkdir(parents=True)
+    (releases / "99.0.0.md").write_text("Unrelated release notes")
+    assert metadata.notes(root=tmp_path) == guidance
+    notes = releases / f"{metadata.version}.md"
+    notes.write_text("\n# Upgrade\n\nRestart HA and reload before saving v2.\n")
+    assert metadata.notes(root=tmp_path) == (
+        f"{guidance}\n# Upgrade\n\nRestart HA and reload before saving v2.\n"
+    )
+    notes.write_text("\n")
+    assert metadata.notes(root=tmp_path) == guidance
+
+
+def test_release_cli_includes_matching_notes(tmp_path: Path) -> None:
+    import json
+    import subprocess
+    import sys
+
+    version = json.loads((ROOT / "package.json").read_text())["version"]
+    output, notes = tmp_path / "github-output", tmp_path / "notes.md"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/release_metadata.py"),
+            f"v{version}",
+            "--github-output",
+            str(output),
+            "--notes-file",
+            str(notes),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    metadata = classify_release(f"v{version}", version)
+    assert notes.read_text() == metadata.notes()
+    local_notes = ROOT / "docs/releases" / f"{version}.md"
+    if local_notes.exists():
+        assert local_notes.read_text().strip() in notes.read_text()

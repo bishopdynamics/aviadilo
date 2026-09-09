@@ -29,20 +29,27 @@ class ReleaseMetadata:
         """Only stable releases may become the default HACS release."""
         return not self.prerelease
 
-    def notes(self) -> str:
-        """Return concise installation guidance for this release channel."""
+    def notes(self, root: Path = ROOT) -> str:
+        """Include version-specific upgrade notes after channel installation guidance."""
         if self.prerelease:
-            return (
+            guidance = (
                 "Development release. In HACS, open Download/Redownload, expand "
                 '"Need a different version?", and explicitly select this version. '
                 "Restart Home Assistant when prompted.\n"
             )
-        return (
-            "Regular release for normal HACS installs and updates. Add "
-            "`bishopdynamics/aviadilo` as a custom Integration repository if it is not "
-            "already installed, then use the standard HACS Download or Update action. "
-            "Restart Home Assistant when prompted.\n"
-        )
+        else:
+            guidance = (
+                "Regular release for normal HACS installs and updates. Add "
+                "`bishopdynamics/aviadilo` as a custom Integration repository if it is not "
+                "already installed, then use the standard HACS Download or Update action. "
+                "Restart Home Assistant when prompted.\n"
+            )
+        notes_path = root / "docs" / "releases" / f"{self.version}.md"
+        if notes_path.is_file():
+            version_notes = notes_path.read_text().strip()
+            if version_notes:
+                return f"{guidance}\n{version_notes}\n"
+        return guidance
 
 
 def parse_version(version: str) -> tuple[int, int, int, str | None]:

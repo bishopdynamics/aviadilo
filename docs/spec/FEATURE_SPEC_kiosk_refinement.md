@@ -237,6 +237,8 @@ The user approved the design, but native slice 3 verification found one platform
 
 ## Change Log
 
+- 2026-09-08 — Slice 6 candidate prepared as 0.2.0-dev.1 (Python 0.2.0.dev1). Parent full gates passed 273 frontend + 486 backend + 20 Chromium tests. Local actual HACS installer and native HA published-0.1.0 upgrade passed; entry/options, untouched v1 dashboards and 80 public cache files survived replacement/restart. The 20-minute saved/editor run, remote workflows and actual release-download verification are still in progress; no publication yet.
+
 - 2026-09-08 — Slice 5 implemented and independently verified: quiet healthy card, retained interaction/list/credits, error-only popover and editor read-only inspection. Parent full gates passed 273 frontend + 482 backend + 20 Chromium tests. Native HA/Chromium validated quiet layout, real missing-entry recovery UI, exact preview inspection, narrow sizing and emulated touch; physical tablet remains user acceptance. No publication/version change.
 
 - 2026-09-08 — Slice 5 also updates tests/e2e/assets.spec.ts because its passive-recovery scenario asserted removed telemetry. Inspection retains last scalar weather timestamps while the mounted card is offscreen, clearly labelled paused; it retains no images/grids or extra collection. The error dialog uses a viewport-bounded browser popover so short list-only cards do not clip recovery details.
