@@ -1,6 +1,6 @@
 # SPEC: Person entities and stock-map location parity
 
-- **Status:** implemented and locally verified — preparing v0.2.0-dev.6 publication; user assessment follows.
+- **Status:** implemented, verified and published as v0.2.0-dev.6 from cb3a4d4; awaiting user assessment.
 
 ## Summary
 
@@ -58,6 +58,8 @@ No new deferred feature. The separately open aircraft-warning investigation reta
 
 ## Change Log
 
-- 2026-09-09 — Parent386 frontend/564 backend/29 browser gates and actual HA person/stock-map/three-role/photo/editor/picker acceptance passed. Actual local HACS upgrade passed.
+- 2026-09-09 — Published [v0.2.0-dev.6](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.0-dev.6) from cb3a4d4 after remote native/HACS/hassfest/publication checks passed. Public ZIP exactly matches tested bytes; actual published-metadata/bytes HACS install passed. Normal v0.1.0 remains Latest.
+
+- 2026-09-09 — Parent 386 frontend/564 backend/29 browser gates and actual HA person/stock-map/three-role/photo/editor/picker acceptance passed. Actual local HACS upgrade passed.
 
 - 2026-09-09 — User supplied diagnostics under tmp and requested gitignore; identified working stock-map person versus faulty direct device tracker. Verified HA person/zone behavior and recorded compatible support.

@@ -1,6 +1,6 @@
 # SPEC: Aviadilo household map
 
-- **Status:** in-progress — initial map and kiosk refinements delivered; the user confirms the current dev.4 release works and looks good. Aircraft-kind icons and graphical type filters are the current requested follow-up.
+- **Status:** in-progress — initial map and kiosk refinements delivered; aircraft icons are confirmed working. Person entities and stock-map zone locations are the current follow-up; the intermittent aircraft warning remains separately under investigation.
 - **Addenda:** [FEATURE_SPEC_kiosk_refinement.md](FEATURE_SPEC_kiosk_refinement.md) — delivered in v0.2.0-dev.1 and positively assessed by the user; shared basemap caching, identical edit/live data, quiet presentation, themes and wind controls.
 - **Addenda:** [FEATURE_SPEC_map_layout.md](FEATURE_SPEC_map_layout.md) — requested 2026-09-08 after positive kiosk acceptance; optional layer buttons and auto page height.
 - **Addenda:** [FEATURE_SPEC_kiosk_permissions.md](FEATURE_SPEC_kiosk_permissions.md) — non-admin kiosk asset subscription repair, requested 2026-09-08.

@@ -4,7 +4,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-Current follow-up [in-progress]: person support under docs/spec/FEATURE_SPEC_person_locations.md is implemented and locally verified:386 frontend/564 backend/29 browser tests, actual HA person and stock-map selection comparison, native three-role locations/photos/editor/picker, and actual HACS candidate install. Preparing v0.2.0-dev.6. User diagnostic folder tmp/ is ignored. Supplied capture shows adsb.fi healthy at capture; the earlier intermittent aircraft event remains unproven.
+Current follow-up implemented and delivered: person support under docs/spec/FEATURE_SPEC_person_locations.md, commit cb3a4d4, published v0.2.0-dev.6. Parent 386 frontend/564 backend/29 browser tests, actual HA person/stock-map comparison, native three-role locations/photos/editor/picker, all remote workflows and actual public-ZIP HACS install passed. Await user assessment. User diagnostic folder tmp/ is ignored; supplied capture showed adsb.fi healthy and did not establish the earlier aircraft event cause.
 
 Current investigation [in-progress, awaiting incident evidence]: intermittent Aircraft unavailable warning; icons confirmed working and earlier missing/edit-only observations withdrawn. See docs/research/intermittent-aircraft-status.md. Parent fault-injection checks confirm failure/cooldown/recovery behavior, and both public API probes succeeded. No household cause established or runtime change made. The supplied diagnostic capture showed adsb.fi current with zero failures/backoff and no active viewers, so it did not capture the incident. Further active-warning evidence is needed if it recurs. The separate People mismatch is being addressed through person/zone support.
 
