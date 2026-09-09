@@ -4,6 +4,8 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
+Current bug repair [in-progress]: dedicated non-admin asset subscription implemented under docs/spec/FEATURE_SPEC_kiosk_permissions.md. Parent301 frontend/512 backend/23 browser gates and actual regular/read-only native clear/reconnect passed. Published dev.2 failure reproduced with no basemap requests. Candidate0.2.0-dev.3 awaits remote validation/publication; no MQTT, role escalation or browser-profile reset needed.
+
 Current follow-up implemented and delivered: optional layer buttons and page auto height under docs/spec/FEATURE_SPEC_map_layout.md, commit 9d714aa, published v0.2.0-dev.2. Parent 282 frontend/489 backend/23 browser checks, native HA layouts/editor/120-second stability, all remote workflows, public ZIP verification and actual published-bytes HACS installation passed. Await user assessment; keep ROOT_SPEC in progress. User TODO remains untouched.
 
 Continuation 2026-09-08 complete for the three requested implementation slices: slice 4 faefc77, slice 5 9ec36b8, slice 6 c2ddc49. Published prerelease v0.2.0-dev.1; actual public ZIP is byte-identical to the tested candidate and actual HACS upgrade using published metadata/bytes passed. Parent gates: 273 frontend + 486 backend + 20 Chromium tests; native upgrade, 20-minute saved/editor endurance, warm return/second-browser/restart and remote native/hassfest/HACS/release workflows passed. ROOT_SPEC remains [in-progress] for user kiosk assessment and the separate unanswered native-preview-remount choice; no stronger cross-remount guarantee is claimed. Normal v0.1.0 remains Latest.

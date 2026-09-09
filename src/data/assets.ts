@@ -307,7 +307,7 @@ export class AssetClient {
   private async start(epoch: number): Promise<AssetInfo> {
     try {
       const subscription = this.ha.subscribe(
-        { type: 'subscribe_events', event_type: ASSETS_CHANGED },
+        { type: 'aviadilo/subscribe_assets', schema_version: 1 },
         (event) => {
           if (epoch !== this.epoch || this.disposed) return;
           try {

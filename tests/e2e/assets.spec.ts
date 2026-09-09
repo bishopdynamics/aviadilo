@@ -35,6 +35,13 @@ test('live, preview and raw picker share transport and assets; edits preserve vi
       page.evaluate(() => window.aviadiloTest.stats().assetSubscriptions),
     )
     .toBe(1);
+  const messages = await page.evaluate(() => window.aviadiloTest.stats().calls);
+  expect(
+    messages.filter((message) => message.type === 'aviadilo/subscribe_assets'),
+  ).toEqual([{ type: 'aviadilo/subscribe_assets', schema_version: 1 }]);
+  expect(messages.some((message) => message.type === 'subscribe_events')).toBe(
+    false,
+  );
   const before = await page.evaluate(() => ({
     center: window.aviadiloTest.inspect(0).center,
     calls: window.aviadiloTest

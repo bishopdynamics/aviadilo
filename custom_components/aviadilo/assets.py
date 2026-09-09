@@ -18,7 +18,7 @@ from homeassistant.auth.models import User
 from homeassistant.auth.permissions.const import POLICY_READ
 from homeassistant.components import websocket_api
 from homeassistant.components.websocket_api.connection import ActiveConnection
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.http import KEY_HASS, HomeAssistantView
 from yarl import URL
 
@@ -109,8 +109,11 @@ def validate_asset(value: Any) -> dict[str, Any]:
             raise AssetFailure("invalid_request")
     elif "type" in data:
         required |= {"id", "type"}
-        optional.add("entry_id")
-        if data["type"] != "aviadilo/assets_info" or _integer(data.get("id"), 2147483647) < 1:
+        if data["type"] == "aviadilo/assets_info":
+            optional.add("entry_id")
+        elif data["type"] != "aviadilo/subscribe_assets":
+            raise AssetFailure("invalid_request")
+        if _integer(data.get("id"), 2147483647) < 1:
             raise AssetFailure("invalid_request")
         data["id"] = int(data["id"])
     elif "code" in data:
@@ -376,6 +379,64 @@ class AssetGateway:
     def __init__(self, resolve: Callable[[], AssetService | None]) -> None:
         self.resolve = resolve
         self.users: dict[str, int] = {}
+        self.subscription_users: dict[str, int] = {}
+        self.subscription_connections: dict[ActiveConnection, int] = {}
+
+    @callback
+    def subscribe(self, hass: HomeAssistant, connection: ActiveConnection, msg_id: int) -> None:
+        """Authenticated metadata only; HA owns unsubscribe/disconnect dispatch."""
+        if connection.user is None:
+            raise AssetFailure("unauthorized")
+        selected(self.resolve(), None)
+        user_id = connection.user.id
+        if (
+            self.subscription_connections.get(connection, 0) >= 4
+            or self.subscription_users.get(user_id, 0) >= 16
+            or sum(self.subscription_users.values()) >= 128
+        ):
+            raise AssetFailure("busy")
+        released = False
+
+        @callback
+        def forward(event: Event[Any]) -> None:
+            if released:
+                return
+            try:
+                data = validate_asset(event.data)
+                service = selected(self.resolve(), None)
+                assert service.entry_id is not None
+                current = service.generation.info(service.entry_id)
+                if data != current:
+                    return
+            except AssetFailure:
+                return
+            # Send only freshly constructed AssetInfo, never the general HA event
+            # (context/user IDs, timestamps or arbitrary bus payload fields).
+            connection.send_event(msg_id, {"event_type": ASSETS_CHANGED, "data": current})
+
+        unlisten = hass.bus.async_listen(ASSETS_CHANGED, forward)
+        self.subscription_connections[connection] = (
+            self.subscription_connections.get(connection, 0) + 1
+        )
+        self.subscription_users[user_id] = self.subscription_users.get(user_id, 0) + 1
+
+        @callback
+        def unsubscribe() -> None:
+            nonlocal released
+            if released:
+                return
+            released = True
+            unlisten()
+            self.subscription_connections[connection] -= 1
+            if not self.subscription_connections[connection]:
+                del self.subscription_connections[connection]
+            self.subscription_users[user_id] -= 1
+            if not self.subscription_users[user_id]:
+                del self.subscription_users[user_id]
+            # Do not pop connection.subscriptions: HA iterates it on disconnect.
+
+        connection.subscriptions[msg_id] = unsubscribe
+        connection.send_result(msg_id)
 
     async def get(self, request: web.Request) -> web.Response:
         try:
@@ -483,17 +544,30 @@ def register(hass: HomeAssistant, resolve: Callable[[], AssetService | None]) ->
         except AssetFailure as error:
             connection.send_error(msg["id"], error.code, str(error))
 
-    def validate_command(value: Any) -> dict[str, Any]:
+    @callback
+    def subscribe(hass: HomeAssistant, connection: ActiveConnection, msg: dict[str, Any]) -> None:
         try:
-            result = validate_asset(value)
-            if result.get("type") != "aviadilo/assets_info":
-                raise AssetFailure("invalid_request")
-            return result
+            validate_asset(msg)
+            gateway.subscribe(hass, connection, msg["id"])
         except AssetFailure as error:
-            raise vol.Invalid(str(error)) from error
+            connection.send_error(msg["id"], error.code, str(error))
 
-    websocket_api.async_register_command(
-        hass, "aviadilo/assets_info", handle, vol.Schema(validate_command)
-    )
+    def command_schema(command: str) -> vol.Schema:
+        def validate_command(value: Any) -> dict[str, Any]:
+            try:
+                result = validate_asset(value)
+                if result.get("type") != command:
+                    raise AssetFailure("invalid_request")
+                return result
+            except AssetFailure as error:
+                raise vol.Invalid(str(error)) from error
+
+        return vol.Schema(validate_command)
+
+    for command, handler in (
+        ("aviadilo/assets_info", handle),
+        ("aviadilo/subscribe_assets", subscribe),
+    ):
+        websocket_api.async_register_command(hass, command, handler, command_schema(command))
     hass.data["aviadilo_asset_gateway"] = gateway
     return gateway

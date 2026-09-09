@@ -402,5 +402,159 @@
       "entity_id": "device_tracker.synthetic",
       "picture_key": "0000000000000000000000000000000000000000000000000000000000000000\r\n"
     }
+  },
+  {
+    "name": "subscribe assets",
+    "valid": true,
+    "value": {
+      "id": 1,
+      "type": "aviadilo/subscribe_assets",
+      "schema_version": 1
+    }
+  },
+  {
+    "name": "subscribe assets version bool",
+    "valid": false,
+    "value": {
+      "id": 1,
+      "type": "aviadilo/subscribe_assets",
+      "schema_version": true
+    }
+  },
+  {
+    "name": "subscribe assets unknown version",
+    "valid": false,
+    "value": {
+      "id": 1,
+      "type": "aviadilo/subscribe_assets",
+      "schema_version": 2
+    }
+  },
+  {
+    "name": "subscribe assets version string",
+    "valid": false,
+    "value": {
+      "id": 1,
+      "type": "aviadilo/subscribe_assets",
+      "schema_version": "1"
+    }
+  },
+  {
+    "name": "subscribe assets null version",
+    "valid": false,
+    "value": {
+      "id": 1,
+      "type": "aviadilo/subscribe_assets",
+      "schema_version": null
+    }
+  },
+  {
+    "name": "subscribe assets event selector",
+    "valid": false,
+    "value": {
+      "id": 1,
+      "type": "aviadilo/subscribe_assets",
+      "schema_version": 1,
+      "event_type": "state_changed"
+    }
+  },
+  {
+    "name": "subscribe assets entry selector",
+    "valid": false,
+    "value": {
+      "id": 1,
+      "type": "aviadilo/subscribe_assets",
+      "schema_version": 1,
+      "entry_id": "synthetic-entry"
+    }
+  },
+  {
+    "name": "subscribe assets URL selector",
+    "valid": false,
+    "value": {
+      "id": 1,
+      "type": "aviadilo/subscribe_assets",
+      "schema_version": 1,
+      "url": "https://private.invalid"
+    }
+  },
+  {
+    "name": "subscribe assets unknown field",
+    "valid": false,
+    "value": {
+      "id": 1,
+      "type": "aviadilo/subscribe_assets",
+      "schema_version": 1,
+      "extra": true
+    }
+  },
+  {
+    "name": "subscribe assets wrong command",
+    "valid": false,
+    "value": {
+      "id": 1,
+      "type": "aviadilo/subscribe_asset",
+      "schema_version": 1
+    }
+  },
+  {
+    "name": "subscribe assets null type",
+    "valid": false,
+    "value": {
+      "id": 1,
+      "type": null,
+      "schema_version": 1
+    }
+  },
+  {
+    "name": "subscribe assets zero id",
+    "valid": false,
+    "value": {
+      "id": 0,
+      "type": "aviadilo/subscribe_assets",
+      "schema_version": 1
+    }
+  },
+  {
+    "name": "subscribe assets bool id",
+    "valid": false,
+    "value": {
+      "id": true,
+      "type": "aviadilo/subscribe_assets",
+      "schema_version": 1
+    }
+  },
+  {
+    "name": "subscribe assets fractional id",
+    "valid": false,
+    "value": {
+      "id": 1.5,
+      "type": "aviadilo/subscribe_assets",
+      "schema_version": 1
+    }
+  },
+  {
+    "name": "subscribe assets missing id",
+    "valid": false,
+    "value": {
+      "type": "aviadilo/subscribe_assets",
+      "schema_version": 1
+    }
+  },
+  {
+    "name": "subscribe assets missing type",
+    "valid": false,
+    "value": {
+      "id": 1,
+      "schema_version": 1
+    }
+  },
+  {
+    "name": "subscribe assets missing schema_version",
+    "valid": false,
+    "value": {
+      "id": 1,
+      "type": "aviadilo/subscribe_assets"
+    }
   }
 ]

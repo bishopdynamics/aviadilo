@@ -11,6 +11,7 @@ import {
   syntheticTile,
   fixtureBlob,
 } from './fixtures';
+import { validateContract } from '../src/config/validate';
 import { parseInfo } from '../src/data/client';
 import type { CardConfig } from '../src/config/types';
 import type {
@@ -76,7 +77,7 @@ function info(): Info {
 }
 function emit(id: number, subscription: Subscription) {
   const m = subscription.message;
-  if (m.type === 'subscribe_events') return;
+  if (m.type === 'aviadilo/subscribe_assets') return;
   const events = previewEvents(m.radar_provider as 'rainviewer');
   const status = events.find((event) => event.kind === 'status')!;
   const aircraft = snapshot.find((event) => event.kind === 'aircraft')!;
@@ -107,10 +108,15 @@ const connection: HaConnection = {
     message: WireMessage,
   ) {
     calls.push(structuredClone(message));
+    if (message.type === 'aviadilo/subscribe_assets')
+      validateContract('assets', { ...message, id: nextId });
+    else if (message.type !== 'aviadilo/subscribe')
+      throw new Error('Unsupported subscription');
     if (
       unavailable ||
       !entryId ||
-      (message.type !== 'subscribe_events' && message.entry_id !== entryId)
+      (message.type !== 'aviadilo/subscribe_assets' &&
+        message.entry_id !== entryId)
     )
       throw new Error('Integration unavailable');
     const id = nextId++;
@@ -365,7 +371,7 @@ const api = {
     generation =
       generation.split(':')[0] + ':' + (Number(generation.split(':')[1]) + 1);
     for (const subscription of subscriptions.values())
-      if (subscription.message.type === 'subscribe_events')
+      if (subscription.message.type === 'aviadilo/subscribe_assets')
         subscription.callback({
           event_type: 'aviadilo/assets_changed',
           data: { schema_version: 1, entry_id: entryId, generation },
@@ -451,10 +457,10 @@ const api = {
   stats() {
     return {
       subscriptions: [...subscriptions.values()].filter(
-        (s) => s.message.type !== 'subscribe_events',
+        (s) => s.message.type !== 'aviadilo/subscribe_assets',
       ).length,
       assetSubscriptions: [...subscriptions.values()].filter(
-        (s) => s.message.type === 'subscribe_events',
+        (s) => s.message.type === 'aviadilo/subscribe_assets',
       ).length,
       assets: [...assetCalls],
       assetActive,

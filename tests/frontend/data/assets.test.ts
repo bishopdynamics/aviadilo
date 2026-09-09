@@ -187,7 +187,7 @@ it('subscribes before info and discards a superseded initial response', async ()
     client = new AssetClient(ha);
   const ready = client.ready();
   expect(ha.messages).toEqual([
-    { type: 'subscribe_events', event_type: ASSETS_CHANGED },
+    { type: 'aviadilo/subscribe_assets', schema_version: 1 },
   ]);
   ha.subscription.resolve(ha.unsub);
   await flush();
@@ -258,7 +258,7 @@ it('refreshes once on 409 without retrying the resource or adding event subscrip
   expect(ha.fetch).toHaveBeenCalledOnce();
   expect(
     ha.messages.filter(
-      (x) => (x as { type: string }).type === 'subscribe_events',
+      (x) => (x as { type: string }).type === 'aviadilo/subscribe_assets',
     ),
   ).toHaveLength(1);
   client.dispose();
@@ -735,4 +735,38 @@ describe('shared bounded decoded resources', () => {
     decoded.dispose();
     client.dispose();
   });
+});
+
+it('surfaces denied subscription without reading info, fetching or falling back to raw events', async () => {
+  const ha = new FakeHa(),
+    client = new AssetClient(ha);
+  const ready = client.ready();
+  const denied = new Error('Asset subscription denied');
+  ha.subscription.reject(denied);
+  await expect(ready).rejects.toMatchObject({ code: 'unavailable' });
+  expect(ha.messages).toEqual([
+    { type: 'aviadilo/subscribe_assets', schema_version: 1 },
+  ]);
+  expect(ha.calls).toHaveLength(0);
+  expect(ha.fetch).not.toHaveBeenCalled();
+  expect(client.currentInfo).toBeUndefined();
+  client.dispose();
+});
+
+it('keeps a clear event that races foreground refresh without adding a subscription', async () => {
+  const { ha, client } = await setup();
+  const refreshed = client.refresh();
+  const next = { ...info, generation: generation.slice(0, -1) + '1' };
+  ha.event(next);
+  ha.calls[1].resolve(info);
+  expect(await refreshed).toEqual(next);
+  expect(client.currentInfo).toEqual(next);
+  expect(
+    ha.messages.filter(
+      (message) =>
+        (message as { type: string }).type === 'aviadilo/subscribe_assets',
+    ),
+  ).toEqual([{ type: 'aviadilo/subscribe_assets', schema_version: 1 }]);
+  expect(ha.fetch).not.toHaveBeenCalled();
+  client.dispose();
 });

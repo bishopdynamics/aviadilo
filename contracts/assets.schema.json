@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://aviadilo.local/contracts/assets.schema.json",
   "title": "AssetContract",
-  "description": "Asset protocol v1. kind is the parsed route discriminator, never a query parameter. HTTP query keys are schema_version=1, generation, optional entry_id; photo adds entity_id and picture_key. No duplicate or unknown keys. Canonical decimal path components; x,y < 2**z. Event aviadilo/assets_changed data equals AssetInfo; WS aviadilo/assets_info returns AssetInfo via the standard HA result envelope. Success: PNG with X-Aviadilo-Generation, nosniff, bounded cache headers and validators. Errors: JSON AssetErrorBody and no-store; stale_generation also carries the current generation header. Status mapping: {\"invalid_request\": 400, \"unauthorized\": 401, \"forbidden\": 403, \"not_found\": 404, \"stale_generation\": 409, \"picture_changed\": 409, \"busy\": 429, \"upstream_error\": 502, \"unavailable\": 503}. Frontend admission 8 active/128 pending per connection; backend 8/user and 32 total. Image loading, queues and retention are separate implementation layers.",
+  "description": "Asset protocol v1. kind is the parsed route discriminator, never a query parameter. HTTP query keys are schema_version=1, generation, optional entry_id; photo adds entity_id and picture_key. No duplicate or unknown keys. Canonical decimal path components; x,y < 2**z. Authenticated WS aviadilo/subscribe_assets accepts only id/type/schema_version, acknowledges with the standard HA result and sends event {event_type: aviadilo/assets_changed, data: AssetInfo}. Standard HA unsubscribe/disconnect releases subscriptions; limits 4/connection, 16/user, 128 total. Event aviadilo/assets_changed data equals AssetInfo; WS aviadilo/assets_info returns AssetInfo via the standard HA result envelope. Success: PNG with X-Aviadilo-Generation, nosniff, bounded cache headers and validators. Errors: JSON AssetErrorBody and no-store; stale_generation also carries the current generation header. Status mapping: {\"invalid_request\": 400, \"unauthorized\": 401, \"forbidden\": 403, \"not_found\": 404, \"stale_generation\": 409, \"picture_changed\": 409, \"busy\": 429, \"upstream_error\": 502, \"unavailable\": 503}. Frontend admission 8 active/128 pending per connection; backend 8/user and 32 total. Image loading, queues and retention are separate implementation layers.",
   "oneOf": [
     {
       "$ref": "#/definitions/BasemapRequest"
@@ -15,6 +15,9 @@
     },
     {
       "$ref": "#/definitions/AssetsInfoCommand"
+    },
+    {
+      "$ref": "#/definitions/SubscribeAssetsCommand"
     },
     {
       "$ref": "#/definitions/AssetErrorBody"
@@ -306,6 +309,25 @@
           "required": ["schema_version", "code", "message"]
         }
       ]
+    },
+    "SubscribeAssetsCommand": {
+      "title": "SubscribeAssetsCommand",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "type": {
+          "const": "aviadilo/subscribe_assets"
+        }
+      },
+      "required": ["schema_version", "id", "type"]
     }
   }
 }

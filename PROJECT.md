@@ -6,6 +6,8 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 
 ## Project-specific rules
 
+- Kiosk permission regression (2026-09-08): asset acceptance must include explicit non-owner regular and read-only HA users. HA automatically makes the first test user an owner; owner-only success is insufficient. Use Aviadilo's authenticated metadata subscription, without changing HA's global event allowlist or granting kiosk administrator access.
+
 - Release workflow preference explicitly endorsed by the user on 2026-09-08: verify changes, publish a prerelease for their hands-on testing, incorporate feedback, then deliver a normal release. Use this as the established Aviadilo workflow; the user considers the prerelease testing pattern the right approach.
 
 - User follow-up 2026-09-08: current kiosk release works very well. Graphical options for hiding layer buttons (fixed saved layers) and auto-sizing height to the page are delivered in v0.2.0-dev.2. See docs/spec/FEATURE_SPEC_map_layout.md; default controls/fixed sizing remain compatible.

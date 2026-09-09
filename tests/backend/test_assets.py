@@ -14,6 +14,7 @@ import pytest
 import voluptuous as vol
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
+from homeassistant.auth.const import GROUP_ID_ADMIN, GROUP_ID_READ_ONLY, GROUP_ID_USER
 from homeassistant.auth.models import User
 from homeassistant.components.websocket_api.connection import ActiveConnection
 from homeassistant.core import HomeAssistant
@@ -294,7 +295,10 @@ def test_generation_event_shape_and_opt_in_registration(monkeypatch: pytest.Monk
     assert AssetGeneration().value != AssetGeneration().value
 
 
-async def test_real_ha_http_auth_websocket_info_and_generation_event(hass: HomeAssistant) -> None:
+@pytest.mark.parametrize("group", [GROUP_ID_ADMIN, GROUP_ID_USER, GROUP_ID_READ_ONLY])
+async def test_real_ha_http_auth_websocket_info_and_generation_event(
+    hass: HomeAssistant, group: str
+) -> None:
     """Exercise real router/auth/WS serialization on loopback before router freeze."""
     from aiohttp.test_utils import TestClient, TestServer
     from homeassistant.auth import auth_manager_from_config
@@ -306,14 +310,18 @@ async def test_real_ha_http_auth_websocket_info_and_generation_event(hass: HomeA
     await device_registry.async_load(hass)
     await entity_registry.async_load(hass)
     hass.auth = await auth_manager_from_config(hass, [], [])
-    user = await hass.auth.async_create_user("Asset transport fixture")
+    owner = await hass.auth.async_create_user("Explicit fixture owner")
+    assert owner.is_owner and owner.is_admin
+    user = await hass.auth.async_create_user("Asset transport fixture", group_ids=[group])
+    assert not user.is_owner
+    assert user.is_admin is (group == GROUP_ID_ADMIN)
     refresh = await hass.auth.async_create_refresh_token(user, client_id="http://test.local")
     token = hass.auth.async_create_access_token(refresh)
     hass.http.app[KEY_HASS] = hass
     await async_setup_auth(hass, hass.http.app)
     await websocket_api.async_setup(hass, {})
     backend = Backend()
-    register(hass, lambda: backend)
+    gateway = register(hass, lambda: backend)
     async with TestClient(TestServer(hass.http.app)) as client:
         unauthenticated = await client.get(PATHS[0]["path"])
         assert unauthenticated.status == 401
@@ -331,8 +339,20 @@ async def test_real_ha_http_auth_websocket_info_and_generation_event(hass: HomeA
             await ws.send_json({"type": "auth", "access_token": token})
             assert (await ws.receive_json())["type"] == "auth_ok"
             await ws.send_json({"id": 1, "type": "subscribe_events", "event_type": ASSETS_CHANGED})
-            assert (await ws.receive_json())["success"] is True
-            await ws.send_json({"id": 2, "type": "aviadilo/assets_info", "schema_version": 1})
+            raw = await ws.receive_json()
+            assert raw["success"] is user.is_admin
+            if not user.is_admin:
+                assert raw["error"]["code"] == "unauthorized"
+            await ws.send_json({"id": 2, "type": "unsubscribe_events", "subscription": 1})
+            assert (await ws.receive_json())["success"] is user.is_admin
+            await ws.send_json({"id": 3, "type": "aviadilo/subscribe_assets", "schema_version": 1})
+            assert await ws.receive_json() == {
+                "id": 3,
+                "type": "result",
+                "success": True,
+                "result": None,
+            }
+            await ws.send_json({"id": 4, "type": "aviadilo/assets_info", "schema_version": 1})
             result = await ws.receive_json()
             assert result["success"] is True
             validate_asset(result["result"])
@@ -345,8 +365,32 @@ async def test_real_ha_http_auth_websocket_info_and_generation_event(hass: HomeA
             stale = await client.get(PATHS[0]["path"], headers=headers)
             assert stale.status == 409
             assert (await stale.json())["generation"] == changed["generation"]
-            await ws.send_json({"id": 3, "type": "aviadilo/assets_info", "schema_version": True})
+            await ws.send_json({"id": 5, "type": "aviadilo/assets_info", "schema_version": True})
             assert (await ws.receive_json())["success"] is False
+            for msg_id in range(6, 9):
+                await ws.send_json(
+                    {"id": msg_id, "type": "aviadilo/subscribe_assets", "schema_version": 1}
+                )
+                assert (await ws.receive_json())["success"]
+            await ws.send_json({"id": 9, "type": "aviadilo/subscribe_assets", "schema_version": 1})
+            assert (await ws.receive_json())["error"]["code"] == "busy"
+            await ws.send_json({"id": 10, "type": "unsubscribe_events", "subscription": 3})
+            assert (await ws.receive_json())["success"]
+            assert gateway.subscription_users == {user.id: 3}
+            await ws.send_json({"id": 11, "type": "aviadilo/subscribe_assets", "schema_version": 1})
+            assert (await ws.receive_json())["success"]
+        async with asyncio.timeout(1):
+            while gateway.subscription_users:
+                await asyncio.sleep(0)
+        assert not gateway.subscription_connections
+        async with client.ws_connect("/api/websocket") as ws:
+            await ws.receive_json()
+            await ws.send_json({"type": "auth", "access_token": token})
+            assert (await ws.receive_json())["type"] == "auth_ok"
+            await ws.send_json({"id": 1, "type": "aviadilo/subscribe_assets", "schema_version": 1})
+            assert (await ws.receive_json())["success"]
+            changed = backend.generation.advance(hass, backend.entry_id)
+            assert (await ws.receive_json())["event"]["data"] == changed
 
 
 async def test_conditional_http_checks_auth_and_generation_before_304() -> None:
@@ -377,8 +421,9 @@ async def test_disconnected_transport_cancels_backend_within_bound() -> None:
     assert not gateway.users
 
 
+@pytest.mark.parametrize("group", [GROUP_ID_USER, GROUP_ID_READ_ONLY])
 async def test_production_registered_http_cache_and_ws_clear(
-    hass: HomeAssistant, entry: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    hass: HomeAssistant, entry: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, group: str
 ) -> None:
     from aiohttp import ClientSession
     from aiohttp.test_utils import TestClient, TestServer
@@ -394,7 +439,10 @@ async def test_production_registered_http_cache_and_ws_clear(
     await device_registry.async_load(hass)
     await entity_registry.async_load(hass)
     hass.auth = await auth_manager_from_config(hass, [], [])
-    user = await hass.auth.async_create_user("Production asset fixture")
+    owner = await hass.auth.async_create_user("Explicit production fixture owner")
+    assert owner.is_owner and owner.is_admin
+    user = await hass.auth.async_create_user("Production asset fixture", group_ids=[group])
+    assert not user.is_owner and not user.is_admin
     refresh = await hass.auth.async_create_refresh_token(user, client_id="http://test.local")
     token = hass.auth.async_create_access_token(refresh)
     hass.http.app[KEY_HASS] = hass
@@ -436,7 +484,7 @@ async def test_production_registered_http_cache_and_ws_clear(
             await ws.receive_json()
             await ws.send_json({"type": "auth", "access_token": token})
             assert (await ws.receive_json())["type"] == "auth_ok"
-            await ws.send_json({"id": 1, "type": "subscribe_events", "event_type": ASSETS_CHANGED})
+            await ws.send_json({"id": 1, "type": "aviadilo/subscribe_assets", "schema_version": 1})
             assert (await ws.receive_json())["success"]
             await service.clear_cache()
             assert (await ws.receive_json())["event"]["data"] == service.generation.info(
@@ -450,3 +498,152 @@ async def test_production_registered_http_cache_and_ws_clear(
         await async_setup_entry(hass, entry)
         assert entry.runtime_data.generation.value == service.generation.value
         await async_unload_entry(hass, entry)
+
+
+async def test_asset_subscriptions_filter_metadata_and_survive_register_reload(
+    hass: HomeAssistant,
+) -> None:
+    """Real HA bus and connection cleanup, with no sockets or provider demand."""
+    from homeassistant.components import websocket_api
+
+    await websocket_api.async_setup(hass, {})
+    backend: Backend | None = Backend()
+    gateway = register(hass, lambda: backend)
+    handlers = dict(hass.data["websocket_api"])
+    user = MagicMock(spec=User)
+    user.id = "viewer"
+    user.name = "Viewer"
+    sent: list[Any] = []
+    connection = ActiveConnection(MagicMock(), hass, sent.append, user, None, None)
+    connection.async_handle({"id": 1, "type": "aviadilo/subscribe_assets", "schema_version": 1})
+    assert json.loads(sent.pop()) == {"id": 1, "type": "result", "success": True, "result": None}
+    old = backend
+    assert old is not None
+    current = old.generation.info(old.entry_id)
+    malformed: list[Any] = [
+        None,
+        [],
+        "private",
+        {**current, "schema_version": True},
+        {**current, "entry_id": "other"},
+        {**current, "generation": "bad"},
+        {**current, "generation": current["generation"][:-1] + "1"},
+        {**current, "private": "secret"},
+        {"id": 2, "type": "aviadilo/assets_info", "schema_version": 1},
+    ]
+    for data in malformed:
+        hass.bus.async_fire(ASSETS_CHANGED, data)
+    hass.bus.async_fire("other_event", current)
+    await hass.async_block_till_done()
+    assert not sent and not old.calls
+    old.closed = True
+    hass.bus.async_fire(ASSETS_CHANGED, current)
+    await hass.async_block_till_done()
+    assert not sent
+    backend = None
+    hass.bus.async_fire(ASSETS_CHANGED, current)
+    await hass.async_block_till_done()
+    assert not sent
+    # Re-register while unloaded, then reload. Existing listeners use the new resolver;
+    # no duplicate handlers, route registration or event listeners are introduced.
+    assert register(hass, lambda: backend) is gateway
+    backend = Backend()
+    backend.generation = AssetGeneration()
+    assert register(hass, lambda: backend) is gateway
+    assert hass.data["websocket_api"] == handlers
+    hass.bus.async_fire(ASSETS_CHANGED, current)
+    changed = backend.generation.advance(hass, backend.entry_id)
+    await hass.async_block_till_done()
+    assert [json.loads(value) for value in sent] == [
+        {"id": 1, "type": "event", "event": {"event_type": ASSETS_CHANGED, "data": changed}}
+    ]
+    assert not backend.calls
+    release = connection.subscriptions[1]
+    connection.async_handle_close()
+    release()
+    assert not connection.subscriptions
+    assert not gateway.subscription_users and not gateway.subscription_connections
+    sent.clear()
+    backend.generation.advance(hass, backend.entry_id)
+    await hass.async_block_till_done()
+    assert not sent
+
+
+async def test_asset_subscription_schema_rejects_before_listener_admission(
+    hass: HomeAssistant,
+) -> None:
+    from homeassistant.components import websocket_api
+
+    await websocket_api.async_setup(hass, {})
+    backend = Backend()
+    gateway = register(hass, lambda: backend)
+    user = MagicMock(spec=User)
+    user.id = "viewer"
+    user.name = "Viewer"
+    connection = ActiveConnection(MagicMock(), hass, MagicMock(), user, None, None)
+    cases = json.loads((ROOT / "contracts/fixtures/asset-cases.json").read_text())
+    _, schema = hass.data["websocket_api"]["aviadilo/subscribe_assets"]
+    for case in cases:
+        if case["name"].startswith("subscribe assets") and not case["valid"]:
+            with pytest.raises(vol.Invalid):
+                schema(case["value"])
+            connection.last_id = 0
+            connection.async_handle(case["value"])
+            assert not connection.subscriptions
+            assert not gateway.subscription_users and not gateway.subscription_connections
+    assert not backend.calls
+    assert ASSETS_CHANGED not in hass.bus.async_listeners()
+    # Defense in depth for direct handler invocation, beyond the authenticated WS router.
+    handler, _ = hass.data["websocket_api"]["aviadilo/subscribe_assets"]
+    connection.user = cast(User, None)
+    handler(hass, connection, {"id": 100, "type": "aviadilo/subscribe_assets", "schema_version": 1})
+    assert not connection.subscriptions and not gateway.subscription_users
+    connection.async_handle_close()
+
+
+async def test_asset_subscription_user_total_limits_and_idempotent_disconnect(
+    hass: HomeAssistant,
+) -> None:
+    from homeassistant.components import websocket_api
+
+    await websocket_api.async_setup(hass, {})
+    backend = Backend()
+    gateway = register(hass, lambda: backend)
+    connections: list[ActiveConnection] = []
+
+    def connect(user_id: str) -> ActiveConnection:
+        user = MagicMock(spec=User)
+        user.id = user_id
+        connection = ActiveConnection(MagicMock(), hass, MagicMock(), user, None, None)
+        connections.append(connection)
+        return connection
+
+    for user_index in range(8):
+        for _ in range(4):
+            connection = connect(f"viewer-{user_index}")
+            for msg_id in range(1, 5):
+                gateway.subscribe(hass, connection, msg_id)
+        assert gateway.subscription_users[f"viewer-{user_index}"] == 16
+        with pytest.raises(AssetFailure, match="capacity"):
+            gateway.subscribe(hass, connect(f"viewer-{user_index}"), 1)
+    assert sum(gateway.subscription_users.values()) == 128
+    with pytest.raises(AssetFailure, match="capacity"):
+        gateway.subscribe(hass, connect("another-viewer"), 1)
+    assert hass.bus.async_listeners()[ASSETS_CHANGED] == 128
+    first = connections[0]
+    releases = list(first.subscriptions.values())
+    # Exercise HA's real dict iteration: a callback that pops its own entry breaks this.
+    first.async_handle_close()
+    for release in releases:
+        release()
+    assert gateway.subscription_users["viewer-0"] == 12
+    assert first not in gateway.subscription_connections
+    replacement = connect("viewer-0")
+    for msg_id in range(1, 5):
+        gateway.subscribe(hass, replacement, msg_id)
+    assert sum(gateway.subscription_users.values()) == 128
+    for connection in connections:
+        connection.async_handle_close()
+    assert not gateway.subscription_users and not gateway.subscription_connections
+    assert ASSETS_CHANGED not in hass.bus.async_listeners()
+    assert not backend.calls

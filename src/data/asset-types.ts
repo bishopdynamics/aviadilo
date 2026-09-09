@@ -6,13 +6,14 @@
  */
 
 /**
- * Asset protocol v1. kind is the parsed route discriminator, never a query parameter. HTTP query keys are schema_version=1, generation, optional entry_id; photo adds entity_id and picture_key. No duplicate or unknown keys. Canonical decimal path components; x,y < 2**z. Event aviadilo/assets_changed data equals AssetInfo; WS aviadilo/assets_info returns AssetInfo via the standard HA result envelope. Success: PNG with X-Aviadilo-Generation, nosniff, bounded cache headers and validators. Errors: JSON AssetErrorBody and no-store; stale_generation also carries the current generation header. Status mapping: {"invalid_request": 400, "unauthorized": 401, "forbidden": 403, "not_found": 404, "stale_generation": 409, "picture_changed": 409, "busy": 429, "upstream_error": 502, "unavailable": 503}. Frontend admission 8 active/128 pending per connection; backend 8/user and 32 total. Image loading, queues and retention are separate implementation layers.
+ * Asset protocol v1. kind is the parsed route discriminator, never a query parameter. HTTP query keys are schema_version=1, generation, optional entry_id; photo adds entity_id and picture_key. No duplicate or unknown keys. Canonical decimal path components; x,y < 2**z. Authenticated WS aviadilo/subscribe_assets accepts only id/type/schema_version, acknowledges with the standard HA result and sends event {event_type: aviadilo/assets_changed, data: AssetInfo}. Standard HA unsubscribe/disconnect releases subscriptions; limits 4/connection, 16/user, 128 total. Event aviadilo/assets_changed data equals AssetInfo; WS aviadilo/assets_info returns AssetInfo via the standard HA result envelope. Success: PNG with X-Aviadilo-Generation, nosniff, bounded cache headers and validators. Errors: JSON AssetErrorBody and no-store; stale_generation also carries the current generation header. Status mapping: {"invalid_request": 400, "unauthorized": 401, "forbidden": 403, "not_found": 404, "stale_generation": 409, "picture_changed": 409, "busy": 429, "upstream_error": 502, "unavailable": 503}. Frontend admission 8 active/128 pending per connection; backend 8/user and 32 total. Image loading, queues and retention are separate implementation layers.
  */
 export type AssetContract =
   | BasemapRequest
   | PhotoRequest
   | AssetInfo
   | AssetsInfoCommand
+  | SubscribeAssetsCommand
   | AssetErrorBody;
 /**
  * Opaque process-instance UUID hex plus colon and canonical decimal counter (0..999999999999999). Preserve exactly in queries, events and X-Aviadilo-Generation.
@@ -58,6 +59,11 @@ export interface AssetsInfoCommand {
   id: number;
   type: 'aviadilo/assets_info';
   entry_id?: EntryId;
+}
+export interface SubscribeAssetsCommand {
+  schema_version: 1;
+  id: number;
+  type: 'aviadilo/subscribe_assets';
 }
 export interface InvalidRequest {
   schema_version: 1;
