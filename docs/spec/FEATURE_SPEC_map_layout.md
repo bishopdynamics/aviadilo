@@ -1,6 +1,6 @@
 # SPEC: Optional layer controls and automatic page height
 
-- **Status:** in-progress — requested by the user after positive kiosk acceptance on 2026-09-08.
+- **Status:** implemented and verified — published v0.2.0-dev.2; awaiting user assessment.
 
 ## Summary
 
@@ -52,6 +52,8 @@ None blocking implementation. The optional height clarification can steer implem
 No new deferred work. Existing provider and physical-device limitations remain as recorded in the parent specs.
 
 ## Change Log
+
+- 2026-09-08 — Published v0.2.0-dev.2 from 9d714aa. Actual public ZIP matches the tested candidate; tagged package and published-bytes HACS installation passed with normal v0.1.0 Latest unchanged. All local/native/remote checks passed; user assessment remains.
 
 - 2026-09-08 — Implemented and independently verified: 282 frontend + 489 backend + 23 Chromium tests, native HA page layouts/editing/scrolling/clipping, and 120-second stable all-layer rendering. Initial native footer clipping was fixed by explicit CSS constraints; no context-specific data behavior. Candidate 0.2.0-dev.2 is ready for remote/release checks.
 

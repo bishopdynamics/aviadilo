@@ -1,6 +1,6 @@
 # SPEC: Aviadilo household map
 
-- **Status:** in-progress — initial map and kiosk refinement delivered; the user reports the kiosk release works very well. The requested optional-controls/auto-height follow-up is being verified.
+- **Status:** in-progress — initial map and kiosk refinement delivered; the user reports the kiosk release works very well. The requested optional-controls/auto-height follow-up is delivered in v0.2.0-dev.2 and awaits user assessment.
 - **Addenda:** [FEATURE_SPEC_kiosk_refinement.md](FEATURE_SPEC_kiosk_refinement.md) — delivered in v0.2.0-dev.1 and positively assessed by the user; shared basemap caching, identical edit/live data, quiet presentation, themes and wind controls.
 - **Addenda:** [FEATURE_SPEC_map_layout.md](FEATURE_SPEC_map_layout.md) — requested 2026-09-08 after positive kiosk acceptance; optional layer buttons and auto page height.
 - **Repository:** public `https://github.com/bishopdynamics/aviadilo`; remote `github`, upstream `github/main`. HACS from the first release is an accepted user requirement.
