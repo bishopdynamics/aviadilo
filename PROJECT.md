@@ -6,6 +6,8 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 
 ## Project-specific rules
 
+- Household marker preference (2026-09-09): spread overlapping person/device/You are here icons individually by default, with an optional grouping checkbox. Display offsets must retain true-coordinate connectors and must not affect radius or auto-fit. People-only auto-fit uses filtered people/device positions. See docs/spec/FEATURE_SPEC_marker_layout.md.
+
 - People follow-up 2026-09-09: prefer Home Assistant `person` entities for household members, while retaining direct `device_tracker` support and existing selections. Match the stock map's person coordinates/active-zone fallback without reimplementing tracker priority or changing household links. See docs/spec/FEATURE_SPEC_person_locations.md. User diagnostic downloads belong in ignored root `tmp/`; never publish their contents.
 
 - Kiosk permission regression (2026-09-08): asset acceptance must include explicit non-owner regular and read-only HA users. HA automatically makes the first test user an owner; owner-only success is insufficient. Use Aviadilo's authenticated metadata subscription, without changing HA's global event allowlist or granting kiosk administrator access.

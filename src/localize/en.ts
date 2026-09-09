@@ -8,6 +8,7 @@ const labels: Record<string, string> = {
   extent_m: 'Initial view width',
   extent_unit: 'View distance unit',
   mode: 'Mode',
+  group_overlapping: 'Group overlapping markers',
   min_zoom: 'Minimum zoom',
   max_zoom: 'Maximum zoom',
   idle_return_s: 'Idle return (seconds; blank disables)',

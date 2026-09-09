@@ -1,6 +1,6 @@
 # SPEC: Person entities and stock-map location parity
 
-- **Status:** implemented, verified and published as v0.2.0-dev.6 from cb3a4d4; awaiting user assessment.
+- **Status:** implemented, verified and published as v0.2.0-dev.6 from cb3a4d4; user-confirmed working and fixed the missing person on 2026-09-09.
 
 ## Summary
 
@@ -57,6 +57,8 @@ None blocking. The selected household person/entity values remain the user's con
 No new deferred feature. The separately open aircraft-warning investigation retains its existing need for incident evidence.
 
 ## Change Log
+
+- 2026-09-09 — User confirms this works much better and fixes the missing person; next refinement is non-overlapping household markers and people auto-fit.
 
 - 2026-09-09 — Published [v0.2.0-dev.6](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.0-dev.6) from cb3a4d4 after remote native/HACS/hassfest/publication checks passed. Public ZIP exactly matches tested bytes; actual published-metadata/bytes HACS install passed. Normal v0.1.0 remains Latest.
 

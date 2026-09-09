@@ -30,7 +30,7 @@ export interface CardConfig {
           longitude: number;
         };
     extent_m?: number;
-    mode?: 'home-area' | 'fit-visible';
+    mode?: 'home-area' | 'fit-people' | 'fit-visible';
     min_zoom?: number;
     max_zoom?: number;
     show_recenter?: boolean;
@@ -108,6 +108,7 @@ export interface CardConfig {
     accuracy_circles?: boolean;
     max_age_s?: number | null;
     show_stale?: boolean;
+    group_overlapping?: boolean;
     [k: string]: unknown;
   };
   aircraft?: {

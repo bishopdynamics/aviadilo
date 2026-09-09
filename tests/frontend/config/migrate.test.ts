@@ -240,3 +240,45 @@ it('defaults all aircraft types through both config generations and preserves ex
     expect(normalizeConfig(base).aircraft!.types).toHaveLength(10);
   }
 });
+
+it('defaults to spreading and validates fit-people before preserving legacy map checks', () => {
+  const minimal = { schema_version: 2, type: 'custom:aviadilo-map' };
+  expect(normalizeConfig(minimal).people?.group_overlapping).toBe(false);
+  expect(
+    normalizeConfig({
+      ...minimal,
+      map: { mode: 'fit-people' },
+      people: { group_overlapping: true },
+    }).map?.mode,
+  ).toBe('fit-people');
+  for (const map of [
+    { mode: 'fit-people', follow_theme: 'false' },
+    { mode: 'fit-people', min_zoom: 20, max_zoom: 3 },
+    { mode: 'invalid' },
+    { mode: null },
+  ])
+    expect(() => normalizeConfig({ ...minimal, map })).toThrow();
+  expect(() =>
+    normalizeConfig({
+      ...minimal,
+      schema_version: 1,
+      map: { mode: 'fit-people' },
+    }),
+  ).toThrow();
+  expect(() =>
+    normalizeConfig({ ...minimal, people: { group_overlapping: 'true' } }),
+  ).toThrow();
+});
+
+it('still rejects duplicate people rows in the extended v2 configuration', () => {
+  expect(() =>
+    normalizeConfig({
+      schema_version: 2,
+      type: 'custom:aviadilo-map',
+      map: { mode: 'fit-people' },
+      people: {
+        trackers: [{ entity_id: 'person.alex' }, { entity_id: 'person.alex' }],
+      },
+    }),
+  ).toThrow('Duplicate trackers');
+});

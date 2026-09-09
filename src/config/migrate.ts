@@ -17,6 +17,12 @@ export function migrateConfig(input: unknown): CardConfig {
     // other sections so malformed mixed legacy fields cannot be discarded.
     validateContract('card-config', legacy);
     delete (frozenInput as Record<string, unknown>).people;
+    // Only the current mode is extended; legacy map fields still validate.
+    if (legacy.map && typeof legacy.map === 'object') {
+      const map = { ...(legacy.map as Record<string, unknown>) };
+      delete map.mode;
+      (frozenInput as Record<string, unknown>).map = map;
+    }
   }
   validateContract('card-config-v1', frozenInput);
   const result = legacy as unknown as CardConfig;

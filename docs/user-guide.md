@@ -1,6 +1,6 @@
 # Using Aviadilo
 
-Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. This guide describes the `0.2.0-dev.6` kiosk candidate. The normal HACS release remains `0.1.0`; the user has confirmed the kiosk permission fix, reference marker and aircraft icons work; person-entity support is the new follow-up.
+Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. This guide describes the `0.2.0-dev.7` kiosk candidate. The normal HACS release remains `0.1.0`; the user has confirmed the kiosk permission fix, reference marker and aircraft icons work; person support is user-confirmed; household marker layout and people-only auto-fit are the final refinement candidates.
 
 Version `0.1.0` includes shared basemap caching and the same real data in saved, editor and picker views. Production previews do not substitute synthetic locations or weather. Synthetic data is confined to the developer test harness. The older `v0.1.0-dev.2` prerelease used synthetic editing previews and remains available for explicit version selection.
 
@@ -15,7 +15,7 @@ The card picker, card editor and dashboard edit mode use the same HA states, sou
 
 ## Kiosk candidate upgrade
 
-To try `v0.2.0-dev.6`, explicitly select it in HACS under **Need a different version? → Release**. Restart HA and reload dashboard browsers before editing card settings. Existing dashboards load through an in-memory migration; a normal editor save stores version-2 card configuration, which an old cached frontend cannot read. Integration settings and the shared cache are retained.
+To try `v0.2.0-dev.7`, explicitly select it in HACS under **Need a different version? → Release**. Restart HA and reload dashboard browsers before editing card settings. Existing dashboards load through an in-memory migration; a normal editor save stores version-2 card configuration, which an old cached frontend cannot read. Integration settings and the shared cache are retained.
 
 Legacy combined wind markers and particles become **Particles**. Legacy wind settings that drew nothing become **Arrows**, while preserving whether the Wind layer is enabled.
 
@@ -47,6 +47,10 @@ The layer buttons change visibility for the current card session. Save defaults 
 - **Radar:** RainViewer is the default; NOAA MRMS and KSOX are alternatives. Choose Latest or automatic Loop, history length, frame duration and opacity in the editor. Live inspection provides the displayed timestamp, legend and coverage. Aircraft and people stay current during radar playback.
 - **Wind:** choose exactly one of Arrows, Barbs or Particles in the editor, plus color and opacity. Marker size/spacing or particle count/speed/trail controls appear for the selected mode; switching retains their saved values. Arrows and particles follow the wind; barbs show where it comes from. Reduced motion uses arrows without changing the saved mode. Wind has its own forecast-valid time.
 - **People:** prefer existing `person` entities for household members so Home Assistant chooses among their associated trackers. Direct `device_tracker` selections remain supported. Under **Selected people and device trackers**, change the entity in an existing row to retain its custom name, color, icon and photo preference. The default 50 km radius excludes distant travellers before drawing and fitting; a missing configured anchor hides radius-filtered people. A person without coordinates can use its first reported active zone, labelled **Zone location · GPS age unknown**. Missing/passive zones cannot supply a point.
+
+Overlapping people/device icons and the reference pin spread apart automatically. Thin connectors show their real locations; the visual offsets do not change location data or accuracy circles. Enable **People → Group overlapping markers** if you prefer a counted group. Activate the count to show individual icons; Escape or a map-background tap collapses it. A count includes the reference pin when present. Small maps or large groups use a scrollable member panel with individual details.
+
+Choose **Map → Map view mode → Auto-fit people/devices** to fit the people/device locations remaining after your radius and freshness filters. Aircraft, the reference pin and separately included zones do not enlarge this view. Empty selections fall back to the configured home extent. **Auto-fit visible items** retains the broader existing fit behavior. Manual pan/zoom pauses automatic fitting until Recenter or the configured idle return.
 
 The **You are here** pin is enabled by default at the configured map anchor: Home Assistant home unless you select a zone or custom coordinates. It stays at that geographic location when you pan. Turn off **Show “You are here” marker** under Map to hide it, independently of the data layers and layer buttons. The pin identifies the configured reference, not the viewing device’s GPS location; it disappears if the anchor is unavailable.
 

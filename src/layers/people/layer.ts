@@ -1,5 +1,9 @@
 import * as L from 'leaflet';
-import { type HomeAssistant, visibleLongitude } from '../../map/geo';
+import {
+  type HomeAssistant,
+  type Point,
+  visibleLongitude,
+} from '../../map/geo';
 import {
   AssetFailure,
   pictureKey,
@@ -8,7 +12,15 @@ import {
 } from '../../data/assets';
 import type { PeopleConfig, PersonPoint } from './model';
 /** DOM APIs keep user-controlled entity names out of HTML interpolation. */
-export class PeopleLayer {
+class PersonLayer {
+  private marker?: L.Marker;
+  private host?: HTMLElement;
+  private circle?: L.Circle;
+  private status?: HTMLElement;
+  private lastPerson?: PersonPoint;
+  private lastConfig?: PeopleConfig;
+  private label?: HTMLElement;
+  private icon?: HTMLElement;
   private group = L.layerGroup();
   private signature = '';
   private assets?: DecodedAssets;
@@ -40,13 +52,21 @@ export class PeopleLayer {
   }
   private clear(): void {
     this.signature = '';
+    const details = this.marker?.getPopup()?.getContent();
+    if (details instanceof HTMLElement) details.remove();
     this.cleanups.splice(0).forEach((stop) => stop());
     this.group.clearLayers();
+    this.marker = undefined;
+    this.circle = undefined;
   }
   constructor(private map: L.Map) {
     this.group.addTo(map);
   }
-  update(points: PersonPoint[], config: PeopleConfig): void {
+  update(
+    points: PersonPoint[],
+    config: PeopleConfig,
+    presented?: boolean,
+  ): void {
     if (this.map.getZoom() === undefined) {
       this.clear();
       return;
@@ -57,34 +77,35 @@ export class PeopleLayer {
       ...person,
       longitude: visibleLongitude(person.longitude, centerLongitude),
     }));
+    this.lastPerson = points[0];
+    this.lastConfig = config;
+    const person = points[0];
+    const photoVisible =
+      presented ??
+      (!!person &&
+        this.map.getBounds().contains([person.latitude, person.longitude]));
     const signature = JSON.stringify([
-      points,
-      config.show_labels,
-      config.accuracy_circles,
-      this.map.getBounds().toBBoxString(),
+      person && [
+        person.entityId,
+        person.name,
+        person.icon,
+        person.color,
+        person.photo,
+      ],
+      photoVisible,
     ]);
+    this.updateDetails();
     if (signature === this.signature) return;
     this.clear();
     this.signature = signature;
     for (const person of points) {
-      if (config.accuracy_circles && person.accuracyM !== null)
-        L.circle([person.latitude, person.longitude], {
-          radius: person.accuracyM,
-          color: person.color,
-          weight: 1,
-          fillOpacity: 0.08,
-          interactive: false,
-          pane: 'context',
-        }).addTo(this.group);
       const icon = document.createElement('span');
+      this.icon = icon;
       icon.className = `person-marker${person.stale ? ' stale' : ''}`;
       icon.style.backgroundColor = person.color;
       icon.textContent = person.name.slice(0, 2).toUpperCase();
       const reason = document.createElement('p');
-      if (
-        person.photo &&
-        this.map.getBounds().contains([person.latitude, person.longitude])
-      ) {
+      if (person.photo && photoVisible) {
         const kind = photoKind(person.photo);
         const controller = new AbortController();
         let held: DecodedAsset | undefined;
@@ -170,43 +191,177 @@ export class PeopleLayer {
         icon: L.divIcon({
           html: icon,
           className: 'person-icon',
-          iconSize: [36, 36],
-          iconAnchor: [18, 18],
+          iconSize: [48, 48],
+          iconAnchor: [24, 24],
         }),
         title: person.name,
         alt: person.name,
         keyboard: true,
         autoPanOnFocus: false,
       }).addTo(this.group);
+      this.marker = marker;
+      const element = marker.getElement();
+      element?.setAttribute('aria-label', person.name);
+      if (element) element.dataset.memberId = person.entityId;
+      const activate = () => {
+        const details = marker.getPopup()?.getContent();
+        if (this.host && details instanceof HTMLElement) {
+          marker.closePopup();
+          if (details.parentElement === this.host) details.remove();
+          else {
+            details.classList.add('household-member-details');
+            this.host.append(details);
+          }
+        } else {
+          if (details instanceof HTMLElement)
+            details.classList.remove('household-member-details');
+          marker.openPopup();
+        }
+      };
+      element?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        activate();
+      });
+      element?.addEventListener('keydown', (event) => {
+        if (event.key === ' ' || event.key === 'Enter') {
+          event.preventDefault();
+          event.stopPropagation();
+          activate();
+        }
+      });
       const details = document.createElement('div');
       const title = document.createElement('strong');
       title.textContent = person.name;
       details.append(title);
-      if (person.locationKind === 'zone') {
-        const location = document.createElement('p');
-        location.textContent = `Zone location: ${person.zoneName ?? person.zoneId} · GPS age unknown`;
-        details.append(location);
-      }
       const status = document.createElement('p');
-      status.textContent = `${person.stale ? 'Stale / unavailable · ' : ''}${person.timestampKind === 'unknown' ? 'Position freshness unknown' : `${person.timestampKind === 'position' ? 'Position time' : 'Entity updated (GPS age unknown)'}: ${new Date(person.timestamp!).toLocaleString()}`}`;
+      this.status = status;
       details.append(status, reason);
       marker.bindPopup(details, { autoPan: false });
-      if (config.show_labels) {
-        const label = document.createElement('span');
-        label.textContent = person.name;
-        marker.bindTooltip(label, {
+      this.updateDetails();
+    }
+  }
+  private updateDetails(): void {
+    const person = this.lastPerson,
+      config = this.lastConfig;
+    if (!person || !config || !this.marker) return;
+    if (this.status)
+      this.status.textContent = `${person.stale ? 'Stale / unavailable · ' : ''}${person.timestampKind === 'unknown' ? 'Position freshness unknown' : `${person.timestampKind === 'position' ? 'Position time' : 'Entity updated (GPS age unknown)'}: ${new Date(person.timestamp!).toLocaleString()}`}`;
+    this.icon?.classList.toggle('stale', person.stale);
+    if (config.accuracy_circles && person.accuracyM !== null) {
+      if (!this.circle)
+        this.circle = L.circle([person.latitude, person.longitude], {
+          radius: person.accuracyM,
+          color: person.color,
+          weight: 1,
+          fillOpacity: 0.08,
+          interactive: false,
+          pane: 'context',
+          className: 'person-accuracy',
+        }).addTo(this.group);
+      this.circle.setLatLng([person.latitude, person.longitude]);
+      this.circle.setRadius(person.accuracyM);
+    } else {
+      this.circle?.remove();
+      this.circle = undefined;
+    }
+    const popup = this.marker.getPopup()?.getContent();
+    if (popup instanceof HTMLElement) {
+      let location = popup.querySelector('.person-location');
+      if (person.locationKind === 'zone') {
+        if (!location) {
+          location = document.createElement('p');
+          location.className = 'person-location';
+          popup.append(location);
+        }
+        location.textContent = `Zone location: ${person.zoneName ?? person.zoneId} · GPS age unknown`;
+      } else location?.remove();
+    }
+  }
+  present(point?: Point, host?: HTMLElement): void {
+    if (!this.marker || !this.lastPerson) return;
+    if (this.host !== host) {
+      const details = this.marker.getPopup()?.getContent();
+      if (details instanceof HTMLElement && details.parentElement === this.host)
+        details.remove();
+    }
+    this.host = host;
+    const person = this.lastPerson;
+    const position = point ?? person;
+    this.marker.setLatLng([position.latitude, position.longitude]);
+    const element = this.marker.getElement();
+    if (element) {
+      const target = host ?? this.map.getPane('people')!;
+      if (element.parentElement !== target) target.append(element);
+      element.classList.toggle('household-grid-icon', !!host);
+    }
+    if (this.lastConfig?.show_labels && !host) {
+      if (!this.marker.getTooltip()) {
+        this.label = document.createElement('span');
+        this.label.textContent = person.name;
+        this.marker.bindTooltip(this.label, {
           permanent: true,
           direction: 'bottom',
-          offset: [0, 16],
+          offset: [0, 18],
+          className: 'person-label',
         });
       }
-    }
+    } else this.marker.unbindTooltip();
   }
   dispose(): void {
     this.unobserve?.();
     this.uncapacity?.();
     this.clear();
     this.group.remove();
+  }
+}
+/** Stable per-entity adapters keep images, open popups and focus through layout updates. */
+export class PeopleLayer {
+  private entries = new Map<string, PersonLayer>();
+  private assets?: DecodedAssets;
+  private entryId?: string;
+  private currentHass?: () => HomeAssistant | undefined;
+  constructor(private map: L.Map) {}
+  setAssets(
+    assets?: DecodedAssets,
+    entryId?: string,
+    currentHass?: () => HomeAssistant | undefined,
+  ): void {
+    this.assets = assets;
+    this.entryId = entryId;
+    this.currentHass = currentHass;
+    for (const layer of this.entries.values())
+      layer.setAssets(assets, entryId, currentHass);
+  }
+  update(
+    points: PersonPoint[],
+    config: PeopleConfig,
+    placements?: Map<string, { point?: Point; host?: HTMLElement }>,
+  ): void {
+    const wanted = new Set(points.map((p) => p.entityId));
+    for (const [id, layer] of this.entries)
+      if (!wanted.has(id)) {
+        layer.dispose();
+        this.entries.delete(id);
+      }
+    for (const point of points) {
+      let layer = this.entries.get(point.entityId);
+      if (!layer) {
+        layer = new PersonLayer(this.map);
+        layer.setAssets(this.assets, this.entryId, this.currentHass);
+        this.entries.set(point.entityId, layer);
+      }
+      layer.update(
+        [point],
+        config,
+        placements?.has(point.entityId) ? true : undefined,
+      );
+      const placement = placements?.get(point.entityId);
+      layer.present(placement?.point, placement?.host);
+    }
+  }
+  dispose(): void {
+    for (const layer of this.entries.values()) layer.dispose();
+    this.entries.clear();
   }
 }
 /** Same-origin/relative HA pictures remain first-party; every external URL goes

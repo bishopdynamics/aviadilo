@@ -213,7 +213,9 @@ export class AviadiloEditor extends LitElement {
       >`;
     if (spec.enum)
       return html`<label
-        >${label(key)}<select
+        >${id === 'map-mode' ? 'Map view mode' : label(key)}<select
+          id=${id}
+          aria-label=${id === 'map-mode' ? 'Map view mode' : label(key)}
           .value=${String(value)}
           @change=${(event: Event) =>
             this.edit(path, (event.target as HTMLSelectElement).value)}
@@ -221,9 +223,15 @@ export class AviadiloEditor extends LitElement {
           ${spec.enum.map(
             (option) =>
               html`<option value=${option} ?selected=${option === value}>
-                ${key === 'theme' && option === 'auto'
-                  ? 'Follow Home Assistant'
-                  : option}
+                ${id === 'map-mode'
+                  ? ({
+                      'home-area': 'Home area',
+                      'fit-people': 'Auto-fit people/devices',
+                      'fit-visible': 'Auto-fit visible items',
+                    }[option] ?? option)
+                  : key === 'theme' && option === 'auto'
+                    ? 'Follow Home Assistant'
+                    : option}
               </option>`,
           )}
         </select></label
@@ -338,6 +346,13 @@ export class AviadiloEditor extends LitElement {
               ? html`<p>
                   Latest shows the newest radar frame. Loop automatically plays
                   the saved history; aircraft and people remain live.
+                </p>`
+              : ''}
+            ${panel === 'people'
+              ? html`<p>
+                  Unchecked, overlapping markers spread into individual icons.
+                  Grouping includes the You are here marker when it overlaps
+                  people.
                 </p>`
               : ''}
             ${panel === 'wind'

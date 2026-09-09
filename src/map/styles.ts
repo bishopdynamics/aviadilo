@@ -200,6 +200,87 @@ export const mapStyles = [
       color: #758795;
       font-size: 11px;
     }
+    .person-icon {
+      display: grid;
+      place-items: center;
+    }
+    .person-label {
+      box-sizing: border-box;
+      max-width: 144px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .household-group {
+      box-sizing: border-box;
+      pointer-events: auto;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      font-weight: bold;
+      border: 2px solid white;
+      box-shadow: 0 2px 7px #0008;
+      background: var(--card-background-color, #192938);
+      color: var(--primary-text-color, white);
+      padding: 4px;
+      cursor: pointer;
+    }
+    .household-group[aria-expanded='true'] {
+      border-style: dashed;
+    }
+    .person-icon:focus-visible,
+    .reference-icon:focus-visible,
+    .household-group:focus-visible {
+      outline: 3px solid var(--aviadilo-accent, #4da3ff);
+      outline-offset: 3px;
+    }
+    .household-members {
+      position: absolute;
+      z-index: 650;
+      inset: 8px;
+      max-height: 55%;
+      top: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(152px, 100%), 1fr));
+      gap: 8px;
+      overflow: auto;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
+      padding: 8px;
+      box-sizing: border-box;
+      border: 1px solid var(--divider-color, #8293a4);
+      border-radius: 8px;
+      background: var(--card-background-color, #192938);
+      color: var(--primary-text-color, white);
+    }
+    .household-member {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .household-member-name {
+      order: 1;
+      width: 100%;
+      overflow-wrap: anywhere;
+      text-align: center;
+      font: 12px system-ui;
+    }
+    .household-member-details {
+      order: 2;
+      overflow-wrap: anywhere;
+      font: 12px system-ui;
+    }
+    .household-members .household-grid-icon {
+      position: relative !important;
+      transform: none !important;
+      margin: 0 !important;
+      flex: none;
+    }
+    .household-connector {
+      pointer-events: none;
+    }
     .person-marker {
       display: flex;
       width: 36px;

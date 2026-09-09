@@ -22,6 +22,7 @@ import { estimateCardHeight, mapStyles } from './map/styles';
 import { resolveTheme } from './map/theme';
 import { PageHeightController } from './map/height';
 import { ReferenceLayer } from './map/reference';
+import { HouseholdLayer } from './map/household';
 import { acquireAssets } from './data/assets';
 import {
   inspectionKey,
@@ -99,6 +100,7 @@ export class AviadiloMap extends LitElement {
   private map?: L.Map;
   private people?: PeopleLayer;
   private reference?: ReferenceLayer;
+  private household?: HouseholdLayer;
   private basemap?: L.GridLayer;
   private assets?: ReturnType<typeof acquireAssets>;
   private assetConnection?: object;
@@ -269,6 +271,8 @@ export class AviadiloMap extends LitElement {
     this.controllerConnection = undefined;
     this.assets?.release();
     this.assets = undefined;
+    this.household?.dispose();
+    this.household = undefined;
     this.people?.dispose();
     this.reference?.dispose();
     this.map?.remove();
@@ -352,6 +356,7 @@ export class AviadiloMap extends LitElement {
       this.map.createPane(name).style.zIndex = String(zIndex);
     this.people = new PeopleLayer(this.map);
     this.reference = new ReferenceLayer(this.map);
+    this.household = new HouseholdLayer(this.map, this.people, this.reference);
     this.viewport = new ViewportController(this.map);
     // Registered before weather layers: revoke old revision work before their
     // own moveend handlers can use a new viewport with the previous manifest.
@@ -766,15 +771,6 @@ export class AviadiloMap extends LitElement {
       if (JSON.stringify(result) !== JSON.stringify(this.peopleResult))
         this.peopleResult = result;
       const home = resolveAnchor(this.config.map!.anchor, hass);
-      this.reference?.update(
-        this.activeVisible &&
-          this.config.map!.layout !== 'list' &&
-          this.config.map!.show_you_are_here
-          ? home
-          : null,
-        this.config.map!.anchor!,
-        hass,
-      );
       const viewKey = JSON.stringify([
         this.config.map!.anchor,
         home,
@@ -825,7 +821,7 @@ export class AviadiloMap extends LitElement {
           this.viewport?.update(
             this.config.map!,
             home,
-            points,
+            this.config.map!.mode === 'fit-people' ? result.points : points,
             Date.now(),
             resized,
           );
@@ -833,11 +829,18 @@ export class AviadiloMap extends LitElement {
           this.inViewportUpdate = false;
         }
       }
-      this.people?.update(
+      this.household?.update(
         !this.activeVisible || this.config.map!.layout === 'list'
           ? []
           : result.points,
         peopleConfig,
+        this.activeVisible &&
+          this.config.map!.layout !== 'list' &&
+          this.config.map!.show_you_are_here
+          ? home
+          : null,
+        this.config.map!.anchor!,
+        hass,
       );
       const uncomposed = !this.aircraft;
       this.compose();

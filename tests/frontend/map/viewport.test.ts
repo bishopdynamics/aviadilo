@@ -72,3 +72,19 @@ describe('central viewport', () => {
     expect(fitBounds).not.toHaveBeenCalled();
   });
 });
+
+it('fit-people follows provided true people points with the existing manual and idle policy', () => {
+  const fitBounds = vi.fn();
+  const controller = new ViewportController({ fitBounds });
+  const people = [{ latitude: 34.12, longitude: -117.74 }];
+  const options = { ...config, mode: 'fit-people' as const, idle_return_s: 10 };
+  controller.update(options, home, people, 100);
+  expect(fitBounds.mock.calls[0][0]).toEqual(pointBounds(people));
+  controller.interact(200);
+  controller.update(options, home, [], 300, true);
+  expect(fitBounds).toHaveBeenCalledTimes(1);
+  controller.update(options, home, [], 10200);
+  expect(fitBounds.mock.calls[1][0]).toEqual(
+    homeBounds(home, options.extent_m),
+  );
+});

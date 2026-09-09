@@ -5,6 +5,7 @@ import '../src/aviadilo-map';
 import type { AviadiloEditor } from '../src/editor/editor';
 import { parseAssetPath, pictureKey } from '../src/data/assets';
 import type { AviadiloMap } from '../src/aviadilo-map';
+import type { HomeAssistant } from '../src/map/geo';
 import {
   previewEvents,
   previewHass,
@@ -362,6 +363,12 @@ const timer = setInterval(() => {
 }, 10000);
 const api = {
   add,
+  /** Opt-in geometry/lifecycle control; the default synthetic fixture is unchanged. */
+  entity(entityId: string, state: HomeAssistant['states'][string] | null) {
+    if (state) hass.states[entityId] = structuredClone(state);
+    else delete hass.states[entityId];
+    for (const card of cards) card.hass = { ...hass };
+  },
   assets(delay = 0, failure = false, cacheControl = 'public,max-age=3600') {
     assetDelay = delay;
     assetFailure = failure;

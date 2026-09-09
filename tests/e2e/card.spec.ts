@@ -1288,19 +1288,7 @@ test('person zone fallback keeps selected identity, truthful freshness, health a
   await expect(card.locator('.leaflet-popup-content')).toContainText(
     'Zone location: Synthetic home · GPS age unknown',
   );
-  expect(
-    await card.evaluate((element) => {
-      // The context pane also contains the reference marker and aircraft trail.
-      // Inspect only the people group; Leaflet circles expose getRadius().
-      const people = (
-        element as unknown as {
-          people: { group: import('leaflet').LayerGroup };
-        }
-      ).people;
-      return people.group.getLayers().filter((layer) => 'getRadius' in layer)
-        .length;
-    }),
-  ).toBe(0);
+  await expect(card.locator('.person-accuracy')).toHaveCount(0);
   await expect(card.locator('.status-indicator')).toHaveCount(0);
   await page.evaluate(() => window.aviadiloTest.move(0, 34.25, -117.85));
   const before = await page.evaluate(
@@ -1420,3 +1408,449 @@ test('people editor prefers persons and saves an existing tracker row without lo
   await expect(editor.getByRole('alert')).toBeVisible();
   expect(JSON.parse((await editor.getAttribute('data-saved'))!)).toEqual(saved);
 });
+
+async function overlappingHousehold(page: Page, count = 3) {
+  await page.evaluate((count) => {
+    const trackers = Array.from({ length: count }, (_, index) => ({
+      entity_id: `person.layout_${String(index).padStart(3, '0')}`,
+      show_photo: index === 0,
+    }));
+    for (const [index, tracker] of trackers.entries())
+      window.aviadiloTest.entity(tracker.entity_id, {
+        state: 'home',
+        last_updated: new Date().toISOString(),
+        attributes: {
+          latitude: 34.1,
+          longitude: -117.72,
+          friendly_name: `Household member ${index}`,
+          gps_accuracy: 10,
+          ...(index === 0
+            ? {
+                entity_picture:
+                  'https://photos.aviadilo.invalid/layout?private=secret',
+              }
+            : {}),
+        },
+      });
+    window.aviadiloTest.config(0, {
+      layers: { aircraft: false, radar: false, wind: false, people: true },
+      map: {
+        layout: 'map',
+        mode: 'home-area',
+        height_px: 480,
+        show_you_are_here: true,
+      },
+      people: { trackers, accuracy_circles: true, show_labels: true },
+    });
+  }, count);
+}
+
+test('overlapping individuals spread by default and retain photo/marker identity through timestamp updates', async ({
+  page,
+}) => {
+  await runtime(page);
+  await overlappingHousehold(page);
+  const card = page.locator('aviadilo-map');
+  await expect(card.locator('.person-marker')).toHaveCount(3);
+  await expect(card.locator('.reference-marker')).toHaveCount(1);
+  await expect(card.locator('.household-group')).toHaveCount(0);
+  await expect(card.locator('.person-marker img')).toHaveCount(1);
+  const before = await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    const root = card.shadowRoot!;
+    const identities = {
+      marker: root.querySelector('.person-icon'),
+      image: root.querySelector('.person-marker img'),
+      map: (card as unknown as { map: unknown }).map,
+    };
+    Object.assign(window, { householdIdentities: identities });
+    return window.aviadiloTest
+      .stats()
+      .assets.filter((path) => path.includes('/photo?')).length;
+  });
+  const boxes = await card
+    .locator('.person-icon, .reference-icon')
+    .evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const r = node.getBoundingClientRect();
+        return { x: r.x, y: r.y, w: r.width, h: r.height };
+      }),
+    );
+  for (let i = 0; i < boxes.length; i++)
+    for (const b of boxes.slice(i + 1)) {
+      const a = boxes[i];
+      expect(
+        a.x + a.w <= b.x ||
+          b.x + b.w <= a.x ||
+          a.y + a.h <= b.y ||
+          b.y + b.h <= a.y,
+      ).toBe(true);
+    }
+  await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    const entity = card.hass!.states['person.layout_000'];
+    window.aviadiloTest.entity('person.layout_000', {
+      ...entity,
+      last_updated: new Date(Date.now() - 1000).toISOString(),
+    });
+  });
+  await page.waitForTimeout(100);
+  expect(
+    await page.evaluate(() => {
+      const card = document.querySelector('aviadilo-map') as AviadiloMap;
+      const identities = (
+        window as unknown as {
+          householdIdentities: {
+            marker: Element;
+            image: Element;
+            map: unknown;
+          };
+        }
+      ).householdIdentities;
+      return (
+        identities.marker === card.shadowRoot!.querySelector('.person-icon') &&
+        identities.image ===
+          card.shadowRoot!.querySelector('.person-marker img') &&
+        identities.map === (card as unknown as { map: unknown }).map
+      );
+    }),
+  ).toBe(true);
+  expect(
+    await page.evaluate(
+      () =>
+        window.aviadiloTest
+          .stats()
+          .assets.filter((path) => path.includes('/photo?')).length,
+    ),
+  ).toBe(before);
+  expect(await card.innerHTML()).not.toContain('private=secret');
+  await page.keyboard.press('Escape');
+  await expect(card.locator('.person-marker')).toHaveCount(3);
+});
+
+test('optional counted grouping expands by keyboard, collapses without changing view and cleans up members', async ({
+  page,
+}) => {
+  await runtime(page);
+  await overlappingHousehold(page);
+  const before = await page.evaluate(() => ({
+    center: window.aviadiloTest.inspect(0).center,
+    calls: window.aviadiloTest.stats().calls.length,
+  }));
+  await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    window.aviadiloTest.config(0, {
+      people: { ...card.config.people, group_overlapping: true },
+    });
+  });
+  const card = page.locator('aviadilo-map'),
+    group = card.locator('.household-group');
+  await expect(group).toHaveCount(1);
+  await expect(group).toHaveText('4');
+  await expect(group).toHaveAccessibleName(/4 markers:.*You are here/);
+  await expect(card.locator('.person-marker')).toHaveCount(0);
+  await group.focus();
+  await page.keyboard.press('Enter');
+  await expect(group).toHaveAttribute('aria-expanded', 'true');
+  await expect(card.locator('.person-marker')).toHaveCount(3);
+  await page.keyboard.press('Escape');
+  await expect(group).toHaveAttribute('aria-expanded', 'false');
+  await expect(group).toBeFocused();
+  await page.keyboard.press('Space');
+  await expect(card.locator('.person-marker')).toHaveCount(3);
+  await card.locator('.map').click({ position: { x: 20, y: 100 } });
+  await expect(card.locator('.person-marker')).toHaveCount(0);
+  expect(
+    await page.evaluate(() => window.aviadiloTest.inspect(0).center),
+  ).toEqual(before.center);
+  expect(
+    await page.evaluate(() => window.aviadiloTest.stats().calls.length),
+  ).toBe(before.calls);
+  await page.evaluate(() =>
+    window.aviadiloTest.entity('person.layout_001', null),
+  );
+  await expect(group).toHaveText('3');
+  await page.evaluate(() =>
+    window.aviadiloTest.config(0, { map: { layout: 'list' } }),
+  );
+  await expect(
+    card.locator(
+      '.household-group, .household-connector, .household-members, .person-marker, .reference-marker',
+    ),
+  ).toHaveCount(0);
+});
+
+test('constrained hundred-person view exposes every member in a scrollable keyboard-safe panel', async ({
+  page,
+}) => {
+  await runtime(page);
+  await overlappingHousehold(page, 100);
+  await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    window.aviadiloTest.config(0, {
+      map: { ...card.config.map, height_px: 160 },
+    });
+  });
+  const card = page.locator('aviadilo-map'),
+    panel = card.locator('.household-members');
+  await expect(panel).toBeVisible();
+  await expect(panel.locator('.household-member')).toHaveCount(101);
+  await expect(panel.locator('.person-marker')).toHaveCount(100);
+  await expect(card.locator('.household-group')).toHaveCount(0);
+  const before = await page.evaluate(() => window.aviadiloTest.inspect(0));
+  const last = panel.locator(
+    '.person-icon[data-member-id="person.layout_099"]',
+  );
+  await last.focus();
+  await page.keyboard.press('Enter');
+  await expect(panel.locator('.household-member-details')).toContainText(
+    'Household member 99',
+  );
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('PageDown');
+  const after = await page.evaluate(() => window.aviadiloTest.inspect(0));
+  expect(after.center).toEqual(before.center);
+  expect(after.suspended).toBe(before.suspended);
+  const sizes = await panel.evaluate((element) => ({
+    scroll: element.scrollHeight,
+    height: element.clientHeight,
+    width: element.scrollWidth,
+    client: element.clientWidth,
+  }));
+  expect(sizes.scroll).toBeGreaterThan(sizes.height);
+  expect(sizes.width).toBeLessThanOrEqual(sizes.client);
+});
+
+test('fit-people excludes aircraft, the reference, explicit zones and filtered travellers and honors manual views', async ({
+  page,
+}) => {
+  await runtime(page);
+  await page.evaluate(() => {
+    window.aviadiloTest.updateHass(true);
+    window.aviadiloTest.entity('zone.remote', {
+      state: 'zoning',
+      attributes: { latitude: 50, longitude: 20 },
+    });
+    window.aviadiloTest.config(0, {
+      layers: { aircraft: true, radar: false, wind: false, people: true },
+      map: {
+        mode: 'fit-people',
+        anchor: { kind: 'custom', latitude: 40, longitude: -100 },
+        include_zones: ['zone.remote'],
+        max_zoom: 14,
+      },
+      people: {
+        trackers: [
+          { entity_id: 'device_tracker.synthetic' },
+          { entity_id: 'device_tracker.traveller' },
+        ],
+        radius_enabled: true,
+        radius_m: 50000,
+      },
+    });
+  });
+  await expect
+    .poll(() => page.evaluate(() => window.aviadiloTest.inspect(0).zoom))
+    .toBe(14);
+  const center = await page.evaluate(
+    () => window.aviadiloTest.inspect(0).center!,
+  );
+  expect(center.lat).toBeCloseTo(34.11, 2);
+  expect(center.lng).toBeCloseTo(-117.72, 1);
+  await expect(page.locator('.reference-marker, .household-group')).toHaveCount(
+    0,
+  );
+  await page.evaluate(() => window.aviadiloTest.move(0, 35, -118, 8));
+  const manual = await page.evaluate(
+    () => window.aviadiloTest.inspect(0).center,
+  );
+  await page.evaluate(() => window.aviadiloTest.updateHass(true));
+  expect(
+    await page.evaluate(() => window.aviadiloTest.inspect(0).center),
+  ).toEqual(manual);
+  await page
+    .locator('aviadilo-map')
+    .getByRole('button', { name: 'Recenter', exact: true })
+    .click();
+  await expect
+    .poll(() => page.evaluate(() => window.aviadiloTest.inspect(0).zoom))
+    .toBe(14);
+});
+
+test('graphical editor saves the grouping checkbox and readable people-fit mode', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const editor = page.locator('aviadilo-map-editor');
+  await expect(
+    editor.locator('summary').filter({ hasText: /^Map$/ }),
+  ).toBeVisible();
+  await editor
+    .getByLabel('Map view mode', { exact: true })
+    .first()
+    .selectOption('fit-people');
+  await editor
+    .locator('summary')
+    .filter({ hasText: /^People$/ })
+    .click();
+  const checkbox = editor.getByRole('checkbox', {
+    name: 'Group overlapping markers',
+    exact: true,
+  });
+  await expect(checkbox).not.toBeChecked();
+  await checkbox.check();
+  await expect(
+    editor.getByText(/Unchecked, overlapping markers spread/),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => {
+      const card = document.querySelector('aviadilo-map') as AviadiloMap;
+      return {
+        mode: card.config.map!.mode,
+        grouping: card.config.people!.group_overlapping,
+      };
+    }),
+  ).toEqual({ mode: 'fit-people', grouping: true });
+  await checkbox.uncheck();
+  expect(
+    await page.evaluate(
+      () =>
+        (document.querySelector('aviadilo-map') as AviadiloMap).config.people!
+          .group_overlapping,
+    ),
+  ).toBe(false);
+});
+
+test.describe('household touch controls', () => {
+  test.use({ hasTouch: true });
+  test('a counted group expands and collapses with touch without zooming', async ({
+    page,
+  }) => {
+    await runtime(page);
+    await overlappingHousehold(page);
+    await page.evaluate(() => {
+      const card = document.querySelector('aviadilo-map') as AviadiloMap;
+      window.aviadiloTest.config(0, {
+        people: { ...card.config.people, group_overlapping: true },
+      });
+    });
+    const group = page.locator('aviadilo-map .household-group');
+    await expect(group).toBeVisible();
+    const box = await group.boundingBox();
+    expect(box?.width).toBe(56);
+    expect(box?.height).toBe(56);
+    const before = await page.evaluate(() => ({
+      center: window.aviadiloTest.inspect(0).center,
+      zoom: window.aviadiloTest.inspect(0).zoom,
+    }));
+    await group.tap();
+    await expect(page.locator('aviadilo-map .person-marker')).toHaveCount(3);
+    await group.tap();
+    await expect(page.locator('aviadilo-map .person-marker')).toHaveCount(0);
+    expect(
+      await page.evaluate(() => ({
+        center: window.aviadiloTest.inspect(0).center,
+        zoom: window.aviadiloTest.inspect(0).zoom,
+      })),
+    ).toEqual(before);
+  });
+});
+
+test('expanding a 101-marker group into overflow retains visible control focus and immediate Escape', async ({
+  page,
+}) => {
+  await runtime(page);
+  await overlappingHousehold(page, 100);
+  await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    window.aviadiloTest.config(0, {
+      map: { ...card.config.map, height_px: 160 },
+      people: { ...card.config.people, group_overlapping: true },
+    });
+  });
+  const card = page.locator('aviadilo-map');
+  const group = card.locator('.household-group');
+  await expect(group).toHaveText('101');
+  const before = await page.evaluate(() => ({
+    center: window.aviadiloTest.inspect(0).center,
+    zoom: window.aviadiloTest.inspect(0).zoom,
+    scrollX: window.scrollX,
+    scrollY: window.scrollY,
+  }));
+  await group.click();
+  const panel = card.locator('.household-members');
+  await expect(panel).toBeVisible();
+  await expect(panel.locator('.household-member')).toHaveCount(102);
+  await expect(
+    panel.locator('.household-member').first().locator('.household-group'),
+  ).toHaveAttribute('aria-expanded', 'true');
+  await expect(group).toBeFocused();
+  const boxes = await group.evaluate((button) => {
+    const panel = button.closest('.household-members')!;
+    const b = button.getBoundingClientRect(),
+      p = panel.getBoundingClientRect();
+    return {
+      buttonTop: b.top,
+      buttonBottom: b.bottom,
+      panelTop: p.top,
+      panelBottom: p.bottom,
+    };
+  });
+  expect(boxes.buttonTop).toBeGreaterThanOrEqual(boxes.panelTop);
+  expect(boxes.buttonBottom).toBeLessThanOrEqual(boxes.panelBottom);
+  await page.keyboard.press('Escape');
+  await expect(panel).toHaveCount(0);
+  await expect(group).toHaveAttribute('aria-expanded', 'false');
+  await expect(group).toBeFocused();
+  expect(
+    await page.evaluate(() => ({
+      center: window.aviadiloTest.inspect(0).center,
+      zoom: window.aviadiloTest.inspect(0).zoom,
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
+    })),
+  ).toEqual(before);
+  await page.keyboard.press('Enter');
+  await expect(panel).toBeVisible();
+  await expect(group).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(panel).toHaveCount(0);
+});
+
+for (const selector of [
+  '.person-icon[data-member-id="person.layout_000"]',
+  '.reference-icon',
+])
+  test(`retains ${selector} focus when moving into and out of the member panel`, async ({
+    page,
+  }) => {
+    await runtime(page);
+    await overlappingHousehold(page);
+    const card = page.locator('aviadilo-map'),
+      marker = card.locator(selector);
+    await expect(card.locator('.household-members')).toHaveCount(0);
+    const originalSize = await card.evaluate((element) => ({
+      width: (element as HTMLElement).style.width,
+      height: (element as AviadiloMap).config.map!.height_px,
+    }));
+    await marker.focus();
+    await page.evaluate(() => {
+      const card = document.querySelector('aviadilo-map') as AviadiloMap;
+      // Compact placement fits a short wide map; constrain both dimensions.
+      card.style.width = '200px';
+      window.aviadiloTest.config(0, {
+        map: { ...card.config.map, height_px: 160 },
+      });
+    });
+    await expect(card.locator('.household-members')).toBeVisible();
+    await expect(marker).toBeFocused();
+    await page.evaluate((originalSize) => {
+      const card = document.querySelector('aviadilo-map') as AviadiloMap;
+      card.style.width = originalSize.width;
+      window.aviadiloTest.config(0, {
+        map: { ...card.config.map, height_px: originalSize.height },
+      });
+    }, originalSize);
+    await expect(card.locator('.household-members')).toHaveCount(0);
+    await expect(marker).toBeFocused();
+  });

@@ -27,7 +27,9 @@ function icon(): HTMLElement {
 /** One map-reference marker. It is deliberately excluded from viewport fitting. */
 export class ReferenceLayer {
   private marker?: L.Marker;
+  private host?: HTMLElement;
   private signature = '';
+  private point?: Point;
 
   constructor(private map: L.Map) {}
 
@@ -40,6 +42,7 @@ export class ReferenceLayer {
       point.longitude,
       this.map.getCenter().lng,
     );
+    this.point = { latitude: point.latitude, longitude };
     const name = referenceName(anchor, hass);
     const signature = JSON.stringify([point.latitude, longitude, name]);
     if (signature === this.signature) return;
@@ -65,7 +68,35 @@ export class ReferenceLayer {
       source.textContent = sourceName(anchor, hass);
       details.append(title, source);
       this.marker.bindPopup(details, { autoPan: false });
-      this.marker.getElement()?.setAttribute('aria-label', name);
+      const element = this.marker.getElement();
+      element?.setAttribute('aria-label', name);
+      if (element) element.dataset.memberId = 'reference';
+      const activate = () => {
+        const details = this.marker?.getPopup()?.getContent();
+        if (this.host && details instanceof HTMLElement) {
+          this.marker?.closePopup();
+          if (details.parentElement === this.host) details.remove();
+          else {
+            details.classList.add('household-member-details');
+            this.host.append(details);
+          }
+        } else {
+          if (details instanceof HTMLElement)
+            details.classList.remove('household-member-details');
+          this.marker?.openPopup();
+        }
+      };
+      element?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        activate();
+      });
+      element?.addEventListener('keydown', (event) => {
+        if (event.key === ' ' || event.key === 'Enter') {
+          event.preventDefault();
+          event.stopPropagation();
+          activate();
+        }
+      });
       return;
     }
     this.marker.setLatLng([point.latitude, longitude]);
@@ -81,7 +112,27 @@ export class ReferenceLayer {
     }
   }
 
+  present(point?: Point, host?: HTMLElement): void {
+    if (!this.marker || !this.point) return;
+    if (this.host !== host) {
+      const details = this.marker.getPopup()?.getContent();
+      if (details instanceof HTMLElement && details.parentElement === this.host)
+        details.remove();
+    }
+    this.host = host;
+    const position = point ?? this.point;
+    this.marker.setLatLng([position.latitude, position.longitude]);
+    const element = this.marker.getElement();
+    if (element) {
+      const target = host ?? this.map.getPane('context')!;
+      if (element.parentElement !== target) target.append(element);
+      element.classList.toggle('household-grid-icon', !!host);
+    }
+  }
+
   clear(): void {
+    const details = this.marker?.getPopup()?.getContent();
+    if (details instanceof HTMLElement) details.remove();
     this.signature = '';
     this.marker?.remove();
     this.marker = undefined;

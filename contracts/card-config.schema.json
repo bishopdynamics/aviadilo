@@ -99,7 +99,7 @@
           "maximum": 20000000
         },
         "mode": {
-          "enum": ["home-area", "fit-visible"]
+          "enum": ["home-area", "fit-people", "fit-visible"]
         },
         "min_zoom": {
           "type": "number",
@@ -363,6 +363,9 @@
           ]
         },
         "show_stale": {
+          "type": "boolean"
+        },
+        "group_overlapping": {
           "type": "boolean"
         }
       },

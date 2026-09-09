@@ -1,12 +1,13 @@
 # SPEC: Aviadilo household map
 
-- **Status:** in-progress — initial map and kiosk refinements delivered; aircraft icons are confirmed working. Person entities and stock-map zone locations are the current follow-up; the intermittent aircraft warning remains separately under investigation.
+- **Status:** in-progress — person support is user-confirmed and fixed the missing person. Household marker spreading/optional grouping and people-only auto-fit are the final requested refinement before stable release assessment.
 - **Addenda:** [FEATURE_SPEC_kiosk_refinement.md](FEATURE_SPEC_kiosk_refinement.md) — delivered in v0.2.0-dev.1 and positively assessed by the user; shared basemap caching, identical edit/live data, quiet presentation, themes and wind controls.
 - **Addenda:** [FEATURE_SPEC_map_layout.md](FEATURE_SPEC_map_layout.md) — requested 2026-09-08 after positive kiosk acceptance; optional layer buttons and auto page height.
 - **Addenda:** [FEATURE_SPEC_kiosk_permissions.md](FEATURE_SPEC_kiosk_permissions.md) — non-admin kiosk asset subscription repair, requested 2026-09-08.
 - **Addenda:** [FEATURE_SPEC_reference_marker.md](FEATURE_SPEC_reference_marker.md) — optional default-enabled reference marker, requested 2026-09-09.
 - **Addenda:** [FEATURE_SPEC_aircraft_types.md](FEATURE_SPEC_aircraft_types.md) — aircraft-kind icons and graphical type filters, requested 2026-09-09.
 - **Addenda:** [FEATURE_SPEC_person_locations.md](FEATURE_SPEC_person_locations.md) — person selection and stock-map zone fallback, requested 2026-09-09.
+- **Addenda:** [FEATURE_SPEC_marker_layout.md](FEATURE_SPEC_marker_layout.md) — always-spread household markers, optional grouping and people-only auto-fit, requested 2026-09-09.
 - **Repository:** public `https://github.com/bishopdynamics/aviadilo`; remote `github`, upstream `github/main`. HACS from the first release is an accepted user requirement.
 - **Compatibility baseline:** Home Assistant Core 2026.9.1, current stable Chromium on a tablet PC. The user reported using latest HA; this patch version is the verified release baseline, not an inspection of their installation.
 - **Inputs:** `docs/idea/revised-direction.md`, `docs/research/everything-map.md`, `docs/research/weather-source-quality.md`, and the frozen Claremont spike.

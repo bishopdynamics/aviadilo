@@ -43,8 +43,9 @@ export class ViewportController {
     )
       return;
     const bounds =
-      (config.mode === 'fit-visible' ? pointBounds(points) : null) ??
-      (home ? homeBounds(home, config.extent_m ?? 100000) : null);
+      (config.mode === 'fit-visible' || config.mode === 'fit-people'
+        ? pointBounds(points)
+        : null) ?? (home ? homeBounds(home, config.extent_m ?? 100000) : null);
     if (!bounds) return;
     const key = JSON.stringify([bounds, config.max_zoom]);
     if (key === this.lastBounds && !resized) return;

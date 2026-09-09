@@ -55,6 +55,7 @@ class ElementStub {
   innerHTML = '';
   children: ElementStub[] = [];
   setAttribute() {}
+  remove() {}
   append(...children: ElementStub[]) {
     this.children.push(...children);
   }

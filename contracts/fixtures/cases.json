@@ -1568,5 +1568,77 @@
         ]
       }
     }
+  },
+  {
+    "name": "people-spreading-default-config",
+    "schema": "card-config",
+    "valid": true,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "people": {
+        "group_overlapping": false
+      }
+    }
+  },
+  {
+    "name": "people-grouping-config",
+    "schema": "card-config",
+    "valid": true,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "people": {
+        "group_overlapping": true
+      }
+    }
+  },
+  {
+    "name": "people-grouping-reject-string",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "people": {
+        "group_overlapping": "false"
+      }
+    }
+  },
+  {
+    "name": "people-fit-v2",
+    "schema": "card-config",
+    "valid": true,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "map": {
+        "mode": "fit-people"
+      }
+    }
+  },
+  {
+    "name": "people-fit-frozen-v1-reject",
+    "schema": "card-config-v1",
+    "valid": false,
+    "value": {
+      "schema_version": 1,
+      "type": "custom:aviadilo-map",
+      "map": {
+        "mode": "fit-people"
+      }
+    }
+  },
+  {
+    "name": "people-fit-reject-unknown-mode",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "map": {
+        "mode": "people"
+      }
+    }
   }
 ]

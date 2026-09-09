@@ -139,3 +139,29 @@ it('retains fixed height and future map fields through graphical layout edits', 
   );
   expect(() => editConfig(hidden, ['map', 'auto_height'], 'true')).toThrow();
 });
+
+it('round-trips graphical grouping and people-only fit while retaining future fields and tracker choices', () => {
+  const saved = normalizeConfig({
+    ...config,
+    map: { future_map: 'retain' },
+    people: {
+      trackers: [{ entity_id: 'person.alex', show_photo: true }],
+      future_people: 'retain',
+    },
+  });
+  const grouped = editConfig(saved, ['people', 'group_overlapping'], true);
+  const fitted = editConfig(grouped, ['map', 'mode'], 'fit-people');
+  expect(fitted.map).toMatchObject({
+    mode: 'fit-people',
+    future_map: 'retain',
+  });
+  expect(fitted.people).toMatchObject({
+    group_overlapping: true,
+    future_people: 'retain',
+    trackers: [{ entity_id: 'person.alex', show_photo: true }],
+  });
+  expect(
+    editConfig(fitted, ['people', 'group_overlapping'], false).people!
+      .group_overlapping,
+  ).toBe(false);
+});

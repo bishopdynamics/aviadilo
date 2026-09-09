@@ -56,7 +56,8 @@
     "anchor": null,
     "accuracy_circles": false,
     "max_age_s": null,
-    "show_stale": false
+    "show_stale": false,
+    "group_overlapping": false
   },
   "aircraft": {
     "show_map": true,
