@@ -4,6 +4,8 @@ Durable handoff info — the kind of stuff that should be read at the start of e
 
 ## Evergreen Entries
 
+- User-endorsed release workflow (2026-09-08): verified changes → published prerelease → user testing/feedback → normal release. The user explicitly said this pattern is the right approach. Preserve this preference in future Aviadilo work; individual release results still need their own verification and assessment.
+
 - Layout follow-up v0.2.0-dev.2 is published from 9d714aa. Map.show_layer_buttons defaults true; disabling it fixes the saved layers and leaves Recenter independent. Map.auto_height defaults false; enabled sizing fills remaining page/fixed clipping bounds, keeps height_px saved, minimum160px and bottom gap16px. Public composed scroll geometry prevents scrolling growth, explicit CSS bounds avoid shrinking-parent loops, and Leaflet resize preserves center. Native Sections/masonry/panel/editor/picker and a120-second no-churn run passed. Normal v0.1.0 stays Latest; users explicitly select dev.2, restart HA and reload. Prior kiosk release was positively assessed by the user.
 
 - Kiosk candidate v0.2.0-dev.1 is published from c2ddc49 (2026-09-08 Pacific), with card-v2/themes/exclusive wind/quiet UI/read-only inspection. Normal v0.1.0 stays GitHub Latest/HACS default. Candidate users explicitly select the prerelease, restart HA and reload browsers before saving v2. Public ZIP exactly matches native/endurance-tested bytes; actual HACS published-metadata/ZIP upgrade passed. User kiosk acceptance and the separate preview-remount policy choice remain; do not claim physical-tablet or cross-remount continuity acceptance.

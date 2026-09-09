@@ -6,6 +6,8 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 
 ## Project-specific rules
 
+- Release workflow preference explicitly endorsed by the user on 2026-09-08: verify changes, publish a prerelease for their hands-on testing, incorporate feedback, then deliver a normal release. Use this as the established Aviadilo workflow; the user considers the prerelease testing pattern the right approach.
+
 - User follow-up 2026-09-08: current kiosk release works very well. Graphical options for hiding layer buttons (fixed saved layers) and auto-sizing height to the page are delivered in v0.2.0-dev.2. See docs/spec/FEATURE_SPEC_map_layout.md; default controls/fixed sizing remain compatible.
 
 - Follow-up direction approved 2026-09-08: production card viewing, dashboard editing, card editing and picker previews must use the same real-data clients, integration cache, upstream fetching and refresh rules. A preview flag must not select synthetic data or a cache-only path. Discuss any technical reason for an exception with the user before implementing it. Synthetic feeds remain confined to development/test harnesses.
