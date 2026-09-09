@@ -341,3 +341,6 @@ Candidate ZIP: 28 files, SHA256 6a897206bccac56754f7fc08d423787cd6069e51b07e3afb
 
 
 Publication verified: commit 84c9231, annotated tag v0.1.0. Release workflow 34298890289, Native checks 34298889078, and hassfest/HACS validation 34298889035 all succeeded. GitHub releases/latest returns v0.1.0 with draft=false/prerelease=false; the public canonical aviadilo.zip URL returns HTTP 200, 1,103,109 bytes and the exact candidate SHA256 above. The retained dev.2 release remains a prerelease. The downloaded ZIP passes package/tag validation, and the real HACS Update test reran successfully using its public metadata and downloaded bytes (hacs-published-result.json). User-side installation is not claimed; refresh HACS repository information, install v0.1.0, restart HA and reload dashboards. All verification servers/processes stopped; only the main worktree remains.
+
+
+User confirmation at session wrap (2026-09-08): the v0.1.0 HACS update worked, map tile caching/loading is great and edit mode no longer uses placeholders. The visible routine status/weather controls are still scheduled for kiosk slice 5; slice 4 first supplies card-v2/theme/wind controls. No runtime change, new release or additional test run was made for this documentation-only wrap. The separate native preview-remount policy question remains recorded.
