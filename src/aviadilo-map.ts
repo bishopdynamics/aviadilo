@@ -20,6 +20,7 @@ import { ViewportController } from './map/viewport';
 import { createBasemap } from './map/basemap';
 import { estimateCardHeight, mapStyles } from './map/styles';
 import { resolveTheme } from './map/theme';
+import { PageHeightController } from './map/height';
 import { acquireAssets } from './data/assets';
 import {
   inspectionKey,
@@ -50,6 +51,7 @@ export class AviadiloMap extends LitElement {
     integrationStatus: { state: true },
     listExpanded: { state: true },
     statusOpen: { state: true },
+    autoMapHeight: { state: true },
   };
   static styles = mapStyles;
   declare hass?: HomeAssistant;
@@ -99,6 +101,8 @@ export class AviadiloMap extends LitElement {
   private assetServiceEntry?: string | null;
   private viewport?: ViewportController;
   private resize?: ResizeObserver;
+  private pageHeight?: PageHeightController;
+  declare private autoMapHeight?: number;
   private intersection?: IntersectionObserver;
   private cardVisible = false;
   declare private listExpanded: boolean;
@@ -168,7 +172,9 @@ export class AviadiloMap extends LitElement {
     this.sessionLayers = Object.fromEntries(
       (['aircraft', 'radar', 'wind', 'people'] as const).map((layer) => [
         layer,
-        !previous || previous.layers![layer] !== next.layers![layer]
+        !next.map!.show_layer_buttons ||
+        !previous ||
+        previous.layers![layer] !== next.layers![layer]
           ? !!next.layers![layer]
           : this.sessionLayers[layer],
       ]),
@@ -246,6 +252,9 @@ export class AviadiloMap extends LitElement {
     clearInterval(this.tick);
     clearTimeout(this.discoveryTimeout);
     this.resize?.disconnect();
+    this.pageHeight?.disconnect();
+    this.pageHeight = undefined;
+    this.autoMapHeight = undefined;
     this.intersection?.disconnect();
     this.interactionListeners?.abort();
     this.disposeComposition();
@@ -288,6 +297,35 @@ export class AviadiloMap extends LitElement {
     if (!this.issues.length && this.statusOpen) this.closeStatus(false);
     this.publishState();
     this.positionStatus();
+    if (
+      changed.has('config') ||
+      changed.has('sessionLayers') ||
+      changed.has('listExpanded') ||
+      !this.pageHeight
+    )
+      this.syncPageHeight();
+  }
+  private syncPageHeight(): void {
+    if (!this.config.map!.auto_height || this.config.map!.layout === 'list') {
+      this.pageHeight?.disconnect();
+      this.pageHeight = undefined;
+      this.autoMapHeight = undefined;
+      return;
+    }
+    if (!this.pageHeight) {
+      const article = this.renderRoot.querySelector<HTMLElement>('article');
+      const map = this.renderRoot.querySelector<HTMLElement>('.map');
+      if (article && map)
+        this.pageHeight = new PageHeightController(
+          this,
+          article,
+          map,
+          (height) => {
+            this.autoMapHeight = height;
+          },
+        );
+    }
+    this.pageHeight?.schedule();
   }
   private initializeMap(): void {
     const container = this.renderRoot.querySelector<HTMLElement>('.map');
@@ -365,7 +403,7 @@ export class AviadiloMap extends LitElement {
       { passive: true, signal },
     );
     this.resize = new ResizeObserver(() => {
-      this.map?.invalidateSize({ pan: false });
+      this.map?.invalidateSize({ pan: true, animate: false });
       this.refresh(true);
     });
     this.resize.observe(container);
@@ -806,6 +844,7 @@ export class AviadiloMap extends LitElement {
     this.refresh();
   }
   private toggle(layer: LayerName): void {
+    if (!this.config.map!.show_layer_buttons) return;
     this.sessionLayers = {
       ...this.sessionLayers,
       [layer]: !this.sessionLayers[layer],
@@ -1136,7 +1175,14 @@ export class AviadiloMap extends LitElement {
   protected render() {
     if (!this.config) return html``;
     this.issues = this.statusTracker.update(this.health());
+    const toolbar =
+      this.config.map!.show_layer_buttons || this.config.map!.show_recenter;
     return html`<article
+      class=${!toolbar &&
+      this.issues.length &&
+      this.config.map!.layout === 'list'
+        ? 'error-only-list'
+        : ''}
       data-theme=${resolveTheme(
         this.config.map!.theme,
         this.hass,
@@ -1147,60 +1193,67 @@ export class AviadiloMap extends LitElement {
       ${this.config.title
         ? html`<header><h2>${this.config.title}</h2></header>`
         : ''}
-      <nav aria-label="Map layers">
-        ${(['aircraft', 'radar', 'wind', 'people'] as const).map(
-          (layer) =>
-            html`<button
-              type="button"
-              aria-pressed=${String(this.sessionLayers[layer])}
-              @click=${() => this.toggle(layer)}
-            >
-              ${layer[0].toUpperCase() + layer.slice(1)}
-            </button>`,
-        )}${this.config.map!.show_recenter
-          ? html`<button type="button" @click=${this.recenter}>
-              Recenter
-            </button>`
-          : ''}
-        ${this.issues.length
-          ? html`<div class="status-anchor">
-              <button
-                class="status-indicator"
-                aria-label="Map data needs attention"
-                aria-expanded=${String(this.statusOpen)}
-                aria-controls="map-data-status"
-                aria-haspopup="dialog"
-                @click=${this.toggleStatus}
-              >
-                ⚠
-              </button>
-              ${this.statusOpen
-                ? html`<div
-                    id="map-data-status"
-                    class="status-popover"
-                    popover="manual"
-                    role="dialog"
-                    aria-modal="false"
-                    aria-label="Map data status"
-                    tabindex="-1"
-                  >
-                    <button
-                      aria-label="Close status"
-                      @click=${() => this.closeStatus(true)}
+      ${toolbar || this.issues.length
+        ? html`<nav
+            class=${toolbar ? '' : 'status-overlay'}
+            aria-label="Map layers"
+          >
+            ${this.config.map!.show_layer_buttons
+              ? (['aircraft', 'radar', 'wind', 'people'] as const).map(
+                  (layer) =>
+                    html`<button
+                      type="button"
+                      aria-pressed=${String(this.sessionLayers[layer])}
+                      @click=${() => this.toggle(layer)}
                     >
-                      Close
-                    </button>
-                    <h3>Map data status</h3>
-                    ${issueDetails(this.issues)}
-                  </div>`
-                : ''}
-            </div>`
-          : ''}
-      </nav>
+                      ${layer[0].toUpperCase() + layer.slice(1)}
+                    </button>`,
+                )
+              : ''}${this.config.map!.show_recenter
+              ? html`<button type="button" @click=${this.recenter}>
+                  Recenter
+                </button>`
+              : ''}
+            ${this.issues.length
+              ? html`<div class="status-anchor">
+                  <button
+                    class="status-indicator"
+                    aria-label="Map data needs attention"
+                    aria-expanded=${String(this.statusOpen)}
+                    aria-controls="map-data-status"
+                    aria-haspopup="dialog"
+                    @click=${this.toggleStatus}
+                  >
+                    ⚠
+                  </button>
+                  ${this.statusOpen
+                    ? html`<div
+                        id="map-data-status"
+                        class="status-popover"
+                        popover="manual"
+                        role="dialog"
+                        aria-modal="false"
+                        aria-label="Map data status"
+                        tabindex="-1"
+                      >
+                        <button
+                          aria-label="Close status"
+                          @click=${() => this.closeStatus(true)}
+                        >
+                          Close
+                        </button>
+                        <h3>Map data status</h3>
+                        ${issueDetails(this.issues)}
+                      </div>`
+                    : ''}
+                </div>`
+              : ''}
+          </nav>`
+        : ''}
       <div class="map-shell">
         <div
           class=${`map${this.config.map!.layout === 'list' ? ' hidden' : ''}`}
-          style=${`height:${this.config.map!.height_px}px`}
+          style=${`height:${this.config.map!.auto_height && this.config.map!.layout !== 'list' ? (this.autoMapHeight ?? this.config.map!.height_px) : this.config.map!.height_px}px`}
           role="region"
           aria-label="Interactive household map"
         ></div>

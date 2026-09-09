@@ -23,6 +23,9 @@ export const mapStyles = [
       border-radius: var(--ha-card-border-radius, 12px);
       font-family: var(--paper-font-body1_-_font-family, system-ui, sans-serif);
     }
+    article.error-only-list {
+      min-height: 60px;
+    }
     article[data-theme='dark'] {
       --primary-text-color: #e6edf5;
       --card-background-color: #192938;
@@ -78,6 +81,17 @@ export const mapStyles = [
       flex-wrap: wrap;
       gap: 6px;
       padding: 12px 16px;
+    }
+    nav.status-overlay {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 1000;
+      padding: 0;
+    }
+    .status-overlay .status-indicator {
+      background: var(--card-background-color);
+      box-shadow: 0 2px 6px #0003;
     }
     button {
       cursor: pointer;
@@ -240,7 +254,10 @@ export const mapStyles = [
  */
 export function estimateCardHeight(config?: CardConfig): number {
   const layout = config?.map?.layout ?? 'combined';
-  let height = 80 + (config?.title ? 56 : 0); // Wrapping layer controls and optional title.
+  const toolbar =
+    config?.map?.show_layer_buttons !== false ||
+    config?.map?.show_recenter !== false;
+  let height = (toolbar ? 80 : 2) + (config?.title ? 56 : 0);
   if (layout !== 'list') height += config?.map?.height_px ?? 480;
   if (
     layout !== 'map' &&

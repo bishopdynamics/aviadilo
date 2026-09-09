@@ -1,6 +1,8 @@
 const labels: Record<string, string> = {
   entry_id: 'Integration entry ID (optional)',
   height_px: 'Map height (px)',
+  auto_height: 'Auto-size height to page',
+  show_layer_buttons: 'Show layer buttons',
   follow_theme: 'Follow Home Assistant theme',
   extent_m: 'Initial view width',
   extent_unit: 'View distance unit',

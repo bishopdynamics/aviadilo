@@ -70,3 +70,26 @@ describe('editor edits', () => {
     ).toEqual(['device_tracker.a', 'device_tracker.b']);
   });
 });
+
+it('retains fixed height and future map fields through graphical layout edits', () => {
+  const saved = normalizeConfig({
+    ...config,
+    map: { height_px: 777, future_layout: 'keep' },
+  });
+  expect(saved.map).toMatchObject({
+    auto_height: false,
+    show_layer_buttons: true,
+  });
+  const auto = editConfig(saved, ['map', 'auto_height'], true);
+  const hidden = editConfig(auto, ['map', 'show_layer_buttons'], false);
+  expect(normalizeConfig(hidden).map).toMatchObject({
+    auto_height: true,
+    show_layer_buttons: false,
+    height_px: 777,
+    future_layout: 'keep',
+  });
+  expect(editConfig(hidden, ['map', 'auto_height'], false).map!.height_px).toBe(
+    777,
+  );
+  expect(() => editConfig(hidden, ['map', 'auto_height'], 'true')).toThrow();
+});

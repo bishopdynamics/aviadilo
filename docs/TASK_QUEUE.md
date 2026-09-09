@@ -4,6 +4,8 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
+Current follow-up [in-progress]: optional layer buttons and page auto height are implemented under docs/spec/FEATURE_SPEC_map_layout.md. Parent 282 frontend/489 backend/23 browser checks and native HA sizing/editor/120-second stability passed. Candidate 0.2.0-dev.2 awaits remote validation, publication and actual download verification. Existing authorization to proceed without routine pauses remains; user TODO stays untouched.
+
 Continuation 2026-09-08 complete for the three requested implementation slices: slice 4 faefc77, slice 5 9ec36b8, slice 6 c2ddc49. Published prerelease v0.2.0-dev.1; actual public ZIP is byte-identical to the tested candidate and actual HACS upgrade using published metadata/bytes passed. Parent gates: 273 frontend + 486 backend + 20 Chromium tests; native upgrade, 20-minute saved/editor endurance, warm return/second-browser/restart and remote native/hassfest/HACS/release workflows passed. ROOT_SPEC remains [in-progress] for user kiosk assessment and the separate unanswered native-preview-remount choice; no stronger cross-remount guarantee is claimed. Normal v0.1.0 remains Latest.
 
 1. [in-progress] Implement `docs/spec/ROOT_SPEC.md` — approved 2026-09-06; slice 1 started 2026-09-06.

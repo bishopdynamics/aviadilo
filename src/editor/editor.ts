@@ -189,6 +189,11 @@ export class AviadiloEditor extends LitElement {
       ? this.draftValues.get(path.join('.'))
       : readPath(this.config, path);
     const id = path.join('-');
+    if (id === 'map-height_px' && this.draftConfig().map!.auto_height)
+      return html`<p>
+        Height fills the remaining page, with a 160px minimum map. Your fixed
+        height is kept for when auto-size is off.
+      </p>`;
     if (spec.const !== undefined)
       return html`<p>${label(key)}: ${String(spec.const)}</p>`;
     if (spec.type === 'boolean')

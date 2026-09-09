@@ -1,6 +1,6 @@
 # Using Aviadilo
 
-Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. This guide describes the `0.2.0-dev.1` kiosk candidate. The normal HACS release remains `0.1.0`; household tablet acceptance is still in progress.
+Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. This guide describes the `0.2.0-dev.2` kiosk candidate. The normal HACS release remains `0.1.0`; household tablet acceptance is still in progress.
 
 Version `0.1.0` includes shared basemap caching and the same real data in saved, editor and picker views. Production previews do not substitute synthetic locations or weather. Synthetic data is confined to the developer test harness. The older `v0.1.0-dev.2` prerelease used synthetic editing previews and remains available for explicit version selection.
 
@@ -15,7 +15,7 @@ The card picker, card editor and dashboard edit mode use the same HA states, sou
 
 ## Kiosk candidate upgrade
 
-To try `v0.2.0-dev.1`, explicitly select it in HACS under **Need a different version? → Release**. Restart HA and reload dashboard browsers before editing card settings. Existing dashboards load through an in-memory migration; a normal editor save stores version-2 card configuration, which an old cached frontend cannot read. Integration settings and the shared cache are retained.
+To try `v0.2.0-dev.2`, explicitly select it in HACS under **Need a different version? → Release**. Restart HA and reload dashboard browsers before editing card settings. Existing dashboards load through an in-memory migration; a normal editor save stores version-2 card configuration, which an old cached frontend cannot read. Integration settings and the shared cache are retained.
 
 Legacy combined wind markers and particles become **Particles**. Legacy wind settings that drew nothing become **Arrows**, while preserving whether the Wind layer is enabled.
 
@@ -41,12 +41,14 @@ The combined-card automated and isolated HA endurance checks used synthetic prov
 
 ## Map and layer controls
 
-The layer buttons change visibility for the current card session. Save defaults through the card editor. Aircraft and people remain current while you view older radar frames; there is no synchronized historical people or aircraft replay.
+The layer buttons change visibility for the current card session. Save defaults through the card editor. Under Map, turn off **Show layer buttons** to use fixed saved layer selections. **Show recenter button** is independent; turn both off for a clean map. Use the map layout if you also want to omit the aircraft list. Aircraft and people remain current while you view older radar frames; there is no synchronized historical people or aircraft replay.
 
 - **Aircraft:** tap a marker or list callsign for details. The list can collapse; choose map, list, or combined layout in the editor. Altitude, distance, age and airborne filters apply before drawing and automatic fitting. Unknown values remain distinct from zero.
 - **Radar:** RainViewer is the default; NOAA MRMS and KSOX are alternatives. Choose Latest or automatic Loop, history length, frame duration and opacity in the editor. Live inspection provides the displayed timestamp, legend and coverage. Aircraft and people stay current during radar playback.
 - **Wind:** choose exactly one of Arrows, Barbs or Particles in the editor, plus color and opacity. Marker size/spacing or particle count/speed/trail controls appear for the selected mode; switching retains their saved values. Arrows and particles follow the wind; barbs show where it comes from. Reduced motion uses arrows without changing the saved mode. Wind has its own forecast-valid time.
 - **People:** select existing `device_tracker` entities. The default 50 km radius filter excludes distant travellers before fitting the map. A missing configured anchor hides radius-filtered people until the anchor is available.
+
+Enable **Auto-size height to page** under Map to fill the remaining visible page below the card. It adapts to resizing and respects fixed scroll-container limits, including editor previews. Fixed pixel height remains the default and is retained when auto sizing is off. The minimum map height is 160px; tall titles/controls/aircraft details can still require scrolling. Scrolling alone does not grow the card.
 
 Choose **Follow Home Assistant**, **light** or **dark** under Map theme. Theme and wind-color changes reuse existing tiles and data.
 

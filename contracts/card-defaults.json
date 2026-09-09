@@ -5,6 +5,8 @@
   "entry_id": null,
   "map": {
     "layout": "combined",
+    "auto_height": false,
+    "show_layer_buttons": true,
     "height_px": 480,
     "anchor": {
       "kind": "home"

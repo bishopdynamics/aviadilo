@@ -30,6 +30,12 @@
         "layout": {
           "enum": ["map", "list", "combined"]
         },
+        "auto_height": {
+          "type": "boolean"
+        },
+        "show_layer_buttons": {
+          "type": "boolean"
+        },
         "height_px": {
           "type": "integer",
           "minimum": 160,

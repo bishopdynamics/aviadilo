@@ -45,3 +45,21 @@ it('list-only sizing ignores hidden map and weather settings', () => {
     }),
   );
 });
+it('omits a healthy empty toolbar from initial masonry estimates', () => {
+  const clean = {
+    ...config,
+    map: {
+      ...config.map,
+      layout: 'map' as const,
+      show_layer_buttons: false,
+      show_recenter: false,
+    },
+  };
+  expect(estimateCardHeight(clean)).toBe(config.map!.height_px! + 2);
+  expect(
+    estimateCardHeight({
+      ...clean,
+      map: { ...clean.map, show_recenter: true },
+    }),
+  ).toBeGreaterThan(estimateCardHeight(clean));
+});

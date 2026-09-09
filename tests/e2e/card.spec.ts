@@ -816,3 +816,228 @@ test('short list-only cards keep failure details readable without changing close
   await expect(indicator).toBeFocused();
   expect((await card.boundingBox())!.height).toBe(before!.height);
 });
+
+test('hidden layer buttons restore saved layers and keep Recenter and error inspection independent', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await runtime(page);
+  const card = page.locator('aviadilo-map');
+  const people = card.locator('.person-marker');
+  await expect(people.first()).toBeVisible();
+  const savedPeople = await people.evaluateAll((markers) =>
+    markers.map((marker) => marker.textContent).sort(),
+  );
+  expect(savedPeople.length).toBeGreaterThan(0);
+  await card.getByRole('button', { name: 'People', exact: true }).click();
+  await expect(card.locator('.person-marker')).toHaveCount(0);
+  await page.evaluate(() => {
+    const card = document.querySelector<AviadiloMap>('aviadilo-map')!;
+    card.setConfig({
+      ...card.config,
+      map: {
+        ...card.config.map,
+        layout: 'map',
+        show_layer_buttons: false,
+        show_recenter: false,
+      },
+    });
+  });
+  await expect(people).toHaveCount(savedPeople.length);
+  await expect
+    .poll(() =>
+      people.evaluateAll((markers) =>
+        markers.map((marker) => marker.textContent).sort(),
+      ),
+    )
+    .toEqual(savedPeople);
+  await expect(card.locator('nav')).toHaveCount(0);
+  await expect(
+    card.getByRole('button', { name: 'Recenter', exact: true }),
+  ).toHaveCount(0);
+  await page.evaluate(() => {
+    const card = document.querySelector<AviadiloMap>('aviadilo-map')!;
+    card.setConfig({
+      ...card.config,
+      map: { ...card.config.map, show_recenter: true },
+    });
+  });
+  await expect(
+    card.getByRole('button', { name: 'Recenter', exact: true }),
+  ).toBeVisible();
+  await expect(
+    card.getByRole('button', { name: 'People', exact: true }),
+  ).toHaveCount(0);
+  await page.evaluate(() => {
+    const card = document.querySelector<AviadiloMap>('aviadilo-map')!;
+    card.setConfig({
+      ...card.config,
+      map: { ...card.config.map, show_recenter: false },
+    });
+  });
+  await page.evaluate(() => window.aviadiloTest.stopFeed());
+  await page.clock.fastForward(16000);
+  await page.evaluate(() => window.aviadiloTest.sourceError());
+  await expect(
+    card.getByRole('button', { name: 'Map data needs attention' }),
+  ).toBeVisible({ timeout: 20000 });
+  await expect(card.locator('nav')).toHaveCSS('position', 'absolute');
+  await card.getByRole('button', { name: 'Map data needs attention' }).click();
+  await expect(
+    card.getByRole('dialog', { name: 'Map data status' }),
+  ).toContainText('Synthetic provider failure');
+  await card.getByRole('button', { name: 'Close status', exact: true }).click();
+  await expect(
+    card.getByRole('link', { name: '© OpenStreetMap contributors' }),
+  ).toBeVisible();
+  expect(external).toEqual([]);
+});
+
+test('auto page height settles across nested scrolling, layout and viewport changes with mounted identity and manual view intact', async ({
+  page,
+}) => {
+  await runtime(page);
+  await page.setViewportSize({ width: 1000, height: 1000 });
+  await page.evaluate(() => {
+    const card = document.querySelector<AviadiloMap>('aviadilo-map')!;
+    const internals = card as unknown as {
+      map: unknown;
+      client: unknown;
+      assets: unknown;
+    };
+    (window as unknown as { layoutIdentity: unknown }).layoutIdentity = [
+      internals.map,
+      internals.client,
+      internals.assets,
+    ];
+    card.setConfig({
+      ...card.config,
+      title: 'Page height',
+      map: {
+        ...card.config.map,
+        layout: 'map',
+        height_px: 333,
+        auto_height: true,
+        show_layer_buttons: false,
+        show_recenter: false,
+        idle_return_s: null,
+      },
+    });
+    window.aviadiloTest.move(0, 34.25, -117.85, 9);
+  });
+  const card = page.locator('aviadilo-map');
+  const geometry = () =>
+    card.evaluate((element) => {
+      const article = element
+        .shadowRoot!.querySelector('article')!
+        .getBoundingClientRect();
+      const map = element
+        .shadowRoot!.querySelector('.map')!
+        .getBoundingClientRect();
+      return { bottom: article.bottom + window.scrollY, height: map.height };
+    });
+  await expect
+    .poll(async () => Math.abs((await geometry()).bottom - 984))
+    .toBeLessThan(1);
+  const before = await page.evaluate(() => window.aviadiloTest.inspect(0));
+  await page.evaluate(() => {
+    const below = document.createElement('div');
+    below.style.height = '1000px';
+    document.body.append(below);
+    window.scrollTo(0, 100);
+  });
+  const height = (await geometry()).height;
+  await expect.poll(async () => (await geometry()).height).toBe(height);
+  await page.setViewportSize({ width: 1000, height: 850 });
+  await expect
+    .poll(async () => Math.abs((await geometry()).bottom - 834))
+    .toBeLessThan(1);
+  const after = await page.evaluate(() => window.aviadiloTest.inspect(0));
+  expect(after.center!.lat).toBeCloseTo(before.center!.lat, 5);
+  expect(after.center!.lng).toBeCloseTo(before.center!.lng, 5);
+  expect(after.zoom).toBe(before.zoom);
+  expect(after.suspended).toBe(true);
+  expect(
+    await page.evaluate(() => {
+      const internals = document.querySelector('aviadilo-map') as unknown as {
+        map: unknown;
+        client: unknown;
+        assets: unknown;
+      };
+      const saved = (window as unknown as { layoutIdentity: unknown[] })
+        .layoutIdentity;
+      return [internals.map, internals.client, internals.assets].every(
+        (value, index) => value === saved[index],
+      );
+    }),
+  ).toBe(true);
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+    const main = document.querySelector('main')!;
+    main.style.cssText = 'height:500px;overflow:auto';
+    const top = document.createElement('div');
+    top.id = 'layout-spacer';
+    top.style.height = '100px';
+    main.prepend(top);
+  });
+  const scrollportBottom = await page
+    .locator('main')
+    .evaluate(
+      (main) =>
+        main.getBoundingClientRect().top +
+        window.scrollY +
+        main.clientHeight -
+        16,
+    );
+  await expect
+    .poll(async () => Math.abs((await geometry()).bottom - scrollportBottom))
+    .toBeLessThan(1);
+  const nestedHeight = (await geometry()).height;
+  await page.evaluate(() => {
+    document.querySelector('main')!.scrollTop = 80;
+  });
+  await expect.poll(async () => (await geometry()).height).toBe(nestedHeight);
+  await page.evaluate(() => {
+    document.getElementById('layout-spacer')!.style.height = '140px';
+  });
+  await expect
+    .poll(async () => (await geometry()).height)
+    .toBe(nestedHeight - 40);
+  await page.setViewportSize({ width: 1000, height: 300 });
+  await expect(card.locator('.map')).toHaveCSS('height', '160px');
+  await page.evaluate(() => {
+    const card = document.querySelector<AviadiloMap>('aviadilo-map')!;
+    card.setConfig({
+      ...card.config,
+      map: { ...card.config.map, auto_height: false },
+    });
+  });
+  await expect(card.locator('.map')).toHaveCSS('height', '333px');
+  expect(external).toEqual([]);
+});
+
+test('graphical layout controls preserve saved height and block saves while another draft is invalid', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const editor = page.locator('aviadilo-map-editor');
+  await editor.locator('#map-height_px').fill('777');
+  await editor.locator('#map-height_px').press('Tab');
+  await editor.getByLabel('Auto-size height to page', { exact: true }).check();
+  await expect(editor.locator('#map-height_px')).toHaveCount(0);
+  await editor.getByLabel('Show layer buttons', { exact: true }).uncheck();
+  await editor
+    .getByLabel('Auto-size height to page', { exact: true })
+    .uncheck();
+  await expect(editor.locator('#map-height_px')).toHaveValue('777');
+  await editor.locator('#map-height_px').fill('0');
+  await editor.locator('#map-height_px').press('Tab');
+  await expect(editor.getByRole('alert')).toBeVisible();
+  await editor.getByLabel('Show layer buttons', { exact: true }).check();
+  await expect(editor.getByRole('alert')).toBeVisible();
+  await expect(editor.locator('#map-height_px')).toHaveValue('0');
+  await editor.locator('#map-height_px').fill('777');
+  await editor.locator('#map-height_px').press('Tab');
+  await expect(editor.getByRole('alert')).toHaveCount(0);
+  expect(external).toEqual([]);
+});

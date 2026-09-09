@@ -12,6 +12,8 @@ export interface CardConfig {
   entry_id?: string | null;
   map?: {
     layout?: 'map' | 'list' | 'combined';
+    auto_height?: boolean;
+    show_layer_buttons?: boolean;
     height_px?: number;
     anchor?:
       | {

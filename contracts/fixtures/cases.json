@@ -1243,5 +1243,43 @@
         "particle_count": 0
       }
     }
+  },
+  {
+    "name": "layout options",
+    "schema": "card-config",
+    "valid": true,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "map": {
+        "auto_height": true,
+        "show_layer_buttons": false,
+        "height_px": 777
+      }
+    }
+  },
+  {
+    "name": "invalid auto height",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "map": {
+        "auto_height": "true"
+      }
+    }
+  },
+  {
+    "name": "invalid layer button visibility",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "map": {
+        "show_layer_buttons": 0
+      }
+    }
   }
 ]
