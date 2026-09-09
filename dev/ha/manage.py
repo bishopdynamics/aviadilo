@@ -223,7 +223,7 @@ views:
   - title: Synthetic map
     cards:
       - type: custom:aviadilo-map
-        schema_version: 1
+        schema_version: 2
         title: SYNTHETIC aircraft, radar, wind and trackers
         layers:
           aircraft: true
@@ -231,8 +231,7 @@ views:
           wind: true
           people: true
         wind:
-          static_style: arrows
-          particles: true
+          mode: arrows
         people:
           trackers:
             - entity_id: device_tracker.synthetic_0

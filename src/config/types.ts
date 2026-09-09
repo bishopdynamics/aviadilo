@@ -6,14 +6,13 @@
  */
 
 export interface CardConfig {
-  schema_version: 1;
+  schema_version: 2;
   type: 'custom:aviadilo-map';
   title?: string;
   entry_id?: string | null;
   map?: {
     layout?: 'map' | 'list' | 'combined';
     height_px?: number;
-    follow_theme?: boolean;
     anchor?:
       | {
           kind: 'home';
@@ -39,6 +38,7 @@ export interface CardConfig {
      */
     include_zones?: string[];
     extent_unit?: 'km' | 'mi' | 'nmi';
+    theme?: 'auto' | 'light' | 'dark';
     [k: string]: unknown;
   };
   layers?: {
@@ -54,15 +54,10 @@ export interface CardConfig {
     mode?: 'latest' | 'loop';
     history_minutes?: number;
     frame_duration_ms?: number;
-    show_timestamp?: boolean;
-    show_legend?: boolean;
-    show_coverage?: boolean;
     [k: string]: unknown;
   };
   wind?: {
     provider?: 'dwd_icon_global';
-    static_style?: 'off' | 'arrows' | 'barbs';
-    particles?: boolean;
     marker_spacing_px?: number;
     marker_size_px?: number;
     particle_count?: number;
@@ -70,6 +65,8 @@ export interface CardConfig {
     trail_length_s?: number;
     opacity?: number;
     speed_unit?: 'km/h' | 'mph' | 'knots' | 'm/s';
+    mode?: 'arrows' | 'barbs' | 'particles';
+    color?: string;
     [k: string]: unknown;
   };
   people?: {
@@ -163,10 +160,7 @@ export interface CardConfig {
   };
   freshness?: {
     max_position_age_s?: number;
-    show_last_update?: boolean;
     stale_retention_s?: number;
-    show_effective_refresh?: boolean;
-    show_source_status?: boolean;
     [k: string]: unknown;
   };
   [k: string]: unknown;

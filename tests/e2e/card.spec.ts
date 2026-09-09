@@ -111,7 +111,7 @@ test('shares feed across viewers and keeps subscriptions across reactive hass an
     .poll(() => page.evaluate(() => window.aviadiloTest.stats().subscriptions))
     .toBe(1);
 });
-test('list layout requests aircraft alone and invisible wind has no demand', async ({
+test('list layout requests aircraft alone and disabled wind has no demand', async ({
   page,
 }) => {
   await runtime(page);
@@ -133,8 +133,7 @@ test('list layout requests aircraft alone and invisible wind has no demand', asy
   await page.evaluate(() =>
     window.aviadiloTest.config(0, {
       map: { layout: 'combined' },
-      layers: { aircraft: false, radar: false, wind: true, people: true },
-      wind: { static_style: 'off', particles: false },
+      layers: { aircraft: false, radar: false, wind: false, people: true },
     }),
   );
   await expect
@@ -462,4 +461,170 @@ test('public sizing contract keeps a following sections card below expanded cont
   expect(boxes.options).not.toHaveProperty('rows');
   expect(boxes.following).toBeGreaterThanOrEqual(boxes.bottom);
   expect(boxes.size * 50).toBeGreaterThanOrEqual(boxes.height);
+});
+
+test('theme and wind edits reuse mounted data, viewport, requests and selected modes', async ({
+  page,
+}) => {
+  await runtime(page);
+  await page.evaluate(() => window.aviadiloTest.move(0, 34.25, -117.85));
+  await expect
+    .poll(() => page.evaluate(() => window.aviadiloTest.stats().assetActive))
+    .toBe(0);
+  await page.waitForTimeout(500);
+  const evidence = await page.evaluate(async () => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    type Runtime = {
+      client: object;
+      basemap: object;
+      wind: { view(): { grid: object } };
+    };
+    const internals = card as unknown as Runtime;
+    const baseline = {
+      client: internals.client,
+      basemap: internals.basemap,
+      grid: internals.wind.view().grid,
+    };
+    const before = window.aviadiloTest.stats();
+    const view = window.aviadiloTest.inspect(0);
+    const appearances = [];
+    for (const theme of ['light', 'dark', 'auto'] as const) {
+      card.hass = { ...card.hass!, themes: { darkMode: true } };
+      for (const mode of ['arrows', 'barbs', 'particles'] as const) {
+        card.setConfig({
+          ...card.config,
+          map: { ...card.config.map, theme },
+          wind: { ...card.config.wind, mode, color: '#12aBcD' },
+        });
+        await card.updateComplete;
+        appearances.push({
+          theme: card
+            .shadowRoot!.querySelector('article')!
+            .getAttribute('data-theme'),
+          mode: card.config.wind!.mode,
+          attributionBackground: getComputedStyle(
+            card.shadowRoot!.querySelector('.leaflet-control-attribution')!,
+          ).backgroundColor,
+          attributionText: getComputedStyle(
+            card.shadowRoot!.querySelector('.leaflet-control-attribution')!,
+          ).color,
+        });
+      }
+    }
+    const panes = [
+      'basemap',
+      'radar',
+      'wind',
+      'aircraft',
+      'people',
+      'popup',
+    ].map((name) => {
+      const element = card.shadowRoot!.querySelector(`.leaflet-${name}-pane`)!;
+      return { name, filter: getComputedStyle(element).filter };
+    });
+    return {
+      before,
+      after: window.aviadiloTest.stats(),
+      view,
+      current: window.aviadiloTest.inspect(0),
+      appearances,
+      panes,
+      same:
+        baseline.client === internals.client &&
+        baseline.basemap === internals.basemap &&
+        baseline.grid === internals.wind.view().grid,
+    };
+  });
+  expect(evidence.same).toBe(true);
+  expect(evidence.after.calls).toEqual(evidence.before.calls);
+  expect(evidence.after.assets).toEqual(evidence.before.assets);
+  expect(evidence.after.tiles).toEqual(evidence.before.tiles);
+  expect(evidence.current.center).toEqual(evidence.view.center);
+  expect(evidence.current.zoom).toBe(evidence.view.zoom);
+  expect(evidence.appearances.map((value) => value.theme)).toEqual([
+    'light',
+    'light',
+    'light',
+    'dark',
+    'dark',
+    'dark',
+    'dark',
+    'dark',
+    'dark',
+  ]);
+  for (const appearance of evidence.appearances) {
+    expect(appearance.attributionBackground).toBe(
+      appearance.theme === 'dark' ? 'rgb(25, 41, 56)' : 'rgb(255, 255, 255)',
+    );
+    expect(appearance.attributionText).toBe(
+      appearance.theme === 'dark' ? 'rgb(230, 237, 245)' : 'rgb(23, 41, 57)',
+    );
+  }
+  expect(
+    evidence.panes.find((pane) => pane.name === 'basemap')!.filter,
+  ).toContain('invert(1)');
+  expect(
+    evidence.panes
+      .filter((pane) => pane.name !== 'basemap')
+      .every((pane) => pane.filter === 'none'),
+  ).toBe(true);
+  expect(external).toEqual([]);
+});
+
+test('graphical wind editor retains inactive settings and blocks all saves while a draft is invalid', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const editor = page.locator('aviadilo-map-editor');
+  await editor
+    .locator('summary')
+    .filter({ hasText: /^Wind$/ })
+    .click();
+  await expect(editor.locator('#wind-marker_spacing_px')).toBeVisible();
+  await expect(editor.locator('#wind-particle_count')).toHaveCount(0);
+  // Commit through native blur so synthetic change events cannot leave a
+  // delayed valid edit pending when the invalid-draft measurement starts.
+  await editor.locator('#wind-marker_spacing_px').fill('80');
+  await editor.locator('#wind-marker_spacing_px').press('Tab');
+  await editor.locator('#wind-mode').selectOption('particles');
+  await expect(editor.locator('#wind-marker_spacing_px')).toHaveCount(0);
+  await expect(editor.locator('#wind-particle_count')).toBeVisible();
+  await editor.locator('#wind-particle_count').fill('73');
+  await editor.locator('#wind-particle_count').press('Tab');
+  await editor.locator('#wind-mode').selectOption('barbs');
+  await expect(editor.locator('#wind-marker_spacing_px')).toHaveValue('80');
+  await page.evaluate(() => {
+    const editor = document.querySelector('aviadilo-map-editor')!;
+    editor.setAttribute('data-saves', '0');
+    editor.addEventListener('config-changed', () =>
+      editor.setAttribute(
+        'data-saves',
+        String(Number(editor.getAttribute('data-saves')) + 1),
+      ),
+    );
+  });
+  await editor.locator('#wind-color').fill('#bad');
+  await editor.locator('#wind-color').press('Tab');
+  await expect(editor.getByRole('alert')).toBeVisible();
+  await expect(editor).toHaveAttribute('data-saves', '0');
+  await editor.locator('#title').fill('Pending title');
+  await editor.locator('#title').press('Tab');
+  await expect(editor.getByRole('alert')).toBeVisible();
+  await expect(editor.locator('#wind-color')).toHaveValue('#bad');
+  await expect(editor.locator('#title')).toHaveValue('Pending title');
+  await expect(editor).toHaveAttribute('data-saves', '0');
+  await editor.locator('#wind-color').fill('#12aBcD');
+  await editor.locator('#wind-color').press('Tab');
+  await expect(editor.getByRole('alert')).toHaveCount(0);
+  await expect(editor).toHaveAttribute('data-saves', '1');
+  await editor.locator('#wind-mode').selectOption('particles');
+  await expect(editor.locator('#wind-particle_count')).toHaveValue('73');
+  await expect(page.locator('aviadilo-map h2')).toHaveText('Pending title');
+  expect(
+    await page.evaluate(
+      () =>
+        (document.querySelector('aviadilo-map') as AviadiloMap).config
+          .schema_version,
+    ),
+  ).toBe(2);
 });

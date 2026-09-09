@@ -126,7 +126,7 @@ export class WindController {
     for (const [key, lo, hi] of [
       ['marker_spacing_px', 16, 256],
       ['marker_size_px', 8, 96],
-      ['particle_count', 0, 1500],
+      ['particle_count', 1, 1500],
       ['animation_speed', 0.1, 5],
       ['trail_length_s', 0.1, 10],
       ['opacity', 0, 1],

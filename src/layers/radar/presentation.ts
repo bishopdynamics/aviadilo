@@ -9,7 +9,6 @@ import type { RadarController, RadarView } from './controller';
  * Snow coloring is disabled by the adapter. No remote legend requests.
  */
 export function radarLegend(view: RadarView) {
-  if (!view.config.show_legend) return html``;
   return view.config.provider === 'rainviewer'
     ? html`<figure
         aria-label="RainViewer Universal Blue reflectivity in dBZ"
@@ -90,29 +89,25 @@ export function radarTimeline(view: RadarView, controller: RadarController) {
           }}
       /></label>
     </div>
-    ${view.config.show_timestamp
-      ? html`<div>
-          Radar frame:
-          ${view.displayedTime
-            ? html`<time datetime=${view.displayedTime}
-                >${new Date(view.displayedTime).toLocaleString()}</time
-              >`
-            : 'Not loaded'}
-          · Aircraft and people remain live
-        </div>`
-      : ''}
+    ${html`<div>
+      Radar frame:
+      ${view.displayedTime
+        ? html`<time datetime=${view.displayedTime}
+            >${new Date(view.displayedTime).toLocaleString()}</time
+          >`
+        : 'Not loaded'}
+      · Aircraft and people remain live
+    </div>`}
     <div role="status">
       ${view.state}${view.message ? ` — ${view.message}` : ''}${view.status
         ?.effective_interval_s
         ? ` · metadata every ${view.status.effective_interval_s}s`
         : ''}
     </div>
-    ${view.config.show_coverage
-      ? html`<small
-          >${view.manifest?.coverage?.description ??
-          'Coverage detail unavailable. Clear areas may have no radar data.'}</small
-        >`
-      : ''}
+    ${html`<small
+      >${view.manifest?.coverage?.description ??
+      'Coverage detail unavailable. Clear areas may have no radar data.'}</small
+    >`}
     ${radarLegend(view)}
     <a
       href=${rain ? 'https://www.rainviewer.com' : 'https://www.weather.gov'}

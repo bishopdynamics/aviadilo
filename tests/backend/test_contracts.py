@@ -44,7 +44,12 @@ def validate(name: str, value: dict[str, Any]) -> None:
     schema = json.loads((ROOT / f"contracts/{name}.schema.json").read_text())
     Draft7Validator.check_schema(schema)
     Draft7Validator(schema, format_checker=FormatChecker()).validate(value)
-    validate_geometry(name, value)
+    # The backend consumes only v1 integration/feed protocols. Its shared
+    # geometry checks also exercise card fixtures, after the card schema gate.
+    if name in ("card-config", "card-config-v1"):
+        validate_geometry("card-config", {**value, "schema_version": 1})
+    else:
+        validate_geometry(name, value)
 
 
 @pytest.mark.parametrize("case", CASES, ids=[case["name"] for case in CASES])
@@ -321,7 +326,7 @@ def test_generated_ha_dashboard_validates_card_schema_and_survives_upgrade(
     assert card["layers"]["aircraft"] is fixtures
     # Existing dashboard content, even an old invalid config, belongs to the
     # acceptance operator. A same-mode package upgrade must not rewrite it.
-    previous = dashboard.read_text().replace("        schema_version: 1\n", "")
+    previous = dashboard.read_text().replace("        schema_version: 2\n", "")
     dashboard.write_text(previous)
     subprocess.run(command, check=True, capture_output=True, text=True)
     assert dashboard.read_text() == previous

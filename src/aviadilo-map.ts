@@ -22,6 +22,7 @@ import {
 import { ViewportController } from './map/viewport';
 import { createBasemap } from './map/basemap';
 import { estimateCardHeight, mapStyles } from './map/styles';
+import { resolveTheme } from './map/theme';
 import { acquireAssets } from './data/assets';
 import { selectPeople, type PeopleResult } from './layers/people/model';
 import { PeopleLayer } from './layers/people/layer';
@@ -47,6 +48,8 @@ export class AviadiloMap extends LitElement {
   declare private sessionLayers: Record<LayerName, boolean>;
   declare private peopleResult: PeopleResult;
   declare private integrationStatus: string;
+  private themeMedia?: MediaQueryList;
+  private readonly themeChanged = () => this.requestUpdate();
   private map?: L.Map;
   private people?: PeopleLayer;
   private basemap?: L.GridLayer;
@@ -109,20 +112,26 @@ export class AviadiloMap extends LitElement {
     };
   }
   setConfig(value: unknown): void {
-    this.holdFitUntilData = !!this.config;
-    this.config = normalizeConfig(value);
-    this.sessionLayers = {
-      aircraft: !!this.config.layers!.aircraft,
-      radar: !!this.config.layers!.radar,
-      wind: !!this.config.layers!.wind,
-      people: !!this.config.layers!.people,
-    };
+    const next = normalizeConfig(value);
+    const previous = this.config;
+    this.holdFitUntilData = !!previous;
+    this.config = next;
+    // Local layer buttons survive style edits. Apply a saved layer setting only
+    // when that setting changes, or when initializing this element.
+    this.sessionLayers = Object.fromEntries(
+      (['aircraft', 'radar', 'wind', 'people'] as const).map((layer) => [
+        layer,
+        !previous || previous.layers![layer] !== next.layers![layer]
+          ? !!next.layers![layer]
+          : this.sessionLayers[layer],
+      ]),
+    ) as Record<LayerName, boolean>;
   }
   static async getConfigElement(): Promise<HTMLElement> {
     return document.createElement('aviadilo-map-editor');
   }
   static getStubConfig(): CardConfig {
-    return { schema_version: 1, type: 'custom:aviadilo-map' };
+    return { schema_version: 2, type: 'custom:aviadilo-map' };
   }
   getCardSize(): number {
     // Masonry queries both before first render and after disclosures/data change.
@@ -145,6 +154,8 @@ export class AviadiloMap extends LitElement {
   }
   connectedCallback(): void {
     super.connectedCallback();
+    this.themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+    this.themeMedia.addEventListener('change', this.themeChanged);
     document.addEventListener('visibilitychange', this.visibility);
     this.cardVisible = false;
     this.intersection = new IntersectionObserver((entries) => {
@@ -164,6 +175,8 @@ export class AviadiloMap extends LitElement {
   }
   disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.themeMedia?.removeEventListener('change', this.themeChanged);
+    this.themeMedia = undefined;
     document.removeEventListener('visibilitychange', this.visibility);
     clearInterval(this.tick);
     clearTimeout(this.discoveryTimeout);
@@ -220,6 +233,7 @@ export class AviadiloMap extends LitElement {
       markerZoomAnimation: false,
     });
     this.map.attributionControl.setPrefix(false);
+    this.map.createPane('basemap').style.zIndex = '200';
     for (const [name, zIndex] of Object.entries(LAYER_PANES))
       this.map.createPane(name).style.zIndex = String(zIndex);
     this.people = new PeopleLayer(this.map);
@@ -326,8 +340,11 @@ export class AviadiloMap extends LitElement {
       this.assets &&
       !this.basemap &&
       this.map.getZoom() !== undefined
-    )
-      this.basemap = createBasemap(this.assets.decoded, entry).addTo(this.map);
+    ) {
+      this.basemap = createBasemap(this.assets.decoded, entry);
+      this.basemap.options.pane = 'basemap';
+      this.basemap.addTo(this.map);
+    }
   }
   private async discover(force = false): Promise<void> {
     const hass = this.hass;
@@ -469,12 +486,7 @@ export class AviadiloMap extends LitElement {
             this.config.map!.layout !== 'map' &&
             !!this.config.aircraft!.show_list)),
       radar: map && this.sessionLayers.radar,
-      wind:
-        map &&
-        this.sessionLayers.wind &&
-        (this.config.wind!.static_style !== 'off' ||
-          (!!this.config.wind!.particles &&
-            this.config.wind!.particle_count! > 0)),
+      wind: map && this.sessionLayers.wind,
     };
   }
   private currentViewport(): Viewport | null {
@@ -698,7 +710,11 @@ export class AviadiloMap extends LitElement {
   protected render() {
     if (!this.config) return html``;
     return html`<article
-      class=${this.config.map!.follow_theme ? '' : 'fixed-theme'}
+      data-theme=${resolveTheme(
+        this.config.map!.theme,
+        this.hass,
+        this.themeMedia?.matches ?? false,
+      )}
       aria-label="Aviadilo map card"
     >
       <header>

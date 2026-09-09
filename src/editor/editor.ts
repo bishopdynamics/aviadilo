@@ -5,12 +5,12 @@ import type { CardConfig } from '../config/types';
 import type { HomeAssistant, Anchor } from '../map/geo';
 import { label } from '../localize/en';
 import { anchorControl } from './map-panel';
+import { windControls } from './wind-panel';
 import { trackerControls } from './people-panel';
 import {
   displayDistance,
   storedDistance,
   readPath,
-  editConfig,
   entitySuggestions,
   type ConfigPath,
 } from './ha-controls';
@@ -35,7 +35,6 @@ export class AviadiloEditor extends LitElement {
   declare hass?: HomeAssistant;
   declare private config: CardConfig;
   declare private error: string;
-  private readonly draftErrors = new Map<string, string>();
   private readonly draftValues = new Map<string, unknown>();
   static styles = css`
     :host {
@@ -103,16 +102,31 @@ export class AviadiloEditor extends LitElement {
   setConfig(value: unknown): void {
     this.config = normalizeConfig(value);
     this.error = '';
-    this.draftErrors.clear();
     this.draftValues.clear();
   }
+  private draftConfig(): CardConfig {
+    const draft = structuredClone(this.config);
+    for (const [key, pending] of this.draftValues) {
+      const parts = key.split('.');
+      let cursor: Record<string, unknown> = draft;
+      for (const part of parts.slice(0, -1))
+        cursor = cursor[part] as Record<string, unknown>;
+      cursor[parts[parts.length - 1]] = pending;
+    }
+    return draft;
+  }
   private edit = (path: ConfigPath, value: unknown): void => {
+    const key = path.join('.');
+    // Replacing a whole anchor/tracker list supersedes drafts inside it.
+    for (const pending of this.draftValues.keys())
+      if (pending.startsWith(`${key}.`)) this.draftValues.delete(pending);
+    this.draftValues.set(key, value);
     try {
-      const next = editConfig(this.config, path, value);
+      const draft = this.draftConfig();
+      const next = normalizeConfig(draft);
       this.config = next;
-      this.draftErrors.delete(path.join('.'));
-      this.draftValues.delete(path.join('.'));
-      this.error = [...this.draftErrors.values()].join(' ');
+      this.draftValues.clear();
+      this.error = '';
       this.dispatchEvent(
         new CustomEvent('config-changed', {
           detail: { config: structuredClone(next) },
@@ -121,12 +135,8 @@ export class AviadiloEditor extends LitElement {
         }),
       );
     } catch (error) {
-      this.draftErrors.set(
-        path.join('.'),
-        error instanceof Error ? error.message : String(error),
-      );
-      this.draftValues.set(path.join('.'), value);
-      this.error = [...this.draftErrors.values()].join(' ');
+      this.error = error instanceof Error ? error.message : String(error);
+      this.requestUpdate();
     }
   };
   private field(path: ConfigPath, spec: FieldSchema) {
@@ -156,7 +166,9 @@ export class AviadiloEditor extends LitElement {
           ${spec.enum.map(
             (option) =>
               html`<option value=${option} ?selected=${option === value}>
-                ${option}
+                ${key === 'theme' && option === 'auto'
+                  ? 'Follow Home Assistant'
+                  : option}
               </option>`,
           )}
         </select></label
@@ -242,6 +254,7 @@ export class AviadiloEditor extends LitElement {
   }
   protected render() {
     if (!this.config) return html``;
+    const draft = this.draftConfig();
     return html`<p>
         Changes update the preview using the same Home Assistant data and
         settings as your dashboard.
@@ -263,23 +276,32 @@ export class AviadiloEditor extends LitElement {
         (panel) =>
           html`<details ?open=${panel === 'map'}>
             <summary>${label(panel)}</summary>
-            ${Object.entries(fields[panel].properties!).map(([key, spec]) =>
-              key === 'anchor'
-                ? anchorControl(
-                    readPath(this.config, [panel, key]) as Anchor | null,
-                    [panel, key],
-                    this.edit,
-                    entitySuggestions(this.hass?.states, 'zone'),
-                    panel === 'people',
-                  )
-                : key === 'trackers'
-                  ? trackerControls(
-                      this.config.people!.trackers!,
-                      entitySuggestions(this.hass?.states, 'device_tracker'),
-                      this.edit,
-                    )
-                  : this.field([panel, key], spec),
-            )}
+            ${panel === 'wind'
+              ? windControls(this.config.wind!, this.edit, (key, saved) =>
+                  this.draftValues.has(`wind.${key}`)
+                    ? this.draftValues.get(`wind.${key}`)
+                    : saved,
+                )
+              : Object.entries(fields[panel].properties!).map(([key, spec]) =>
+                  key === 'anchor'
+                    ? anchorControl(
+                        readPath(draft, [panel, key]) as Anchor | null,
+                        [panel, key],
+                        this.edit,
+                        entitySuggestions(this.hass?.states, 'zone'),
+                        panel === 'people',
+                      )
+                    : key === 'trackers'
+                      ? trackerControls(
+                          draft.people!.trackers!,
+                          entitySuggestions(
+                            this.hass?.states,
+                            'device_tracker',
+                          ),
+                          this.edit,
+                        )
+                      : this.field([panel, key], spec),
+                )}
           </details>`,
       )} `;
   }

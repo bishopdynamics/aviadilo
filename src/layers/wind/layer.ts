@@ -175,17 +175,21 @@ export class WindLayer {
       L.DomUtil.setPosition(canvas, map.containerPointToLayerPoint([0, 0]));
       const ctx = this.contexts[i];
       ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
-      ctx.strokeStyle = '#ecf8ff';
+      ctx.strokeStyle = this.view.config.color!;
       ctx.shadowColor = '#082638';
       ctx.shadowBlur = 3;
-      ctx.fillStyle = '#ecf8ff';
+      ctx.fillStyle = this.view.config.color!;
       ctx.lineWidth = 1.5;
       ctx.globalAlpha = this.view.config.opacity!;
     }
     const { grid, config } = this.view;
     if (!visible || !grid || !hasWindData(grid) || !this.width || !this.height)
       return;
-    if (config.static_style !== 'off') {
+    const mode =
+      config.mode === 'particles' && this.media?.matches
+        ? 'arrows'
+        : config.mode;
+    if (mode === 'arrows' || mode === 'barbs') {
       // Independent of source sampling; bound static work even for giant screens.
       const spacing = Math.max(
         config.marker_spacing_px!,
@@ -202,13 +206,12 @@ export class WindLayer {
               y,
               vector,
               position.lat,
-              config.static_style!,
+              mode,
               config.marker_size_px!,
             );
         }
     }
-    if (config.particles && !this.media?.matches && config.particle_count! > 0)
-      this.raf = requestAnimationFrame(this.animate);
+    if (mode === 'particles') this.raf = requestAnimationFrame(this.animate);
   }
   private seed(): Particle {
     return {
@@ -226,6 +229,7 @@ export class WindLayer {
       document.hidden ||
       !this.view.visible ||
       this.media?.matches ||
+      this.view.config.mode !== 'particles' ||
       this.moving
     ) {
       this.stop();

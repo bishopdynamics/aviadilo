@@ -29,6 +29,9 @@ function fixture(): WindGrid {
 }
 function setup() {
   const context = {
+    strokeStyle: '',
+    fillStyle: '',
+    globalAlpha: 1,
     save: vi.fn(),
     restore: vi.fn(),
     translate: vi.fn(),
@@ -91,8 +94,7 @@ function setup() {
   };
   const controller = new WindController();
   controller.configure({
-    static_style: 'arrows',
-    particles: true,
+    mode: 'particles',
     particle_count: 1500,
   });
   controller.receive(fixture());
@@ -116,6 +118,53 @@ function setup() {
 }
 afterEach(() => vi.unstubAllGlobals());
 describe('wind canvas lifecycle', () => {
+  it('renders exclusive modes with chosen stroke/fill, retains grid and restores reduced-motion particles', () => {
+    const f = setup();
+    const grid = f.controller.view().grid;
+    expect(f.context.stroke).not.toHaveBeenCalled();
+    f.step(0);
+    f.step(34);
+    expect(f.context.stroke).toHaveBeenCalled();
+    for (const mode of ['arrows', 'barbs'] as const) {
+      f.context.stroke.mockClear();
+      f.controller.configure({
+        mode,
+        color: '#a1B2c3',
+        opacity: 0.3,
+        particle_count: 73,
+      });
+      expect(f.context.stroke).toHaveBeenCalled();
+      expect(f.context.strokeStyle).toBe('#a1B2c3');
+      expect(f.context.fillStyle).toBe('#a1B2c3');
+      expect(f.context.globalAlpha).toBe(0.3);
+      expect(f.layer.diagnostics()).toMatchObject({
+        animating: false,
+        particles: 0,
+      });
+      expect(f.frames.size).toBe(0);
+      expect(f.controller.view().grid).toBe(grid);
+    }
+    f.context.stroke.mockClear();
+    f.controller.configure({
+      ...f.controller.view().config,
+      mode: 'particles',
+    });
+    expect(f.context.stroke).not.toHaveBeenCalled();
+    f.media.matches = true;
+    f.media.dispatchEvent(new Event('change'));
+    expect(f.context.stroke).toHaveBeenCalled();
+    expect(f.controller.view().config.mode).toBe('particles');
+    expect(f.context.strokeStyle).toBe('#a1B2c3');
+    expect(f.layer.diagnostics().animating).toBe(false);
+    f.media.matches = false;
+    f.media.dispatchEvent(new Event('change'));
+    f.step(0);
+    f.step(34);
+    expect(f.layer.diagnostics().particles).toBe(73);
+    expect(f.controller.view().grid).toBe(grid);
+    f.layer.dispose();
+  });
+
   it('stops existing animation for an all-null field and resumes for calm or partial data', () => {
     const f = setup();
     f.step(0);
@@ -146,7 +195,7 @@ describe('wind canvas lifecycle', () => {
       v_mps: [0, 0, 0, 0],
     });
     expect(f.layer.diagnostics().animating).toBe(true);
-    expect(f.context.arc).toHaveBeenCalled();
+    expect(f.context.arc).not.toHaveBeenCalled();
     f.controller.receive({
       ...fixture(),
       u_mps: [null, 0, 0, 0],
@@ -237,7 +286,7 @@ describe('wind canvas lifecycle', () => {
         (c) => c.width === 0 && c.remove.mock.calls.length === 1,
       ),
     ).toBe(true);
-    f.controller.configure({ particles: true });
+    f.controller.configure({ mode: 'particles' });
     f.media.dispatchEvent(new Event('change'));
     expect(f.frames.size).toBe(0);
     f.layer.attach(f.map as unknown as L.Map);

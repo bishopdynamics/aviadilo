@@ -53,16 +53,5 @@ export function radarControls(
               change(key, Number((e.target as HTMLInputElement).value))}
         /></label>`,
     )}
-    ${(['show_timestamp', 'show_legend', 'show_coverage'] as const).map(
-      (key) =>
-        html`<label style="min-height:44px;display:flex;align-items:center"
-          ><input
-            type="checkbox"
-            .checked=${config[key]}
-            @change=${(e: Event) =>
-              change(key, (e.target as HTMLInputElement).checked)}
-          />${key.replaceAll('_', ' ')}</label
-        >`,
-    )}
   </fieldset>`;
 }

@@ -293,10 +293,10 @@ const hass = {
 };
 const cards: AviadiloMap[] = [];
 const defaultConfig: CardConfig = {
-  schema_version: 1,
+  schema_version: 2,
   type: 'custom:aviadilo-map',
   layers: { aircraft: true, radar: true, wind: true, people: true },
-  wind: { static_style: 'arrows', particles: true },
+  wind: { mode: 'arrows' },
   people: {
     trackers: [
       { entity_id: 'device_tracker.synthetic' },

@@ -14,6 +14,7 @@ export interface HaEntity {
 }
 export interface HomeAssistant {
   user?: { id: string };
+  themes?: { darkMode?: boolean };
   connection?: HaConnection;
   fetchWithAuth?: HassTransport['fetchWithAuth'];
   states: Record<string, HaEntity>;

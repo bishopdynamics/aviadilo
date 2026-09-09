@@ -107,8 +107,7 @@ export class AviadiloAircraftList extends LitElement {
   protected render() {
     const view = this.view;
     if (!view) return html`<p>Waiting for aircraft data</p>`;
-    const config = view.config.aircraft!,
-      freshness = view.config.freshness!;
+    const config = view.config.aircraft!;
     const provider = view.provider ? PROVIDERS[view.provider] : null;
     const selected = view.selected;
     const sourceStale =
@@ -192,38 +191,32 @@ export class AviadiloAircraftList extends LitElement {
                 >${provider.name}</a
               >`
           : 'Aircraft source pending'}
-        ${freshness.show_source_status
-          ? html`<div role="status">
-              ${sourceStale && view.status?.state === 'current'
+        ${html`<div role="status">
+          ${sourceStale && view.status?.state === 'current'
+            ? 'stale'
+            : (view.status?.state ??
+              (sourceStale
                 ? 'stale'
-                : (view.status?.state ??
-                  (sourceStale
-                    ? 'stale'
-                    : view.fetchedAt
-                      ? 'current'
-                      : 'loading'))}${view.status?.message
-                ? ` · ${view.status.message}`
-                : ''}
-            </div>`
-          : nothing}
-        ${freshness.show_last_update
-          ? html`<div>
-              Last update:
-              ${view.fetchedAt
-                ? html`<time datetime=${view.fetchedAt}
-                    >${new Date(view.fetchedAt).toLocaleString()}</time
-                  >`
-                : 'Unknown'}
-            </div>`
-          : nothing}
-        ${freshness.show_effective_refresh
-          ? html`<div>
-              Effective refresh:
-              ${view.status?.effective_interval_s != null
-                ? `${view.status.effective_interval_s} s`
-                : 'Unknown'}
-            </div>`
-          : nothing}
+                : view.fetchedAt
+                  ? 'current'
+                  : 'loading'))}${view.status?.message
+            ? ` · ${view.status.message}`
+            : ''}
+        </div>`}
+        ${html`<div>
+          Last update:
+          ${view.fetchedAt
+            ? html`<time datetime=${view.fetchedAt}
+                >${new Date(view.fetchedAt).toLocaleString()}</time
+              >`
+            : 'Unknown'}
+        </div>`}
+        ${html`<div>
+          Effective refresh:
+          ${view.status?.effective_interval_s != null
+            ? `${view.status.effective_interval_s} s`
+            : 'Unknown'}
+        </div>`}
       </footer>`;
   }
 }

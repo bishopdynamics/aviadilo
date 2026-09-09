@@ -2,86 +2,97 @@ import { html } from 'lit';
 import defaults from '../../contracts/card-defaults.json';
 import type { WindConfig } from '../layers/wind/model';
 import type { ConfigPath } from './ha-controls';
-/** Only one changed path is emitted; the parent preserves all future settings. */
+/** Mode-specific fields remain saved while hidden; invalid drafts remain editable. */
 export function windControls(
   saved: WindConfig,
   edit: (path: ConfigPath, value: unknown) => void,
+  draft: (key: string, saved: unknown) => unknown = (_key, value) => value,
 ) {
   const config = { ...defaults.wind, ...saved };
-  const change = (key: string, value: unknown) => edit(['wind', key], value);
+  const value = (key: keyof typeof config) => draft(key, config[key]);
+  const change = (key: string, next: unknown) => edit(['wind', key], next);
+  const mode = value('mode');
   return html`<fieldset style="display:grid;gap:8px;min-width:0">
     <legend>Wind</legend>
-    <label
-      >Source<select
-        style="min-height:44px"
-        @change=${() => change('provider', 'dwd_icon_global')}
-      >
-        <option value="dwd_icon_global" selected>
-          DWD ICON-global · 10 m wind
-        </option>
-      </select></label
-    >
+    <p>Source: DWD ICON-global · 10 m wind</p>
     ${(
       [
-        ['static_style', 'Static markers', ['off', 'arrows', 'barbs']],
+        ['mode', 'Display mode', ['arrows', 'barbs', 'particles']],
         ['speed_unit', 'Numeric speed unit', ['km/h', 'mph', 'knots', 'm/s']],
       ] as const
     ).map(
-      ([key, label, values]) =>
+      ([key, label, choices]) =>
         html`<label
           >${label}<select
-            style="min-height:44px;max-width:100%"
-            .value=${config[key]}
-            @change=${(e: Event) =>
-              change(key, (e.target as HTMLSelectElement).value)}
+            id=${`wind-${key}`}
+            .value=${String(value(key))}
+            @change=${(event: Event) =>
+              change(key, (event.target as HTMLSelectElement).value)}
           >
-            ${values.map(
-              (value) =>
-                html`<option value=${value} ?selected=${value === config[key]}>
-                  ${value}
+            ${choices.map(
+              (choice) =>
+                html`<option value=${choice} ?selected=${choice === value(key)}>
+                  ${choice}
                 </option>`,
             )}
           </select></label
         >`,
     )}
-    <label style="min-height:44px"
-      ><input
-        type="checkbox"
-        .checked=${config.particles}
-        @change=${(e: Event) =>
-          change('particles', (e.target as HTMLInputElement).checked)}
-      />Animated particles</label
-    >
+    <label
+      >Wind color picker<input
+        type="color"
+        id="wind-color-picker"
+        .value=${/^#[0-9a-fA-F]{6}$/.test(String(value('color')))
+          ? String(value('color'))
+          : config.color}
+        @input=${(event: Event) =>
+          change('color', (event.target as HTMLInputElement).value)}
+    /></label>
+    <label
+      >Wind color (hex)<input
+        type="text"
+        id="wind-color"
+        pattern="#[0-9a-fA-F]{6}"
+        maxlength="7"
+        .value=${String(value('color'))}
+        @change=${(event: Event) =>
+          change('color', (event.target as HTMLInputElement).value)}
+    /></label>
     ${(
       [
         ['marker_spacing_px', 'Marker spacing (px)', 16, 256, 1],
         ['marker_size_px', 'Marker size (px)', 8, 96, 1],
-        ['particle_count', 'Particle count', 0, 1500, 1],
+        ['particle_count', 'Particle count', 1, 1500, 1],
         ['animation_speed', 'Animation speed multiplier', 0.1, 5, 0.1],
         ['trail_length_s', 'Trail length (seconds)', 0.1, 10, 0.1],
         ['opacity', 'Opacity', 0, 1, 0.05],
       ] as const
-    ).map(
-      ([key, label, min, max, step]) =>
-        html`<label
-          >${label}<input
-            style="min-height:44px;max-width:100%;box-sizing:border-box"
-            type="number"
-            min=${min}
-            max=${max}
-            step=${step}
-            .value=${String(config[key])}
-            @change=${(e: Event) => {
-              const input = e.target as HTMLInputElement;
-              if (input.value !== '' && input.checkValidity())
-                change(key, Number(input.value));
-            }}
-        /></label>`,
-    )}
+    )
+      .filter(
+        ([key]) =>
+          key === 'opacity' ||
+          (key.startsWith('marker_')
+            ? mode !== 'particles'
+            : mode === 'particles'),
+      )
+      .map(
+        ([key, label, min, max, step]) =>
+          html`<label
+            >${label}<input
+              id=${`wind-${key}`}
+              type="number"
+              min=${min}
+              max=${max}
+              step=${step}
+              .value=${String(value(key))}
+              @change=${(event: Event) =>
+                change(key, (event.target as HTMLInputElement).valueAsNumber)}
+          /></label>`,
+      )}
     <small
       >Arrows point downwind. Barbs point from the wind source; feathers always
       show 5, 10 and 50 knots. Animation adds no forecast detail. Reduced motion
-      disables particles.</small
+      displays static arrows while keeping Particles saved.</small
     >
   </fieldset>`;
 }

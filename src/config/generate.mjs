@@ -12,6 +12,7 @@ const ajv = new Ajv({
 addFormats(ajv, { mode: 'full' });
 const names = [
   'card-config',
+  'card-config-v1',
   'integration-config',
   'command',
   'event',

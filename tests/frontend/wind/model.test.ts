@@ -113,7 +113,7 @@ describe('shared wind field', () => {
     const controller = new WindController();
     controller.receive(grid());
     controller.configure({
-      particles: true,
+      mode: 'particles',
       particle_count: 2000,
       animation_speed: 100,
       marker_spacing_px: 1,

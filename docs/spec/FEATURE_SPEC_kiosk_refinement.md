@@ -237,6 +237,12 @@ The user approved the design, but native slice 3 verification found one platform
 
 ## Change Log
 
+- 2026-09-08 — Slice 4 implemented and independently verified: exact frozen v1 reader, canonical v2 migration, exclusive wind modes/color, invalid-draft preservation and HA-aware map themes. Full parent checks passed 264 frontend + 482 backend + 17 Chromium scenarios; native HA verified unchanged v1 storage on load, migration/rendering, theme contrast, reduced motion and normal editor-save persistence. Routine panels remain until slice 5. No release/version change.
+
+- 2026-09-08 — Slice 6 ownership also includes scripts/release_metadata.py and tests/backend/test_release_metadata.py so publication can include the version's migration/reload guidance from orchestrator-owned release notes. Existing release channel and publication safeguards remain unchanged.
+
+- 2026-09-08 — Continuing slices 4–6 without routine slice pauses at the user's request. Slice 4 ownership narrowly includes src/editor/radar-panel.ts, src/layers/radar/presentation.ts and src/layers/aircraft/list.ts to consume the removed presentation flags coherently; current metadata remains available until slice 5 replaces its presentation.
+
 - 2026-09-08 — Created from user TODO feedback. User confirmed retaining layer buttons, Recenter and the optional aircraft list, accepted the proposed kiosk/cache/theme/wind direction, and explicitly required the same pipeline in edit and live modes. Detailed spec remains draft for review; no implementation started.
 
 - 2026-09-08 — User approved the detailed spec. Began slice 1 asset contracts with card/integration/feed v1 preserved; no renewed approval needed for the recorded choices.

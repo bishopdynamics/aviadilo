@@ -4,7 +4,7 @@
   "type": "object",
   "properties": {
     "schema_version": {
-      "const": 2
+      "const": 1
     },
     "type": {
       "const": "custom:aviadilo-map"
@@ -34,6 +34,9 @@
           "type": "integer",
           "minimum": 160,
           "maximum": 2000
+        },
+        "follow_theme": {
+          "type": "boolean"
         },
         "anchor": {
           "oneOf": [
@@ -128,9 +131,6 @@
         },
         "extent_unit": {
           "enum": ["km", "mi", "nmi"]
-        },
-        "theme": {
-          "enum": ["auto", "light", "dark"]
         }
       },
       "required": [],
@@ -178,6 +178,15 @@
           "type": "integer",
           "minimum": 100,
           "maximum": 10000
+        },
+        "show_timestamp": {
+          "type": "boolean"
+        },
+        "show_legend": {
+          "type": "boolean"
+        },
+        "show_coverage": {
+          "type": "boolean"
         }
       },
       "required": [],
@@ -188,6 +197,12 @@
       "properties": {
         "provider": {
           "const": "dwd_icon_global"
+        },
+        "static_style": {
+          "enum": ["off", "arrows", "barbs"]
+        },
+        "particles": {
+          "type": "boolean"
         },
         "marker_spacing_px": {
           "type": "number",
@@ -201,7 +216,7 @@
         },
         "particle_count": {
           "type": "integer",
-          "minimum": 1,
+          "minimum": 0,
           "maximum": 1500
         },
         "animation_speed": {
@@ -221,13 +236,6 @@
         },
         "speed_unit": {
           "enum": ["km/h", "mph", "knots", "m/s"]
-        },
-        "mode": {
-          "enum": ["arrows", "barbs", "particles"]
-        },
-        "color": {
-          "type": "string",
-          "pattern": "^#[0-9a-fA-F]{6}$"
         }
       },
       "required": [],
@@ -493,10 +501,19 @@
           "minimum": 1,
           "maximum": 3600
         },
+        "show_last_update": {
+          "type": "boolean"
+        },
         "stale_retention_s": {
           "type": "number",
           "minimum": 0,
           "maximum": 3600
+        },
+        "show_effective_refresh": {
+          "type": "boolean"
+        },
+        "show_source_status": {
+          "type": "boolean"
         }
       },
       "required": [],

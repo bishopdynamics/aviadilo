@@ -1,7 +1,7 @@
 [
   {
     "name": "card-defaults",
-    "schema": "card-config",
+    "schema": "card-config-v1",
     "valid": true,
     "value": {
       "schema_version": 1,
@@ -131,7 +131,7 @@
   },
   {
     "name": "future-config",
-    "schema": "card-config",
+    "schema": "card-config-v1",
     "valid": true,
     "value": {
       "schema_version": 1,
@@ -724,7 +724,7 @@
   },
   {
     "name": "bad-zoom-limits",
-    "schema": "card-config",
+    "schema": "card-config-v1",
     "valid": false,
     "value": {
       "schema_version": 1,
@@ -830,7 +830,7 @@
   },
   {
     "name": "bad-altitude-limits",
-    "schema": "card-config",
+    "schema": "card-config-v1",
     "valid": false,
     "value": {
       "schema_version": 1,
@@ -936,7 +936,7 @@
   },
   {
     "name": "zero-radius",
-    "schema": "card-config",
+    "schema": "card-config-v1",
     "valid": false,
     "value": {
       "schema_version": 1,
@@ -1066,7 +1066,7 @@
   },
   {
     "name": "too-many-particles",
-    "schema": "card-config",
+    "schema": "card-config-v1",
     "valid": false,
     "value": {
       "schema_version": 1,
@@ -1167,6 +1167,80 @@
         "stale_retention_s": 120,
         "show_effective_refresh": true,
         "show_source_status": true
+      }
+    }
+  },
+  {
+    "name": "card v2 minimal",
+    "schema": "card-config",
+    "valid": true,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map"
+    }
+  },
+  {
+    "name": "card v2 theme and wind",
+    "schema": "card-config",
+    "valid": true,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "map": {
+        "theme": "dark"
+      },
+      "wind": {
+        "mode": "particles",
+        "color": "#10Aaff",
+        "particle_count": 1500
+      }
+    }
+  },
+  {
+    "name": "card v2 invalid theme",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "map": {
+        "theme": false
+      }
+    }
+  },
+  {
+    "name": "card v2 invalid mode",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "wind": {
+        "mode": "off"
+      }
+    }
+  },
+  {
+    "name": "card v2 invalid color",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "wind": {
+        "color": "red"
+      }
+    }
+  },
+  {
+    "name": "card v2 zero count",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "wind": {
+        "particle_count": 0
       }
     }
   }

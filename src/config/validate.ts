@@ -3,6 +3,7 @@ import type { CardConfig } from './types';
 
 export type SchemaName =
   | 'card-config'
+  | 'card-config-v1'
   | 'integration-config'
   | 'command'
   | 'event'
@@ -15,7 +16,7 @@ export class ContractError extends Error {}
 export function validateContract(name: SchemaName, value: unknown): void {
   const version = (value as { schema_version?: unknown } | null)
     ?.schema_version;
-  if (version !== 1)
+  if (version !== (name === 'card-config' ? 2 : 1))
     throw new ContractError('Unsupported Aviadilo schema version');
   const validator =
     validators[name.replaceAll('-', '_') as keyof typeof validators];
@@ -89,7 +90,7 @@ export function validateContract(name: SchemaName, value: unknown): void {
         );
     }
   }
-  if (name === 'card-config') {
+  if (name === 'card-config' || name === 'card-config-v1') {
     const card = value as CardConfig;
     if ((card.map?.min_zoom ?? 2) > (card.map?.max_zoom ?? 18))
       throw new ContractError('Minimum zoom exceeds maximum');

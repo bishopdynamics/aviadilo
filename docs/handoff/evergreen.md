@@ -4,6 +4,8 @@ Durable handoff info — the kind of stuff that should be read at the start of e
 
 ## Evergreen Entries
 
+- Kiosk slice 4 activates canonical card schema v2 while retaining an exact frozen v1 reader. normalizeConfig migrates only in memory; editor save persists v2. Feed, integration and assets remain v1. map.theme is auto/light/dark; wind.mode is arrows/barbs/particles with wind.color. HA theme precedes OS preference; only the basemap pane is filtered. Mounted styling edits preserve clients/view/local toggles; native HA element replacement remains the separately pending policy question. Existing public 0.1.0 has v1 frontend; final kiosk packaging must change version/module URL before user saves v2 settings.
+
 - User rule (2026-09-07): `.bishop/` must always be committed with the project, including generated task updates. This supersedes earlier handoff instructions to leave its changes unstaged.
 - Project: Aviadilo (`aviadilo`), one larger Lovelace kiosk map combining optional aircraft, radar, wind, and household locations. Original idea: `docs/idea/initial-idea.md`; current user decisions: `docs/idea/revised-direction.md`.
 - Full `docs/spec/ROOT_SPEC.md` approved by the user on 2026-09-06. Implementation began with slice 1 that day. All documented engineering defaults and deferrals are accepted; do not request repeated approval.
