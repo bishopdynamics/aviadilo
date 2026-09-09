@@ -1,6 +1,6 @@
 # Using Aviadilo
 
-Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. This guide describes the `0.2.0-dev.4` kiosk candidate. The normal HACS release remains `0.1.0`; the user has confirmed the kiosk permission fix works, and the new reference marker awaits hands-on assessment.
+Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. This guide describes the `0.2.0-dev.5` kiosk candidate. The normal HACS release remains `0.1.0`; the user has confirmed the kiosk permission fix and reference marker work, and the new aircraft icons/type filters await hands-on assessment.
 
 Version `0.1.0` includes shared basemap caching and the same real data in saved, editor and picker views. Production previews do not substitute synthetic locations or weather. Synthetic data is confined to the developer test harness. The older `v0.1.0-dev.2` prerelease used synthetic editing previews and remains available for explicit version selection.
 
@@ -15,7 +15,7 @@ The card picker, card editor and dashboard edit mode use the same HA states, sou
 
 ## Kiosk candidate upgrade
 
-To try `v0.2.0-dev.4`, explicitly select it in HACS under **Need a different version? → Release**. Restart HA and reload dashboard browsers before editing card settings. Existing dashboards load through an in-memory migration; a normal editor save stores version-2 card configuration, which an old cached frontend cannot read. Integration settings and the shared cache are retained.
+To try `v0.2.0-dev.5`, explicitly select it in HACS under **Need a different version? → Release**. Restart HA and reload dashboard browsers before editing card settings. Existing dashboards load through an in-memory migration; a normal editor save stores version-2 card configuration, which an old cached frontend cannot read. Integration settings and the shared cache are retained.
 
 Legacy combined wind markers and particles become **Particles**. Legacy wind settings that drew nothing become **Arrows**, while preserving whether the Wind layer is enabled.
 
@@ -49,6 +49,10 @@ The layer buttons change visibility for the current card session. Save defaults 
 - **People:** select existing `device_tracker` entities. The default 50 km radius filter excludes distant travellers before fitting the map. A missing configured anchor hides radius-filtered people until the anchor is available.
 
 The **You are here** pin is enabled by default at the configured map anchor: Home Assistant home unless you select a zone or custom coordinates. It stays at that geographic location when you pan. Turn off **Show “You are here” marker** under Map to hide it, independently of the data layers and layer buttons. The pin identifies the configured reference, not the viewing device’s GPS location; it disappears if the anchor is unavailable.
+
+Under **Aircraft → Aircraft types**, check the groups you want to see: Airplanes, Helicopters, Gliders, Balloons / airships, Parachutists, Ultralights / hang-gliders, Drones, Spacecraft, Ground vehicles / obstacles and Unknown. All start enabled; checking only Helicopters filters the map, aircraft list and fit candidates to that group. Unchecking every type hides all aircraft. Hiding a selected type clears its details and trail. These are per-card display filters using the existing shared feed.
+
+Icons follow the reported aircraft category, with distinct plane/helicopter shapes and a neutral Unknown symbol for missing or unrecognized categories. Model names remain available in aircraft details. Known courses rotate directional icons; a question-mark badge marks missing course. Aircraft type, size/color, stale styling and keyboard selection remain independent.
 
 Enable **Auto-size height to page** under Map to fill the remaining visible page below the card. It adapts to resizing and respects fixed scroll-container limits, including editor previews. Fixed pixel height remains the default and is retained when auto sizing is off. The minimum map height is 160px; tall titles/controls/aircraft details can still require scrolling. Scrolling alone does not grow the card.
 

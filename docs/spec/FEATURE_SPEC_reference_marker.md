@@ -1,6 +1,6 @@
 # SPEC: Optional you-are-here reference marker
 
-- **Status:** implemented, verified and published as v0.2.0-dev.4 from 8b89254; awaiting user assessment.
+- **Status:** implemented, verified and published as v0.2.0-dev.4 from 8b89254; user-confirmed working and visually accepted on 2026-09-09.
 
 ## Summary
 
@@ -50,6 +50,8 @@ No blocking question. The optional location clarification can steer the work; th
 No new deferred work; live-device location is outside this requested reference-marker implementation unless the user selects it.
 
 ## Change Log
+
+- 2026-09-09 — User confirms the marker works and looks good; next requested refinement is aircraft-kind icons and filters.
 
 - 2026-09-09 — Published v0.2.0-dev.4 from 8b89254 after native and hassfest/HACS workflows passed. Public ZIP exactly matches the tested candidate; tag validation and actual HACS installation using downloaded bytes/published metadata pass. Normal v0.1.0 remains Latest.
 

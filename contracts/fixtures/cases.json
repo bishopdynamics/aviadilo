@@ -1305,5 +1305,124 @@
         "show_you_are_here": "yes"
       }
     }
+  },
+  {
+    "name": "aircraft-types-all",
+    "schema": "card-config",
+    "valid": true,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "aircraft": {
+        "types": [
+          "airplanes",
+          "helicopters",
+          "gliders",
+          "balloons",
+          "parachutists",
+          "ultralights",
+          "drones",
+          "spacecraft",
+          "ground",
+          "unknown"
+        ]
+      }
+    }
+  },
+  {
+    "name": "aircraft-types-none",
+    "schema": "card-config",
+    "valid": true,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "aircraft": {
+        "types": []
+      }
+    }
+  },
+  {
+    "name": "aircraft-types-helicopters",
+    "schema": "card-config",
+    "valid": true,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "aircraft": {
+        "types": ["helicopters"]
+      }
+    }
+  },
+  {
+    "name": "aircraft-types-unknown",
+    "schema": "card-config",
+    "valid": true,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "aircraft": {
+        "types": ["unknown"]
+      }
+    }
+  },
+  {
+    "name": "aircraft-types-duplicate",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "aircraft": {
+        "types": ["helicopters", "helicopters"]
+      }
+    }
+  },
+  {
+    "name": "aircraft-types-unsupported",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "aircraft": {
+        "types": ["A7"]
+      }
+    }
+  },
+  {
+    "name": "aircraft-types-null",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "aircraft": {
+        "types": null
+      }
+    }
+  },
+  {
+    "name": "aircraft-types-scalar",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "aircraft": {
+        "types": "helicopters"
+      }
+    }
+  },
+  {
+    "name": "aircraft-types-non-string",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "aircraft": {
+        "types": [7]
+      }
+    }
   }
 ]

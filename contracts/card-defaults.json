@@ -89,6 +89,18 @@
       "position_age",
       "distance",
       "ground"
+    ],
+    "types": [
+      "airplanes",
+      "helicopters",
+      "gliders",
+      "balloons",
+      "parachutists",
+      "ultralights",
+      "drones",
+      "spacecraft",
+      "ground",
+      "unknown"
     ]
   },
   "freshness": {

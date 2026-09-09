@@ -1,4 +1,10 @@
 import * as L from 'leaflet';
+import { aircraftKind, AIRCRAFT_KIND_LABELS } from './classification';
+import {
+  createAircraftSymbol,
+  updateAircraftSymbol,
+  type AircraftSymbol,
+} from './icons';
 import { visibleLongitude, type Point } from '../../map/geo';
 import { LAYER_PANES } from '../types';
 import {
@@ -12,7 +18,7 @@ import {
 interface MarkerState {
   marker: L.Marker;
   icon: HTMLElement;
-  symbol: HTMLElement;
+  symbol: AircraftSymbol;
   label: HTMLElement;
   popup: HTMLElement;
 }
@@ -66,8 +72,9 @@ export class AircraftLayer {
     const current = new Set(view.points.map((row) => row.aircraft.id));
     for (const [id, state] of this.markers) {
       if (!current.has(id)) {
-        state.marker.off();
+        state.marker.closePopup();
         this.group.removeLayer(state.marker);
+        state.marker.off();
         this.markers.delete(id);
       }
     }
@@ -81,9 +88,9 @@ export class AircraftLayer {
       let state = this.markers.get(id);
       if (!state) {
         const icon = document.createElement('div');
-        const symbol = document.createElement('span');
+        const symbol = createAircraftSymbol();
         const label = document.createElement('span');
-        icon.append(symbol, label);
+        icon.append(symbol.svg, label);
         const popup = document.createElement('div');
         const marker = L.marker(position, {
           pane: 'aircraft',
@@ -103,15 +110,25 @@ export class AircraftLayer {
           autoClose: false,
         });
         marker.on('click', () => this.controller.select(id));
+        marker.on('keydown', (event: L.LeafletKeyboardEvent) => {
+          const key = event.originalEvent.key;
+          if (key !== 'Enter' && key !== ' ') return;
+          // Leaflet's default Enter handler only toggles its popup. Selection
+          // must also enter shared controller state, just like a pointer click.
+          L.DomEvent.stop(event.originalEvent);
+          this.controller.select(id);
+          marker.openPopup();
+        });
         state = { marker, icon, symbol, label, popup };
         this.markers.set(id, state);
       }
       state.marker.setLatLng(position);
       state.marker.setOpacity(row.stale ? 0.5 : 1);
       state.icon.style.cssText = `position:relative;width:${config.marker_size_px}px;height:${config.marker_size_px}px;`;
-      state.symbol.style.cssText = `display:block;text-align:center;line-height:1;width:100%;height:100%;font-size:${config.marker_size_px}px;transform:rotate(${row.aircraft.course_deg ?? 0}deg);text-shadow:0 0 3px #000;`;
-      state.symbol.style.color = config.marker_color!;
-      state.symbol.textContent = row.aircraft.course_deg === null ? '●' : '▲';
+      const kind = aircraftKind(row.aircraft.category);
+      updateAircraftSymbol(state.symbol, kind, row.aircraft.course_deg);
+      state.symbol.svg.style.color = config.marker_color!;
+      const accessibleName = `${aircraftName(row)}, ${AIRCRAFT_KIND_LABELS[kind]}${row.aircraft.course_deg === null ? ', course unknown' : ''}${row.stale ? ', stale position' : ''}`;
       state.label.style.cssText =
         'position:absolute;top:100%;left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:2px 4px;border-radius:3px;font-size:12px;';
       const mode = config.label_mode;
@@ -123,11 +140,10 @@ export class AircraftLayer {
         element.style.height = `${config.marker_size_px}px`;
         element.style.marginLeft = `${-config.marker_size_px! / 2}px`;
         element.style.marginTop = `${-config.marker_size_px! / 2}px`;
-        element.setAttribute(
-          'aria-label',
-          `${aircraftName(row)}${row.stale ? ', stale position' : ''}`,
-        );
+        element.setAttribute('aria-label', accessibleName);
         element.setAttribute('aria-pressed', String(selected));
+        element.setAttribute('title', accessibleName);
+        element.setAttribute('data-aircraft-kind', kind);
         element.style.outline = selected ? '2px solid currentColor' : '';
       }
       const previousWidth = state.popup.offsetWidth;
@@ -165,7 +181,7 @@ export class AircraftLayer {
     );
   }
   private popup(root: HTMLElement, row: AircraftRow, view: AircraftView): void {
-    const text = `${aircraftName(row)}${row.stale ? ' · Stale position' : ''}\n${view.config.aircraft!.detail_fields!.map((field) => `${field.replaceAll('_', ' ')}: ${formatField(row, field, view.config.aircraft!)}`).join('\n')}`;
+    const text = `${aircraftName(row)} · ${AIRCRAFT_KIND_LABELS[aircraftKind(row.aircraft.category)]}${row.stale ? ' · Stale position' : ''}\n${view.config.aircraft!.detail_fields!.map((field) => `${field.replaceAll('_', ' ')}: ${formatField(row, field, view.config.aircraft!)}`).join('\n')}`;
     let details = root.querySelector('div');
     if (!details) {
       details = document.createElement('div');
@@ -195,9 +211,11 @@ export class AircraftLayer {
       this.map.attributionControl?.removeAttribution(this.attribution);
     this.unsubscribe();
     this.map.off('moveend resize', this.redraw);
+    for (const state of this.markers.values()) state.marker.closePopup();
+    // Keep Leaflet's removal handlers attached until layers leave the map.
+    this.group.clearLayers();
     for (const state of this.markers.values()) state.marker.off();
     this.markers.clear();
-    this.group.clearLayers();
     this.group.remove();
   }
 }

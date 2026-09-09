@@ -1,10 +1,11 @@
 # SPEC: Aviadilo household map
 
-- **Status:** in-progress — initial map and kiosk refinement delivered; the user reports the kiosk release works very well. The requested optional-controls/auto-height follow-up is delivered in v0.2.0-dev.2 and awaits user assessment.
+- **Status:** in-progress — initial map and kiosk refinements delivered; the user confirms the current dev.4 release works and looks good. Aircraft-kind icons and graphical type filters are the current requested follow-up.
 - **Addenda:** [FEATURE_SPEC_kiosk_refinement.md](FEATURE_SPEC_kiosk_refinement.md) — delivered in v0.2.0-dev.1 and positively assessed by the user; shared basemap caching, identical edit/live data, quiet presentation, themes and wind controls.
 - **Addenda:** [FEATURE_SPEC_map_layout.md](FEATURE_SPEC_map_layout.md) — requested 2026-09-08 after positive kiosk acceptance; optional layer buttons and auto page height.
 - **Addenda:** [FEATURE_SPEC_kiosk_permissions.md](FEATURE_SPEC_kiosk_permissions.md) — non-admin kiosk asset subscription repair, requested 2026-09-08.
 - **Addenda:** [FEATURE_SPEC_reference_marker.md](FEATURE_SPEC_reference_marker.md) — optional default-enabled reference marker, requested 2026-09-09.
+- **Addenda:** [FEATURE_SPEC_aircraft_types.md](FEATURE_SPEC_aircraft_types.md) — aircraft-kind icons and graphical type filters, requested 2026-09-09.
 - **Repository:** public `https://github.com/bishopdynamics/aviadilo`; remote `github`, upstream `github/main`. HACS from the first release is an accepted user requirement.
 - **Compatibility baseline:** Home Assistant Core 2026.9.1, current stable Chromium on a tablet PC. The user reported using latest HA; this patch version is the verified release baseline, not an inspection of their installation.
 - **Inputs:** `docs/idea/revised-direction.md`, `docs/research/everything-map.md`, `docs/research/weather-source-quality.md`, and the frozen Claremont spike.
@@ -13,7 +14,7 @@
 
 Aviadilo replaces separate aircraft, radar, and household-location maps with one large Lovelace map suitable for the user's Chromium kiosk. A Python Home Assistant integration shares external data collection and caching across cards and devices. A TypeScript/Lit/Leaflet card renders aircraft, precipitation radar, wind, and existing household trackers as independent layers. Every supported setting has a graphical editor, and distant travellers cannot pull the home view out to a world map.
 
-The initial implementation and kiosk refinement are delivered. The user reports the current kiosk release works very well and requested optional layer controls and automatic page height. The addenda supersede the original production-preview and presentation choices below; the separate native-preview-remount policy question remains recorded in the kiosk addendum.
+The initial implementation, kiosk refinement, optional layer controls, automatic page height, non-admin permission fix and reference marker are delivered. The user confirms the current release works and looks good, and requests aircraft-kind icons with graphical type filters. The addenda supersede the original production-preview and presentation choices below; the separate native-preview-remount policy question remains recorded in the kiosk addendum.
 
 ## Goals
 

@@ -6,7 +6,7 @@ import time
 from collections.abc import AsyncIterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import pytest
 from aiohttp import ClientSession
@@ -517,3 +517,17 @@ async def test_status_memory_is_bounded_during_viewer_churn_expiry_and_close(
         await service.close()
     assert ended == ["aviadilo:lease_expired", "aviadilo:closed"]
     assert not service.status_signatures and not service.viewers
+
+
+@pytest.mark.parametrize("provider", ["adsb_fi", "adsb_lol"])
+@pytest.mark.parametrize(
+    "category", ["A1", "A7", "B1", "B2", "B3", "B4", "B6", "B7", "C1", "B5", None]
+)
+def test_reported_category_is_preserved_independently_of_model(
+    provider: Literal["adsb_fi", "adsb_lol"], category: str | None
+) -> None:
+    result = normalize(payload([{**RAW, "category": category, "t": "A320"}]), provider, NOW)
+    validated(cast(dict[str, Any], result))
+    record = result["aircraft"][0]
+    assert record["category"] == category
+    assert record["aircraft_type"] == "A320"

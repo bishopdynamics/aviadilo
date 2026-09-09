@@ -11,6 +11,11 @@ import schema from '../../contracts/card-config.schema.json';
 import { normalizeConfig } from '../config/defaults';
 import type { CardConfig } from '../config/types';
 import type { HomeAssistant, Anchor } from '../map/geo';
+import {
+  AIRCRAFT_TYPE_HELP,
+  AIRCRAFT_KIND_LABELS,
+  type AircraftKind,
+} from '../layers/aircraft/classification';
 import { label } from '../localize/en';
 import { anchorControl } from './map-panel';
 import { windControls } from './wind-panel';
@@ -225,6 +230,7 @@ export class AviadiloEditor extends LitElement {
     if (spec.type === 'array' && spec.items?.enum)
       return html`<fieldset>
         <legend>${label(key)}</legend>
+        ${id === 'aircraft-types' ? html`<p>${AIRCRAFT_TYPE_HELP}</p>` : ''}
         ${spec.items.enum.map(
           (option) =>
             html`<label class="check"
@@ -238,7 +244,9 @@ export class AviadiloEditor extends LitElement {
                       ? [...(value as string[]), option]
                       : (value as string[]).filter((item) => item !== option),
                   )}
-              />${label(option)}</label
+              />${id === 'aircraft-types'
+                ? AIRCRAFT_KIND_LABELS[option as AircraftKind]
+                : label(option)}</label
             >`,
         )}
       </fieldset>`;

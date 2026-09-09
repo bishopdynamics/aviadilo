@@ -1,3 +1,4 @@
+import { aircraftKind } from './classification';
 import { normalizeConfig } from '../../config/defaults';
 import type { CardConfig } from '../../config/types';
 import type { Aircraft, SnapshotEvent } from '../../data/types';
@@ -199,6 +200,13 @@ export class AircraftController {
         continue;
       }
       const aircraft = stored.aircraft;
+      if (!config.types!.includes(aircraftKind(aircraft.category))) {
+        if (this.selectedId === id) {
+          this.selectedId = null;
+          this.trail = [];
+        }
+        continue;
+      }
       const position = point(aircraft.latitude, aircraft.longitude);
       const distance =
         position && this.anchor ? distanceM(position, this.anchor) : null;

@@ -159,6 +159,22 @@ export interface CardConfig {
       | 'distance'
       | 'ground'
     )[];
+    /**
+     * @minItems 0
+     * @maxItems 10
+     */
+    types?: (
+      | 'airplanes'
+      | 'helicopters'
+      | 'gliders'
+      | 'balloons'
+      | 'parachutists'
+      | 'ultralights'
+      | 'drones'
+      | 'spacecraft'
+      | 'ground'
+      | 'unknown'
+    )[];
     [k: string]: unknown;
   };
   freshness?: {

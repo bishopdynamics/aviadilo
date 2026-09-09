@@ -147,3 +147,39 @@ describe('card v1 to v2 migration', () => {
       ).toThrow('Unsupported');
   });
 });
+
+it('defaults all aircraft types through both config generations and preserves explicit empty/heli selections', () => {
+  for (const schema_version of [1, 2]) {
+    const base = { schema_version, type: 'custom:aviadilo-map' };
+    const defaults = normalizeConfig(base);
+    expect(defaults.aircraft!.types).toEqual([
+      'airplanes',
+      'helicopters',
+      'gliders',
+      'balloons',
+      'parachutists',
+      'ultralights',
+      'drones',
+      'spacecraft',
+      'ground',
+      'unknown',
+    ]);
+    for (const types of [[], ['helicopters'], ['unknown']]) {
+      const input = { ...base, aircraft: { types, future: 'retained' } };
+      expect(normalizeConfig(input).aircraft).toMatchObject({
+        types,
+        future: 'retained',
+      });
+      expect(input.schema_version).toBe(schema_version);
+    }
+    for (const types of [
+      null,
+      ['helicopters', 'helicopters'],
+      ['A7'],
+      'helicopters',
+    ])
+      expect(() => normalizeConfig({ ...base, aircraft: { types } })).toThrow();
+    defaults.aircraft!.types!.pop();
+    expect(normalizeConfig(base).aircraft!.types).toHaveLength(10);
+  }
+});

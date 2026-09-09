@@ -238,3 +238,53 @@ describe('local aircraft state', () => {
     expect(controller.view().status).toBeNull();
   });
 });
+
+it('filters every reported kind before rows/points and permanently clears hidden selection/trail', () => {
+  const c = config();
+  const controller = new AircraftController(c, null, () => time);
+  const plane = { ...record, category: 'A1' };
+  const helicopter = { ...record, id: 'adsb_fi:000007', category: ' a7 ' };
+  const unknown = { ...record, id: 'adsb_fi:000000', aircraft_type: 'H60' };
+  controller.update(snapshot([plane, helicopter, unknown]));
+  expect(controller.view().points).toHaveLength(3);
+  controller.select(plane.id);
+  expect(controller.view().trail).toHaveLength(1);
+  c.aircraft!.types = ['helicopters'];
+  controller.configure(c);
+  expect(controller.view().rows.map((r) => r.aircraft.id)).toEqual([
+    helicopter.id,
+  ]);
+  expect(controller.view().points.map((r) => r.aircraft.id)).toEqual([
+    helicopter.id,
+  ]);
+  expect(controller.view().selected).toBeNull();
+  expect(controller.view().trail).toEqual([]);
+  c.aircraft!.types = config().aircraft!.types;
+  controller.configure(c);
+  expect(controller.view().points).toHaveLength(3);
+  expect(controller.view().selected).toBeNull();
+  expect(controller.view().trail).toEqual([]);
+  controller.select(helicopter.id);
+  // A newly reported category can also hide and clear a selected aircraft.
+  c.aircraft!.types = ['helicopters'];
+  controller.configure(c);
+  controller.update(
+    snapshot([plane, { ...helicopter, category: 'A2' }, unknown]),
+  );
+  expect(controller.view().selected).toBeNull();
+  controller.update(snapshot([plane, helicopter, unknown]));
+  expect(controller.view().selected).toBeNull();
+  c.aircraft!.types = ['unknown'];
+  controller.configure(c);
+  expect(controller.view().rows.map((r) => r.aircraft.id)).toEqual([
+    unknown.id,
+  ]);
+  c.aircraft!.types = [];
+  controller.configure(c);
+  expect(controller.view().rows).toEqual([]);
+  expect(controller.view().points).toEqual([]);
+  controller.select(unknown.id);
+  c.aircraft!.types = config().aircraft!.types;
+  controller.configure(c);
+  expect(controller.view().selected).toBeNull();
+});

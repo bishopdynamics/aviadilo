@@ -1,4 +1,9 @@
 import { html } from 'lit';
+import {
+  AIRCRAFT_KINDS,
+  AIRCRAFT_KIND_LABELS,
+  AIRCRAFT_TYPE_HELP,
+} from '../layers/aircraft/classification';
 import type { AircraftConfig } from '../layers/aircraft/model';
 import {
   displayDistance,
@@ -23,6 +28,28 @@ export function aircraftControls(
   const label = (key: string) => key.replaceAll('_', ' ');
   return html`<fieldset>
     <legend>Aircraft display</legend>
+    <fieldset>
+      <legend>Aircraft types</legend>
+      <p>${AIRCRAFT_TYPE_HELP}</p>
+      ${AIRCRAFT_KINDS.map(
+        (kind) =>
+          html`<label
+            ><input
+              type="checkbox"
+              .checked=${(config.types ?? AIRCRAFT_KINDS).includes(kind)}
+              @change=${(event: Event) => {
+                const selected = config.types ?? AIRCRAFT_KINDS;
+                change(
+                  'types',
+                  (event.target as HTMLInputElement).checked
+                    ? [...selected, kind]
+                    : selected.filter((item) => item !== kind),
+                );
+              }}
+            />${AIRCRAFT_KIND_LABELS[kind]}</label
+          >`,
+      )}
+    </fieldset>
     ${(['show_map', 'show_list', 'airborne_only'] as const).map(
       (key) =>
         html`<label

@@ -1093,3 +1093,173 @@ test('graphical layout controls preserve saved height and block saves while anot
   await expect(editor.getByRole('alert')).toHaveCount(0);
   expect(external).toEqual([]);
 });
+
+test('aircraft SVG kinds retain focus/popups on updates and type filters clear selection without feed demand', async ({
+  page,
+}) => {
+  await runtime(page);
+  await page.evaluate(() => window.aviadiloTest.stopFeed());
+  const card = page.locator('aviadilo-map');
+  const markers = card.locator('.aviadilo-aircraft-icon');
+  const plane = card.locator(
+    '.aviadilo-aircraft-icon[data-aircraft-kind="airplanes"]',
+  );
+  const heli = card.locator(
+    '.aviadilo-aircraft-icon[data-aircraft-kind="helicopters"]',
+  );
+  await expect(markers).toHaveCount(3);
+  await expect(plane.locator('svg')).toHaveCount(1);
+  await expect(heli.locator('svg')).toHaveCount(1);
+  await expect(
+    card.locator('svg[data-aircraft-kind="unknown"]'),
+  ).toHaveAttribute('data-course-known', 'false');
+  await expect(
+    card.locator('.aviadilo-aircraft-icon[data-aircraft-kind="unknown"]'),
+  ).toHaveAttribute('aria-label', /course unknown/);
+  await expect(
+    card.locator('svg[data-aircraft-kind="unknown"] [data-course-unknown]'),
+  ).toBeVisible();
+  const original = await heli.elementHandle();
+  const originalSvg = await heli.locator('svg').elementHandle();
+  await heli.focus();
+  await page.keyboard.press('Enter');
+  await expect
+    .poll(() => page.evaluate(() => window.aviadiloTest.inspect(0).selected))
+    .toBe('adsb_fi:synthetic1');
+  await page.evaluate(() => window.aviadiloTest.emit());
+  expect(
+    await heli.evaluate((node, previous) => node === previous, original),
+  ).toBe(true);
+  expect(
+    await heli
+      .locator('svg')
+      .evaluate((node, previous) => node === previous, originalSvg),
+  ).toBe(true);
+  await expect(heli).toBeFocused();
+  await expect(card.locator('.leaflet-popup')).toBeVisible();
+  await card.locator('.leaflet-popup-close-button').click();
+  await expect(card.locator('.leaflet-popup')).toHaveCount(0);
+  await heli.focus();
+  const scrollBeforeSpace = await page.evaluate(() => window.scrollY);
+  await page.keyboard.press('Space');
+  await expect(card.locator('.leaflet-popup')).toHaveCount(1);
+  await expect(heli).toBeFocused();
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollBeforeSpace);
+  await page.evaluate(() => window.aviadiloTest.emit());
+  await expect(card.locator('.leaflet-popup')).toHaveCount(1);
+  await expect
+    .poll(() => page.evaluate(() => window.aviadiloTest.inspect(0).selected))
+    .toBe('adsb_fi:synthetic1');
+  const before = await page.evaluate(
+    () => window.aviadiloTest.stats().calls.length,
+  );
+  await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    window.aviadiloTest.config(0, {
+      aircraft: {
+        ...card.config.aircraft,
+        types: ['helicopters'],
+        marker_size_px: 32,
+        marker_color: '#ff7700',
+      },
+    });
+  });
+  await expect(markers).toHaveCount(1);
+  await expect(heli).toHaveCSS('width', '32px');
+  await expect(heli.locator('svg')).toHaveCSS('color', 'rgb(255, 119, 0)');
+  expect(
+    await heli.evaluate((node, previous) => node === previous, original),
+  ).toBe(true);
+  await expect(
+    card
+      .locator('aviadilo-aircraft-list')
+      .getByRole('button', { name: 'DEMO1', exact: true }),
+  ).toHaveCount(0);
+  await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    window.aviadiloTest.config(0, {
+      aircraft: { ...card.config.aircraft, types: [] },
+    });
+  });
+  await expect(markers).toHaveCount(0);
+  await expect(card.locator('.leaflet-popup')).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => window.aviadiloTest.inspect(0).selected))
+    .toBeUndefined();
+  await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    window.aviadiloTest.config(0, {
+      aircraft: {
+        ...card.config.aircraft,
+        types: ['airplanes', 'helicopters', 'unknown'],
+      },
+    });
+  });
+  await expect(markers).toHaveCount(3);
+  await expect
+    .poll(() => page.evaluate(() => window.aviadiloTest.inspect(0).selected))
+    .toBeUndefined();
+  expect(
+    await page.evaluate(() => window.aviadiloTest.stats().calls.length),
+  ).toBe(before);
+  expect(external).toEqual([]);
+});
+
+test('graphical aircraft type checkboxes use friendly names and respect invalid drafts', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(
+    page.locator('aviadilo-map .aviadilo-aircraft-icon'),
+  ).toHaveCount(3);
+  const editor = page.locator('aviadilo-map-editor');
+  await editor
+    .locator('summary')
+    .filter({ hasText: /^Aircraft$/ })
+    .click();
+  const types = editor.getByRole('group', {
+    name: 'Aircraft types',
+    exact: true,
+  });
+  await expect(types.getByRole('checkbox')).toHaveCount(10);
+  await expect(
+    types.getByRole('checkbox', { name: 'Balloons / airships', exact: true }),
+  ).toBeChecked();
+  await expect(
+    types.getByRole('checkbox', {
+      name: 'Ground vehicles / obstacles',
+      exact: true,
+    }),
+  ).toBeChecked();
+  await expect(types).toContainText('reported categories');
+  const size = editor.locator('#aircraft-marker_size_px');
+  await size.fill('1');
+  await size.dispatchEvent('change');
+  await expect(editor.getByRole('alert')).toBeVisible();
+  await types
+    .getByRole('checkbox', { name: 'Airplanes', exact: true })
+    .uncheck();
+  await expect(editor.getByRole('alert')).toBeVisible();
+  await expect(
+    page.locator('aviadilo-map .aviadilo-aircraft-icon'),
+  ).toHaveCount(3);
+  await size.fill('24');
+  await size.dispatchEvent('change');
+  await expect(editor.getByRole('alert')).toHaveCount(0);
+  await expect(
+    page.locator(
+      'aviadilo-map .aviadilo-aircraft-icon[data-aircraft-kind="airplanes"]',
+    ),
+  ).toHaveCount(0);
+  for (const input of await types.getByRole('checkbox').all())
+    await input.uncheck();
+  await types
+    .getByRole('checkbox', { name: 'Helicopters', exact: true })
+    .check();
+  await expect(
+    page.locator('aviadilo-map .aviadilo-aircraft-icon'),
+  ).toHaveCount(1);
+  await expect(
+    page.locator('aviadilo-map .aviadilo-aircraft-icon'),
+  ).toHaveAttribute('data-aircraft-kind', 'helicopters');
+});

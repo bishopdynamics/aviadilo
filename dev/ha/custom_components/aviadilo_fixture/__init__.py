@@ -146,6 +146,7 @@ class FixtureSession:
                             "track": index * 90,
                             "seen_pos": 0,
                             "r": "SYNTHETIC",
+                            "category": ["A1", "A7", None][index],
                         }
                         for index in range(3)
                     ],

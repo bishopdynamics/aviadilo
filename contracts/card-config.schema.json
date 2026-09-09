@@ -489,6 +489,27 @@
           },
           "maxItems": 14,
           "minItems": 0
+        },
+        "types": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 0,
+          "maxItems": 10,
+          "items": {
+            "type": "string",
+            "enum": [
+              "airplanes",
+              "helicopters",
+              "gliders",
+              "balloons",
+              "parachutists",
+              "ultralights",
+              "drones",
+              "spacecraft",
+              "ground",
+              "unknown"
+            ]
+          }
         }
       },
       "required": [],

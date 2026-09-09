@@ -33,6 +33,7 @@ const labels: Record<string, string> = {
   anchor: 'Anchor',
   schema_version: 'Schema version',
   type: 'Card type',
+  types: 'Aircraft types',
 };
 export function label(key: string): string {
   return (

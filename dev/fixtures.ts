@@ -62,7 +62,7 @@ export function previewEvents(
         callsign: `DEMO${index + 1}`,
         registration: 'SYNTHETIC',
         aircraft_type: 'Demo',
-        category: null,
+        category: ['A1', 'A7', null][index],
         on_ground: false,
         altitude_m: index === 0 ? 0 : 1200 + index * 500,
         speed_mps: index === 0 ? 0 : 90,

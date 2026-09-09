@@ -4,7 +4,9 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-Current follow-up implemented and delivered: optional default-enabled You are here icon under docs/spec/FEATURE_SPEC_reference_marker.md, commit 8b89254, published v0.2.0-dev.4. Parent 308 frontend/515 backend/24 browser tests, native HA admin/regular/read-only, all remote workflows, exact public ZIP and actual published-bytes HACS installation passed. Configured map anchor, HA home by default; graphical Map checkbox. Await user assessment, keeping ROOT_SPEC in progress.
+Current follow-up [in-progress]: aircraft-kind icons and type checkboxes under docs/spec/FEATURE_SPEC_aircraft_types.md are implemented and locally verified:360 frontend/546 backend/26 browser tests, native admin/regular/read-only all/none/heli/unknown filters, graphical save/reopen, editor/picker and actual HACS candidate install. Preparing v0.2.0-dev.5 publication; user assessment follows.
+
+Current follow-up implemented and delivered: optional default-enabled You are here icon under docs/spec/FEATURE_SPEC_reference_marker.md, commit 8b89254, published v0.2.0-dev.4. Parent 308 frontend/515 backend/24 browser tests, native HA admin/regular/read-only, all remote workflows, exact public ZIP and actual published-bytes HACS installation passed. Configured map anchor, HA home by default; graphical Map checkbox. User confirmed on 2026-09-09 that it works and looks good. ROOT_SPEC stays in progress for the aircraft-icon follow-up.
 
 Current bug repair delivered: non-admin kiosk asset subscription fixed in v0.2.0-dev.3 (6c95c0e). Parent 301 frontend/512 backend/23 browser gates, regular/read-only native loading/clear/reconnect, remote workflows, actual public ZIP and HACS installation passed. User confirmed on 2026-09-09 that the fix works great. Keep existing HA roles; no MQTT or repeated profile/cache reset is needed.
 
