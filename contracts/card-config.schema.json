@@ -36,6 +36,9 @@
         "show_layer_buttons": {
           "type": "boolean"
         },
+        "show_you_are_here": {
+          "type": "boolean"
+        },
         "height_px": {
           "type": "integer",
           "minimum": 160,

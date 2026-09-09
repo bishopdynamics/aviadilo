@@ -222,6 +222,30 @@ export const mapStyles = [
       opacity: 0.55;
       border-style: dashed;
     }
+    .reference-marker {
+      box-sizing: border-box;
+      display: grid;
+      width: 48px;
+      height: 48px;
+      place-items: center;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--aviadilo-accent) 24%, transparent);
+      box-shadow:
+        0 0 0 2px #102131,
+        0 2px 8px #0009;
+      color: var(--aviadilo-accent);
+    }
+    .reference-marker svg {
+      width: 26px;
+      height: 26px;
+      overflow: visible;
+      fill: var(--card-background-color);
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 2.5;
+    }
     .leaflet-tooltip,
     .leaflet-popup-content-wrapper,
     .leaflet-popup-tip {

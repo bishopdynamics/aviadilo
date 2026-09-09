@@ -7,6 +7,7 @@
     "layout": "combined",
     "auto_height": false,
     "show_layer_buttons": true,
+    "show_you_are_here": true,
     "height_px": 480,
     "anchor": {
       "kind": "home"

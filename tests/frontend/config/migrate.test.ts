@@ -94,6 +94,13 @@ describe('card v1 to v2 migration', () => {
   });
   it('maps legacy theme and defaults predictably', () => {
     expect(normalizeConfig(base).map!.theme).toBe('auto');
+    expect(normalizeConfig(base).map!.show_you_are_here).toBe(true);
+    expect(
+      normalizeConfig({
+        ...base,
+        map: { show_you_are_here: false },
+      }).map!.show_you_are_here,
+    ).toBe(false);
     expect(
       normalizeConfig({ ...base, map: { follow_theme: true } }).map!.theme,
     ).toBe('auto');
@@ -109,6 +116,7 @@ describe('card v1 to v2 migration', () => {
       { map: { theme: 'invalid' } },
       { map: { theme: null } },
       { map: { follow_theme: 'yes', theme: 'light' } },
+      { map: { show_you_are_here: 'yes' } },
       { wind: { mode: 'off' } },
       { wind: { mode: null } },
       { wind: { color: '#123' } },

@@ -4,7 +4,9 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-Current bug repair delivered: non-admin kiosk asset subscription fixed in v0.2.0-dev.3 (6c95c0e). Parent 301 frontend/512 backend/23 browser gates, regular/read-only native loading/clear/reconnect, remote workflows, actual public ZIP and HACS installation passed. Await the user's kiosk confirmation. Keep existing HA roles; no MQTT or repeated profile/cache reset is needed.
+Current follow-up [in-progress]: optional default-enabled You are here icon under docs/spec/FEATURE_SPEC_reference_marker.md is implemented and locally verified (308 frontend/515 backend/24 browser tests, native HA admin/regular/read-only, actual HACS candidate install). Preparing v0.2.0-dev.4 publication; configured map anchor, HA home by default. User assessment follows.
+
+Current bug repair delivered: non-admin kiosk asset subscription fixed in v0.2.0-dev.3 (6c95c0e). Parent 301 frontend/512 backend/23 browser gates, regular/read-only native loading/clear/reconnect, remote workflows, actual public ZIP and HACS installation passed. User confirmed on 2026-09-09 that the fix works great. Keep existing HA roles; no MQTT or repeated profile/cache reset is needed.
 
 Current follow-up implemented and delivered: optional layer buttons and page auto height under docs/spec/FEATURE_SPEC_map_layout.md, commit 9d714aa, published v0.2.0-dev.2. Parent 282 frontend/489 backend/23 browser checks, native HA layouts/editor/120-second stability, all remote workflows, public ZIP verification and actual published-bytes HACS installation passed. Await user assessment; keep ROOT_SPEC in progress. User TODO remains untouched.
 

@@ -89,6 +89,9 @@ test('live, preview and raw picker share transport and assets; edits preserve vi
     document.body.prepend(picker);
   });
   await expect(page.locator('hui-card-picker .person-marker')).toHaveCount(2);
+  await expect(page.locator('hui-card-picker .reference-marker')).toHaveCount(
+    1,
+  );
   await expect(
     page.locator('hui-card-picker .leaflet-tile img').first(),
   ).toBeVisible();

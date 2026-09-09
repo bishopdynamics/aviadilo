@@ -1,6 +1,6 @@
 # SPEC: Asset subscriptions for ordinary kiosk users
 
-- **Status:** implemented and verified — published v0.2.0-dev.3; awaiting user kiosk confirmation.
+- **Status:** complete — published v0.2.0-dev.3; user confirmed on 2026-09-09 that it works great.
 
 ## Summary
 
@@ -48,6 +48,8 @@ None. The source and frontend dependency explain the reported log and blank map;
 No new deferred work.
 
 ## Change Log
+
+- 2026-09-09 — User confirms the kiosk fix works great and requests only a new optional reference marker. Do not reopen the permission repair.
 
 - 2026-09-08 — Published v0.2.0-dev.3 from 6c95c0e. Actual downloaded bytes match native-tested candidate; published-bytes HACS install and all remote workflows passed. Kiosk user permissions and HA's global restrictions remain unchanged; user confirmation follows.
 

@@ -1281,5 +1281,29 @@
         "show_layer_buttons": 0
       }
     }
+  },
+  {
+    "name": "reference marker setting",
+    "schema": "card-config",
+    "valid": true,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "map": {
+        "show_you_are_here": false
+      }
+    }
+  },
+  {
+    "name": "invalid reference marker setting",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "map": {
+        "show_you_are_here": "yes"
+      }
+    }
   }
 ]

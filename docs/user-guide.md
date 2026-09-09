@@ -1,6 +1,6 @@
 # Using Aviadilo
 
-Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. This guide describes the `0.2.0-dev.3` kiosk candidate. The normal HACS release remains `0.1.0`; household tablet acceptance is still in progress.
+Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. This guide describes the `0.2.0-dev.4` kiosk candidate. The normal HACS release remains `0.1.0`; the user has confirmed the kiosk permission fix works, and the new reference marker awaits hands-on assessment.
 
 Version `0.1.0` includes shared basemap caching and the same real data in saved, editor and picker views. Production previews do not substitute synthetic locations or weather. Synthetic data is confined to the developer test harness. The older `v0.1.0-dev.2` prerelease used synthetic editing previews and remains available for explicit version selection.
 
@@ -15,7 +15,7 @@ The card picker, card editor and dashboard edit mode use the same HA states, sou
 
 ## Kiosk candidate upgrade
 
-To try `v0.2.0-dev.3`, explicitly select it in HACS under **Need a different version? → Release**. Restart HA and reload dashboard browsers before editing card settings. Existing dashboards load through an in-memory migration; a normal editor save stores version-2 card configuration, which an old cached frontend cannot read. Integration settings and the shared cache are retained.
+To try `v0.2.0-dev.4`, explicitly select it in HACS under **Need a different version? → Release**. Restart HA and reload dashboard browsers before editing card settings. Existing dashboards load through an in-memory migration; a normal editor save stores version-2 card configuration, which an old cached frontend cannot read. Integration settings and the shared cache are retained.
 
 Legacy combined wind markers and particles become **Particles**. Legacy wind settings that drew nothing become **Arrows**, while preserving whether the Wind layer is enabled.
 
@@ -48,6 +48,8 @@ The layer buttons change visibility for the current card session. Save defaults 
 - **Wind:** choose exactly one of Arrows, Barbs or Particles in the editor, plus color and opacity. Marker size/spacing or particle count/speed/trail controls appear for the selected mode; switching retains their saved values. Arrows and particles follow the wind; barbs show where it comes from. Reduced motion uses arrows without changing the saved mode. Wind has its own forecast-valid time.
 - **People:** select existing `device_tracker` entities. The default 50 km radius filter excludes distant travellers before fitting the map. A missing configured anchor hides radius-filtered people until the anchor is available.
 
+The **You are here** pin is enabled by default at the configured map anchor: Home Assistant home unless you select a zone or custom coordinates. It stays at that geographic location when you pan. Turn off **Show “You are here” marker** under Map to hide it, independently of the data layers and layer buttons. The pin identifies the configured reference, not the viewing device’s GPS location; it disappears if the anchor is unavailable.
+
 Enable **Auto-size height to page** under Map to fill the remaining visible page below the card. It adapts to resizing and respects fixed scroll-container limits, including editor previews. Fixed pixel height remains the default and is retained when auto sizing is off. The minimum map height is 160px; tall titles/controls/aircraft details can still require scrolling. Scrolling alone does not grow the card.
 
 Choose **Follow Home Assistant**, **light** or **dark** under Map theme. Theme and wind-color changes reuse existing tiles and data.
@@ -64,7 +66,7 @@ The card editor controls that card's view, filters, units, layers and presentati
 
 ## Updates and troubleshooting
 
-A blank basemap with **Refusing to allow … to subscribe to event aviadilo/assets_changed** is a permissions bug in releases through v0.2.0-dev.2. Update to v0.2.0-dev.3, restart HA and reload the kiosk page. Keep the kiosk's existing regular/read-only role: MQTT and administrator permissions are not involved. Browser cache/profile clearing alone cannot correct this server-side refusal. The fixed version uses a dedicated authenticated metadata subscription while preserving HA's event and entity access restrictions.
+A blank basemap with **Refusing to allow … to subscribe to event aviadilo/assets_changed** is a permissions bug in releases through v0.2.0-dev.2. Update to v0.2.0-dev.3 or later, restart HA and reload the kiosk page. Keep the kiosk's existing regular/read-only role: MQTT and administrator permissions are not involved. Browser cache/profile clearing alone cannot correct this server-side refusal. The fixed version uses a dedicated authenticated metadata subscription while preserving HA's event and entity access restrictions.
 
 If HACS still offers a commit hash, its metadata may reflect the former prerelease-only repository. On Aviadilo's entry, open the three-dot menu and choose **Update information**, then install the `v0.1.0` update. This refresh changes version metadata; it does not install files by itself. After downloading, restart HA and reload the dashboard. See [HACS metadata refresh](https://www.hacs.xyz/docs/use/repositories/dashboard/#updating-repository-metadata).
 

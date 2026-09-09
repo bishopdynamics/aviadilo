@@ -64,6 +64,54 @@ test('composes four layers with responsive keyboard list selection and stable ma
     .poll(() => page.evaluate(() => window.aviadiloTest.inspect(0).suspended))
     .toBe(false);
 });
+test('reference marker defaults on and toggles without affecting data demand or the viewport', async ({
+  page,
+}) => {
+  await runtime(page);
+  const card = page.locator('aviadilo-map');
+  const marker = card.locator('.reference-marker');
+  await expect(marker).toHaveCount(1);
+  await expect(
+    card.locator('.reference-icon[title="You are here — Home Assistant home"]'),
+  ).toHaveCount(1);
+  const before = await page.evaluate(() => ({
+    center: window.aviadiloTest.inspect(0).center,
+    calls: window.aviadiloTest.stats().calls.length,
+  }));
+  await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    window.aviadiloTest.config(0, {
+      map: { ...card.config.map, show_you_are_here: false },
+    });
+  });
+  await expect(marker).toHaveCount(0);
+  expect(
+    await page.evaluate(() => window.aviadiloTest.stats().calls.length),
+  ).toBe(before.calls);
+  expect(
+    await page.evaluate(() => window.aviadiloTest.inspect(0).center),
+  ).toEqual(before.center);
+  await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    window.aviadiloTest.config(0, {
+      map: { ...card.config.map, show_you_are_here: true },
+    });
+  });
+  await expect(marker).toHaveCount(1);
+  await page.evaluate(() => {
+    window.aviadiloTest.config(0, {
+      layers: { aircraft: false, radar: false, wind: false, people: false },
+    });
+  });
+  await expect(marker).toHaveCount(1);
+  await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    window.aviadiloTest.config(0, {
+      map: { ...card.config.map, layout: 'list' },
+    });
+  });
+  await expect(marker).toHaveCount(0);
+});
 test('shares feed across viewers and keeps subscriptions across reactive hass and local edits', async ({
   page,
 }) => {
@@ -574,6 +622,10 @@ test('graphical wind editor retains inactive settings and blocks all saves while
 }) => {
   await page.goto('/');
   const editor = page.locator('aviadilo-map-editor');
+  const reference = editor.getByLabel('Show “You are here” marker');
+  await expect(reference).toBeChecked();
+  await reference.uncheck();
+  await expect(page.locator('aviadilo-map .reference-marker')).toHaveCount(0);
   await editor
     .locator('summary')
     .filter({ hasText: /^Wind$/ })

@@ -20,6 +20,12 @@ CASES = json.loads((ROOT / "contracts/fixtures/cases.json").read_text())
 ASSET_CASES = json.loads((ROOT / "contracts/fixtures/asset-cases.json").read_text())
 
 
+def test_card_defaults_enable_reference_marker() -> None:
+    defaults = json.loads((ROOT / "contracts/card-defaults.json").read_text())
+    validate("card-config", defaults)
+    assert defaults["map"]["show_you_are_here"] is True
+
+
 @pytest.mark.parametrize("case", ASSET_CASES, ids=[case["name"] for case in ASSET_CASES])
 def test_asset_fixture(case: dict[str, Any]) -> None:
     from jsonschema import ValidationError
