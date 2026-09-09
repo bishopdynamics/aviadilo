@@ -4,7 +4,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-Current follow-up [in-progress]: household spreading/grouping and people-only auto-fit under docs/spec/FEATURE_SPEC_marker_layout.md implemented and locally verified: 411 frontend/570 backend/38 browser tests, native three-role/editor/picker/capacity and 120-second stability, actual HACS candidate install. Preparing v0.2.0-dev.7 for final feedback before stable 0.2.0. Default spread and optional grouping match explicit user preference; person support is confirmed fixed.
+Current follow-up implemented and delivered: household spreading/grouping and people-only auto-fit under docs/spec/FEATURE_SPEC_marker_layout.md, commit 239fb4b, published v0.2.0-dev.7. Parent 411 frontend/570 backend/38 browser tests, native roles/editor/picker/capacity/120-second stability, remote workflows and actual published-ZIP HACS install passed. Await final user assessment before stable 0.2.0; default spread/optional grouping match explicit preference.
 
 Current follow-up implemented and delivered: person support under docs/spec/FEATURE_SPEC_person_locations.md, commit cb3a4d4, published v0.2.0-dev.6. Parent 386 frontend/564 backend/29 browser tests, actual HA person/stock-map comparison, native three-role locations/photos/editor/picker, all remote workflows and actual public-ZIP HACS install passed. User confirms it works much better and fixed the missing person. User diagnostic folder tmp/ is ignored; supplied capture showed adsb.fi healthy and did not establish the earlier aircraft event cause.
 
