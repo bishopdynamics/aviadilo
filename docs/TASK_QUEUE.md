@@ -4,7 +4,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-Current follow-up [in-progress]: optional default-enabled You are here icon under docs/spec/FEATURE_SPEC_reference_marker.md is implemented and locally verified (308 frontend/515 backend/24 browser tests, native HA admin/regular/read-only, actual HACS candidate install). Preparing v0.2.0-dev.4 publication; configured map anchor, HA home by default. User assessment follows.
+Current follow-up implemented and delivered: optional default-enabled You are here icon under docs/spec/FEATURE_SPEC_reference_marker.md, commit 8b89254, published v0.2.0-dev.4. Parent 308 frontend/515 backend/24 browser tests, native HA admin/regular/read-only, all remote workflows, exact public ZIP and actual published-bytes HACS installation passed. Configured map anchor, HA home by default; graphical Map checkbox. Await user assessment, keeping ROOT_SPEC in progress.
 
 Current bug repair delivered: non-admin kiosk asset subscription fixed in v0.2.0-dev.3 (6c95c0e). Parent 301 frontend/512 backend/23 browser gates, regular/read-only native loading/clear/reconnect, remote workflows, actual public ZIP and HACS installation passed. User confirmed on 2026-09-09 that the fix works great. Keep existing HA roles; no MQTT or repeated profile/cache reset is needed.
 

@@ -1,6 +1,6 @@
 # SPEC: Optional you-are-here reference marker
 
-- **Status:** implemented and locally verified — preparing v0.2.0-dev.4 publication; user assessment follows.
+- **Status:** implemented, verified and published as v0.2.0-dev.4 from 8b89254; awaiting user assessment.
 
 ## Summary
 
@@ -50,6 +50,8 @@ No blocking question. The optional location clarification can steer the work; th
 No new deferred work; live-device location is outside this requested reference-marker implementation unless the user selects it.
 
 ## Change Log
+
+- 2026-09-09 — Published v0.2.0-dev.4 from 8b89254 after native and hassfest/HACS workflows passed. Public ZIP exactly matches the tested candidate; tag validation and actual HACS installation using downloaded bytes/published metadata pass. Normal v0.1.0 remains Latest.
 
 - 2026-09-09 — Parent full checks pass: 308 frontend, 515 backend, 24 Chromium scenarios; native HA admin/regular/read-only default/toggle/pan/zero/missing anchor/keyboard/theme/editor checks pass. Actual HACS candidate installation preserves settings/cache/dashboard.
 
