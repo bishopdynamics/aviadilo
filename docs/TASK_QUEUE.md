@@ -4,6 +4,8 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
+Current investigation [in-progress, awaiting incident evidence]: intermittent Aircraft unavailable warning; icons confirmed working and earlier missing/edit-only observations withdrawn. See docs/research/intermittent-aircraft-status.md. Parent fault-injection checks confirm failure/cooldown/recovery behavior, and both public API probes succeeded. No household cause established or runtime change made. Need active-warning Aviadilo diagnostics, selected provider and whether aircraft remain/move/disappear. People missing-location warning is separate.
+
 Current follow-up implemented and delivered: aircraft-kind icons and type checkboxes under docs/spec/FEATURE_SPEC_aircraft_types.md, commit c686f72, published v0.2.0-dev.5. Parent 360 frontend/546 backend/26 browser tests, native admin/regular/read-only filters and keyboard/popup checks, graphical save/reopen, editor/picker, all remote workflows and actual published-bytes HACS installation passed. Await user assessment; keep ROOT_SPEC in progress.
 
 Current follow-up implemented and delivered: optional default-enabled You are here icon under docs/spec/FEATURE_SPEC_reference_marker.md, commit 8b89254, published v0.2.0-dev.4. Parent 308 frontend/515 backend/24 browser tests, native HA admin/regular/read-only, all remote workflows, exact public ZIP and actual published-bytes HACS installation passed. Configured map anchor, HA home by default; graphical Map checkbox. User confirmed on 2026-09-09 that it works and looks good. ROOT_SPEC stays in progress for the aircraft-icon follow-up.
