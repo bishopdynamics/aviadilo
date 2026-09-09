@@ -1,27 +1,27 @@
 # Using Aviadilo
 
-Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. Version `0.1.0-dev.2` is a development prerelease under acceptance.
+Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. Version `0.1.0` establishes normal HACS installation and updates; kiosk refinements and household tablet acceptance remain in progress.
 
-The installation instructions below describe the published `v0.1.0-dev.2`. The current development branch is adding shared basemap caching and the same real data in saved, editor and picker views. That work has not been published as a new HACS release; its previews do not substitute synthetic locations or weather. Synthetic data is confined to the developer test harness.
+Version `0.1.0` includes shared basemap caching and the same real data in saved, editor and picker views. Production previews do not substitute synthetic locations or weather. Synthetic data is confined to the developer test harness. The older `v0.1.0-dev.2` prerelease used synthetic editing previews and remains available for explicit version selection.
 
 ## Installation
 
-1. In HACS, add `https://github.com/bishopdynamics/aviadilo` as a custom repository with type **Integration**. Open Download/Redownload, expand **Need a different version?**, and explicitly select `v0.1.0-dev.2` in the Release dropdown. Confirm the dialog names that version before downloading. Restart Home Assistant when requested.
+1. In HACS, add `https://github.com/bishopdynamics/aviadilo` as a custom repository with type **Integration**. Download the latest normal release (`v0.1.0`). If already installed, use the ordinary Update action. Restart Home Assistant when requested.
 2. Open **Settings → Devices & services → Add integration → Aviadilo**. Choose the shared collection anchor, aircraft provider, radius, and cache settings. Leave conservative provider pacing at its defaults unless you want slower collection.
 3. Reload the dashboard in your browser. Edit the dashboard, add a card, and select **Aviadilo**. The integration loads its matching card automatically; no manual JavaScript resource is needed.
 4. Use the graphical editor to choose layers and add your `device_tracker` entities under People. **Save the card, then click Done to leave dashboard edit mode.**
 
-The card picker, card editor and dashboard edit mode show synthetic locations and weather. Saving the card alone can leave you in dashboard edit mode. **Done** returns to the real dashboard. Preview data does not represent your household or current conditions.
+The card picker, card editor and dashboard edit mode use the same HA states, source fetching and shared caches as the saved card. **Done** exits dashboard editing. Missing HA context, integration or source data produces a real loading/unavailable state. HA may recreate its preview card after a settings change, which creates a new viewer while shared data/cache remains available.
 
 ## Checking the saved card
 
-Preview-only content includes the **Synthetic · offline preview** badge, numbered schematic tiles, DEMO aircraft and Alex/Sam synthetic trackers. The saved dashboard should load real basemap tiles, selected HA trackers and enabled provider layers. The published integration does not contain the development provider shim. A saved card that remains labelled synthetic after Done and a browser reload needs investigation.
+Saved and editor cards should load real basemap tiles, selected HA trackers and enabled provider layers. The published integration does not contain the development provider shim. A **Synthetic · offline preview** badge or fabricated DEMO/Alex/Sam data indicates the older prerelease/frontend is still loaded; confirm the update, restart HA and reload the browser.
 
 Defaults: aircraft and people layers are enabled; radar and wind are disabled. People has no trackers selected initially. Wind also needs a visible display style: enable arrows/barbs or particles in addition to its layer toggle. Leave provider pacing unchanged while testing, and allow initial loading to finish.
 
 | Check | Action and expected result |
 | --- | --- |
-| Connection and basemap | After Done, look for Integration connected and real roads/place labels around your configured HA home/anchor. Numbered grid tiles indicate preview; Basemap unavailable indicates a tile-loading failure. |
+| Connection and basemap | Look for Integration connected and real roads/place labels around your configured HA home/anchor in either viewing or editing. Basemap unavailable indicates a tile-loading failure. Cached revisits should load promptly; genuinely new tiles remain paced by the integration. |
 | Aircraft | Check the source status and last-update/position ages. Select a callsign in the list and its marker; both should select the same aircraft and show details. Confirm distances make sense for your collection area. Empty results can be legitimate; defaults exclude aircraft on the ground. |
 | People | Add known device_tracker entities and compare displayed positions with HA. Start with one nearby tracker. The default 50 km filter intentionally excludes distant people before fitting the map. |
 | Radar | Enable Radar and keep RainViewer for the first check. Check status, displayed frame time and legend; try Loop, Pause and Latest. Historical radar must not rewind people or aircraft. No precipitation over your area can be legitimate; loading/unavailable is a separate state. |
@@ -52,7 +52,9 @@ The card editor controls that card's view, filters, units, layers and presentati
 
 ## Updates and troubleshooting
 
-If a download URL contains a commit hash such as `17c240a`, HACS has not selected a published release. This can happen even after updating repository information: Aviadilo currently has only a prerelease, so HACS's default available version can fall back to the latest commit. Explicitly select `v0.1.0-dev.2` under **Need a different version?**; the user confirmed this resolves the download. HACS 2.0.5's current download dialog lists prereleases in that dropdown and does not require a separate Show beta versions checkbox. A failed GitHub validation workflow does not control this version selection.
+If HACS still offers a commit hash, its metadata may reflect the former prerelease-only repository. On Aviadilo's entry, open the three-dot menu and choose **Update information**, then install the `v0.1.0` update. This refresh changes version metadata; it does not install files by itself. After downloading, restart HA and reload the dashboard. See [HACS metadata refresh](https://www.hacs.xyz/docs/use/repositories/dashboard/#updating-repository-metadata).
+
+Normal releases use tags such as `v0.1.0`; development versions remain prereleases and do not replace the normal update channel. HACS should no longer advertise each main-branch commit as an update. **Need a different version?** is still available for deliberate version selection, including the retained `v0.1.0-dev.2`; it is not the routine update path. Repository topics and validation failures do not determine this channel selection.
 
 Aviadilo requires the compiled `aviadilo.zip` asset attached to a versioned [GitHub Release](https://github.com/bishopdynamics/aviadilo/releases). A source push, tag alone, or unpublished draft does not provide that asset. [HACS version rules](https://www.hacs.xyz/docs/publish/start/#versions), [refresh/download controls](https://www.hacs.xyz/docs/use/repositories/dashboard/).
 

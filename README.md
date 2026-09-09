@@ -10,7 +10,7 @@ The development candidate combines all four layers in one card: live aircraft wi
 
 The public repository is [bishopdynamics/aviadilo](https://github.com/bishopdynamics/aviadilo). HACS installation and updates use one Integration release package that includes the card. Use a published version from [GitHub Releases](https://github.com/bishopdynamics/aviadilo/releases); pushing source to `main` does not create the downloadable package.
 
-See [the user guide](docs/user-guide.md) for the installation flow, map controls, shared settings, and troubleshooting. Version `0.1.0-dev.2` is a development prerelease; explicitly choose it under **Need a different version?** in HACS's download dialog. The default selection may show a commit hash while no regular release exists. Acceptance on the user's tablet remains pending.
+See [the user guide](docs/user-guide.md) for installation, controls and troubleshooting. Version `0.1.0` establishes the normal HACS release channel. If HACS still shows a commit hash, open Aviadilo's three-dot menu, select **Update information**, then install the `v0.1.0` update and restart Home Assistant. Development tags remain optional prereleases; source commits do not become HACS updates. Further kiosk refinements and acceptance on the user's tablet remain in progress.
 
 The [approved implementation spec](docs/spec/ROOT_SPEC.md) targets Home Assistant 2026.9.1 and the user's Chromium tablet-PC kiosk.
 

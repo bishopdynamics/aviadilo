@@ -9,6 +9,8 @@ import tomllib
 from pathlib import Path, PurePosixPath
 from zipfile import BadZipFile, ZipFile
 
+from release_metadata import parse_version
+
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = {
     "LICENSE",
@@ -20,7 +22,6 @@ REQUIRED = {
     "brand/icon.png",
     "frontend/aviadilo.js",
 }
-SEMVER = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?$")
 
 
 def check_release(path: Path, tag: str | None = None, root: Path = ROOT) -> None:
@@ -29,8 +30,7 @@ def check_release(path: Path, tag: str | None = None, root: Path = ROOT) -> None
     version = package["version"]
     if package.get("license") != "MIT":
         raise ValueError("JavaScript package license is not MIT")
-    if not SEMVER.fullmatch(version):
-        raise ValueError("Invalid package semantic version")
+    parse_version(version)
     if tag is not None and tag != f"v{version}":
         raise ValueError("Tag version does not match package")
     project = tomllib.loads((root / "pyproject.toml").read_text())["project"]

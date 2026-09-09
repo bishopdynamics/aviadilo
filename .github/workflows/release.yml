@@ -1,4 +1,4 @@
-name: Publish development prerelease
+name: Publish release
 on:
   push:
     tags: ['v*']
@@ -25,13 +25,51 @@ jobs:
         env:
           AVIADILO_TAG: ${{ github.ref_name }}
         run: uv run --frozen python scripts/check_release.py dist/aviadilo.zip --tag "$AVIADILO_TAG"
-      - uses: softprops/action-gh-release@62c96d0c4e8a889135c1f3a25910db8dbe0e85f7 # v2.3.4
+      - name: Classify release channel
+        id: release
+        env:
+          AVIADILO_TAG: ${{ github.ref_name }}
+        run: |
+          uv run --frozen python scripts/release_metadata.py "$AVIADILO_TAG" \
+            --github-output "$GITHUB_OUTPUT" \
+            --notes-file "$RUNNER_TEMP/aviadilo-release-notes.md"
+      - name: Refuse to replace a published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AVIADILO_TAG: ${{ github.ref_name }}
+        run: |
+          set +e
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$AVIADILO_TAG" \
+            --jq .draft >"$RUNNER_TEMP/aviadilo-release-draft-state" \
+            2>"$RUNNER_TEMP/aviadilo-release-lookup-error"
+          lookup_status=$?
+          set -e
+          if [ "$lookup_status" -eq 0 ]; then
+            if [ "$(<"$RUNNER_TEMP/aviadilo-release-draft-state")" != "true" ]; then
+              echo "Release $AVIADILO_TAG is already published; refusing to replace it."
+              exit 1
+            fi
+          elif ! grep -q "HTTP 404" "$RUNNER_TEMP/aviadilo-release-lookup-error"; then
+            sed -n '1,20p' "$RUNNER_TEMP/aviadilo-release-lookup-error"
+            exit "$lookup_status"
+          fi
+      - name: Create draft and upload package
+        uses: softprops/action-gh-release@62c96d0c4e8a889135c1f3a25910db8dbe0e85f7 # v2.3.4
         with:
           files: dist/aviadilo.zip
           fail_on_unmatched_files: true
-          draft: false
-          prerelease: true
-          body: |
-            Development candidate: physical tablet acceptance is still pending.
-
-            In HACS, add `bishopdynamics/aviadilo` as a custom repository of type Integration. Open Download/Redownload, expand "Need a different version?", and explicitly select this release. Restart Home Assistant when prompted, then add Aviadilo under Devices & services. The bundled card becomes available automatically in the card picker.
+          draft: true
+          prerelease: ${{ steps.release.outputs.prerelease }}
+          make_latest: false
+          body_path: ${{ runner.temp }}/aviadilo-release-notes.md
+      - name: Publish release with its uploaded package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AVIADILO_TAG: ${{ github.ref_name }}
+          AVIADILO_PRERELEASE: ${{ steps.release.outputs.prerelease }}
+          AVIADILO_MAKE_LATEST: ${{ steps.release.outputs.make_latest }}
+        run: |
+          gh release edit "$AVIADILO_TAG" \
+            --draft=false \
+            --prerelease="$AVIADILO_PRERELEASE" \
+            --latest="$AVIADILO_MAKE_LATEST"
