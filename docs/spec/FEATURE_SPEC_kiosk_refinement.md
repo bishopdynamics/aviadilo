@@ -237,6 +237,8 @@ The user approved the design, but native slice 3 verification found one platform
 
 ## Change Log
 
+- 2026-09-08 — Remaining slices 4–6 implemented, verified and delivered as prerelease v0.2.0-dev.1 from c2ddc49. Public ZIP matches the tested candidate exactly; published-metadata/bytes HACS installation and retained-data upgrade passed. Twenty-minute saved/native-editor run, warm return/second-browser/restart and all remote workflows passed. Normal v0.1.0 stays Latest. User kiosk assessment and the distinct unanswered native-preview-remount choice remain; no stronger continuity guarantee is inferred.
+
 - 2026-09-08 — Slice 6 candidate prepared as 0.2.0-dev.1 (Python 0.2.0.dev1). Parent full gates passed 273 frontend + 486 backend + 20 Chromium tests. Local actual HACS installer and native HA published-0.1.0 upgrade passed; entry/options, untouched v1 dashboards and 80 public cache files survived replacement/restart. The 20-minute saved/editor run, remote workflows and actual release-download verification are still in progress; no publication yet.
 
 - 2026-09-08 — Slice 5 implemented and independently verified: quiet healthy card, retained interaction/list/credits, error-only popover and editor read-only inspection. Parent full gates passed 273 frontend + 482 backend + 20 Chromium tests. Native HA/Chromium validated quiet layout, real missing-entry recovery UI, exact preview inspection, narrow sizing and emulated touch; physical tablet remains user acceptance. No publication/version change.
