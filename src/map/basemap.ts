@@ -159,6 +159,7 @@ class Basemap extends L.GridLayer {
           asset.signal.addEventListener('abort', clear, { once: true });
           tile.classList.remove('tile-unavailable');
           tile.removeAttribute('title');
+          tile.dataset.aviadiloCache = asset.stale ? 'stale' : 'current';
           if (repeatWorlds) {
             tile.replaceChildren();
             tile.style.backgroundImage = `url("${asset.url}")`;
@@ -179,7 +180,8 @@ class Basemap extends L.GridLayer {
           )
             this.blocked.add(load);
           tile.classList.add('tile-unavailable');
-          tile.textContent = 'Basemap unavailable';
+          tile.textContent = '';
+          delete tile.dataset.aviadiloCache;
           tile.title =
             error instanceof Error && error.name !== 'AbortError'
               ? error.message

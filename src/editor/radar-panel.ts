@@ -1,4 +1,6 @@
 import { html } from 'lit';
+import { radarLegend } from '../layers/radar/presentation';
+import type { InspectionSnapshot } from '../data/status';
 import defaults from '../../contracts/card-defaults.json';
 import type { RadarConfig } from '../layers/radar/controller';
 import type { ConfigPath } from './ha-controls';
@@ -54,4 +56,24 @@ export function radarControls(
         /></label>`,
     )}
   </fieldset>`;
+}
+
+/** Timestamp, palette and coverage all come from the same mounted renderer. */
+export function radarInspection(view: InspectionSnapshot['radar']) {
+  if (!view.enabled)
+    return html`<p>Radar is disabled or not requested in this layout.</p>`;
+  return html`<p>
+      Radar frame:
+      ${view.displayedTime
+        ? html`<time datetime=${view.displayedTime}
+            >${view.displayedTime}</time
+          >`
+        : 'Not loaded'}
+    </p>
+    <p>${view.state}${view.message ? ` · ${view.message}` : ''}</p>
+    <p>
+      ${view.coverage ??
+      'Coverage detail unavailable. Clear areas may have no radar data.'}
+    </p>
+    ${radarLegend(view)}`;
 }

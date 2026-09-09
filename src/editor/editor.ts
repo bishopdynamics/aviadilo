@@ -1,4 +1,12 @@
-import { LitElement, css, html } from 'lit';
+import { LitElement, css, html, type PropertyValues } from 'lit';
+import {
+  inspectionKey,
+  observeInspection,
+  type InspectionResult,
+} from '../data/status';
+import { issueDetails } from '../map/status';
+import { radarInspection } from './radar-panel';
+import { windInspection } from '../layers/wind/controls';
 import schema from '../../contracts/card-config.schema.json';
 import { normalizeConfig } from '../config/defaults';
 import type { CardConfig } from '../config/types';
@@ -31,10 +39,46 @@ export class AviadiloEditor extends LitElement {
     hass: { attribute: false },
     config: { state: true },
     error: { state: true },
+    inspection: { state: true },
   };
   declare hass?: HomeAssistant;
   declare private config: CardConfig;
   declare private error: string;
+  declare private inspection: InspectionResult;
+  constructor() {
+    super();
+    this.inspection = { state: 'unavailable' };
+  }
+  private stopInspection?: () => void;
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.watchInspection();
+  }
+  disconnectedCallback(): void {
+    this.stopInspection?.();
+    this.stopInspection = undefined;
+    this.inspection = { state: 'unavailable' };
+    super.disconnectedCallback();
+  }
+  protected updated(changed: PropertyValues): void {
+    if (changed.has('hass') || changed.has('config')) this.watchInspection();
+  }
+  private watchInspection(): void {
+    this.stopInspection?.();
+    this.stopInspection = undefined;
+    if (!this.isConnected || !this.config || !this.hass?.connection) {
+      this.inspection = { state: 'unavailable' };
+      return;
+    }
+    this.stopInspection = observeInspection(this.hass.connection, {
+      owner: this,
+      user: this.hass.user?.id,
+      key: inspectionKey(this.config),
+      receive: (value) => {
+        this.inspection = value;
+      },
+    });
+  }
   private readonly draftValues = new Map<string, unknown>();
   static styles = css`
     :host {
@@ -276,6 +320,12 @@ export class AviadiloEditor extends LitElement {
         (panel) =>
           html`<details ?open=${panel === 'map'}>
             <summary>${label(panel)}</summary>
+            ${panel === 'radar'
+              ? html`<p>
+                  Latest shows the newest radar frame. Loop automatically plays
+                  the saved history; aircraft and people remain live.
+                </p>`
+              : ''}
             ${panel === 'wind'
               ? windControls(this.config.wind!, this.edit, (key, saved) =>
                   this.draftValues.has(`wind.${key}`)
@@ -303,7 +353,25 @@ export class AviadiloEditor extends LitElement {
                       : this.field([panel, key], spec),
                 )}
           </details>`,
-      )} `;
+      )}
+      <details aria-label="Live inspection">
+        <summary>Live inspection</summary>
+        <p>
+          Read-only state from the matching mounted card. This opens no
+          additional data collection.
+        </p>
+        ${this.inspection.state === 'matched'
+          ? html`${!this.inspection.snapshot.visible
+              ? html`<p>Card is not visible; data collection is paused.</p>`
+              : ''}${radarInspection(this.inspection.snapshot.radar)}
+            ${windInspection(this.inspection.snapshot.wind)}
+            ${issueDetails(this.inspection.snapshot.issues)}`
+          : html`<p>
+              ${this.inspection.state === 'ambiguous'
+                ? 'More than one equally close matching card is mounted. Inspection is unavailable until a unique card matches.'
+                : 'No matching mounted card is available for inspection.'}
+            </p>`}
+      </details>`;
   }
 }
 if (!customElements.get('aviadilo-map-editor'))

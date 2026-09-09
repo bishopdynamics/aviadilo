@@ -1,6 +1,6 @@
 # Using Aviadilo
 
-Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. Version `0.1.0` establishes normal HACS installation and updates; kiosk refinements and household tablet acceptance remain in progress.
+Aviadilo combines aircraft, radar, wind, and household trackers in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. This guide describes the `0.2.0-dev.1` kiosk candidate. The normal HACS release remains `0.1.0`; household tablet acceptance is still in progress.
 
 Version `0.1.0` includes shared basemap caching and the same real data in saved, editor and picker views. Production previews do not substitute synthetic locations or weather. Synthetic data is confined to the developer test harness. The older `v0.1.0-dev.2` prerelease used synthetic editing previews and remains available for explicit version selection.
 
@@ -13,19 +13,25 @@ Version `0.1.0` includes shared basemap caching and the same real data in saved,
 
 The card picker, card editor and dashboard edit mode use the same HA states, source fetching and shared caches as the saved card. **Done** exits dashboard editing. Missing HA context, integration or source data produces a real loading/unavailable state. HA may recreate its preview card after a settings change, which creates a new viewer while shared data/cache remains available.
 
+## Kiosk candidate upgrade
+
+To try `v0.2.0-dev.1`, explicitly select it in HACS under **Need a different version? → Release**. Restart HA and reload dashboard browsers before editing card settings. Existing dashboards load through an in-memory migration; a normal editor save stores version-2 card configuration, which an old cached frontend cannot read. Integration settings and the shared cache are retained.
+
+Legacy combined wind markers and particles become **Particles**. Legacy wind settings that drew nothing become **Arrows**, while preserving whether the Wind layer is enabled.
+
 ## Checking the saved card
 
 Saved and editor cards should load real basemap tiles, selected HA trackers and enabled provider layers. The published integration does not contain the development provider shim. A **Synthetic · offline preview** badge or fabricated DEMO/Alex/Sam data indicates the older prerelease/frontend is still loaded; confirm the update, restart HA and reload the browser.
 
-Defaults: aircraft and people layers are enabled; radar and wind are disabled. People has no trackers selected initially. Wind also needs a visible display style: enable arrows/barbs or particles in addition to its layer toggle. Leave provider pacing unchanged while testing, and allow initial loading to finish.
+Defaults: aircraft and people layers are enabled; radar and wind are disabled. People has no trackers selected initially. Enabling Wind displays arrows by default; choose Arrows, Barbs or Particles in the editor. Leave provider pacing unchanged while testing, and allow initial loading to finish.
 
 | Check | Action and expected result |
 | --- | --- |
-| Connection and basemap | Look for Integration connected and real roads/place labels around your configured HA home/anchor in either viewing or editing. Basemap unavailable indicates a tile-loading failure. Cached revisits should load promptly; genuinely new tiles remain paced by the integration. |
-| Aircraft | Check the source status and last-update/position ages. Select a callsign in the list and its marker; both should select the same aircraft and show details. Confirm distances make sense for your collection area. Empty results can be legitimate; defaults exclude aircraft on the ground. |
+| Connection and basemap | Look for real roads/place labels around your configured HA home/anchor in either viewing or editing. A healthy card has no routine status panel; a problem indicator provides failure details. Cached revisits should load promptly; genuinely new tiles remain paced by the integration. |
+| Aircraft | Select a callsign in the list and its marker; both should select the same aircraft and show details, including configured position-age fields. Confirm distances make sense for your collection area. Empty results can be legitimate; defaults exclude aircraft on the ground. |
 | People | Add known device_tracker entities and compare displayed positions with HA. Start with one nearby tracker. The default 50 km filter intentionally excludes distant people before fitting the map. |
-| Radar | Enable Radar and keep RainViewer for the first check. Check status, displayed frame time and legend; try Loop, Pause and Latest. Historical radar must not rewind people or aircraft. No precipitation over your area can be legitimate; loading/unavailable is a separate state. |
-| Wind | Enable Wind and choose arrows first, then optionally particles. Look for DWD ICON-global, a model-valid time and direction/speed. Wind is forecast data; static markers should remain usable with particles off or reduced motion enabled. |
+| Radar | Enable Radar and keep RainViewer for the first check. Choose Latest or Loop in the editor. Its Live inspection shows the displayed frame time, matching legend and coverage. Historical radar must not rewind people or aircraft. No precipitation over your area can be legitimate; loading/unavailable is a separate state. |
+| Wind | Enable Wind and choose arrows first, then optionally particles. Choose a visible wind color. Live inspection shows DWD ICON-global information and model-valid time. Reduced motion displays static arrows while preserving a saved Particles setting. |
 | View and persistence | Pan/zoom manually and ensure ordinary updates preserve the view; Recenter should restore the configured view. Save a title/unit/filter change, click Done, reload and verify it persists. Test list collapse and narrow/touch layout without overlapping cards or losing map controls. |
 | Recovery | Navigate away and back or reload the dashboard. Enabled layers should resume without duplicate markers or persistent loading. Repeated cache clearing is unnecessary. |
 
@@ -38,9 +44,13 @@ The combined-card automated and isolated HA endurance checks used synthetic prov
 The layer buttons change visibility for the current card session. Save defaults through the card editor. Aircraft and people remain current while you view older radar frames; there is no synchronized historical people or aircraft replay.
 
 - **Aircraft:** tap a marker or list callsign for details. The list can collapse; choose map, list, or combined layout in the editor. Altitude, distance, age and airborne filters apply before drawing and automatic fitting. Unknown values remain distinct from zero.
-- **Radar:** RainViewer is the default; NOAA MRMS and KSOX are alternatives. Use Latest, Loop, or the history slider. The timestamp and legend describe the displayed radar frame. Clear areas can also mean missing coverage.
-- **Wind:** enable static arrows or barbs, particles, or both. Arrows and particles follow the wind; barbs show the direction it comes from. Static markers remain useful when reduced motion disables animation. Wind is a forecast field, with its own valid time, separate from radar playback.
+- **Radar:** RainViewer is the default; NOAA MRMS and KSOX are alternatives. Choose Latest or automatic Loop, history length, frame duration and opacity in the editor. Live inspection provides the displayed timestamp, legend and coverage. Aircraft and people stay current during radar playback.
+- **Wind:** choose exactly one of Arrows, Barbs or Particles in the editor, plus color and opacity. Marker size/spacing or particle count/speed/trail controls appear for the selected mode; switching retains their saved values. Arrows and particles follow the wind; barbs show where it comes from. Reduced motion uses arrows without changing the saved mode. Wind has its own forecast-valid time.
 - **People:** select existing `device_tracker` entities. The default 50 km radius filter excludes distant travellers before fitting the map. A missing configured anchor hides radius-filtered people until the anchor is available.
+
+Choose **Follow Home Assistant**, **light** or **dark** under Map theme. Theme and wind-color changes reuse existing tiles and data.
+
+A healthy card keeps its controls, optional aircraft list and source credits visible without routine weather/status panels. After the initial loading grace, **Map data needs attention** opens read-only causes, timestamps and recovery guidance. Close it with Escape, the close button or a tap outside. Use **Live inspection** in the editor for healthy weather details.
 
 Dragging or zooming suspends automatic fitting. Recenter returns to the configured view; an optional idle timeout can return automatically. Weather never independently recenters the map. Hidden cards stop requesting external layers and stop animation.
 
@@ -60,7 +70,7 @@ Aviadilo requires the compiled `aviadilo.zip` asset attached to a versioned [Git
 
 Update the single integration package through HACS, restart HA when requested, then reload browser dashboards. Backend and card versions travel together. Settings and the bounded public-data cache live outside the replaced integration directory.
 
-If Aviadilo is missing from the card picker, confirm that its integration loaded and reload the dashboard. If external layers are unavailable, check the card's source status and the integration's configured anchor; people can still use HA state. A disabled wind display makes no wind requests. Wind or radar data can be unavailable even when aircraft work because sources are independent.
+If Aviadilo is missing from the card picker, confirm that its integration loaded and reload the dashboard. If external layers are unavailable, open the card's problem indicator or editor Live inspection and check the integration's configured anchor; people can still use HA state. A disabled Wind layer makes no wind requests. Wind or radar data can be unavailable even when aircraft work because sources are independent.
 
 Use the integration's diagnostics download for aggregate scheduler/cache status. Cache clearing is a separate confirmed action in Configure; it affects every viewer and causes later requests to refill the cache. Avoid clearing it repeatedly when investigating a provider outage.
 

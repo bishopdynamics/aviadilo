@@ -237,6 +237,12 @@ The user approved the design, but native slice 3 verification found one platform
 
 ## Change Log
 
+- 2026-09-08 — Slice 5 implemented and independently verified: quiet healthy card, retained interaction/list/credits, error-only popover and editor read-only inspection. Parent full gates passed 273 frontend + 482 backend + 20 Chromium tests. Native HA/Chromium validated quiet layout, real missing-entry recovery UI, exact preview inspection, narrow sizing and emulated touch; physical tablet remains user acceptance. No publication/version change.
+
+- 2026-09-08 — Slice 5 also updates tests/e2e/assets.spec.ts because its passive-recovery scenario asserted removed telemetry. Inspection retains last scalar weather timestamps while the mounted card is offscreen, clearly labelled paused; it retains no images/grids or extra collection. The error dialog uses a viewport-bounded browser popover so short list-only cards do not clip recovery details.
+
+- 2026-09-08 — Slice 5 inspection uses exact config/connection/user plus nearest generic composed DOM ancestry to select the editor's mounted preview without private HA selectors or new collectors. Equal-distance matches remain explicitly ambiguous. Owned paths narrowly include src/data/assets.ts and src/map/basemap.ts to propagate the existing X-Aviadilo-Cache stale/current response marker into basemap health; no provider/cache/wire behavior changes.
+
 - 2026-09-08 — Slice 4 implemented and independently verified: exact frozen v1 reader, canonical v2 migration, exclusive wind modes/color, invalid-draft preservation and HA-aware map themes. Full parent checks passed 264 frontend + 482 backend + 17 Chromium scenarios; native HA verified unchanged v1 storage on load, migration/rendering, theme contrast, reduced motion and normal editor-save persistence. Routine panels remain until slice 5. No release/version change.
 
 - 2026-09-08 — Slice 6 ownership also includes scripts/release_metadata.py and tests/backend/test_release_metadata.py so publication can include the version's migration/reload guidance from orchestrator-owned release notes. Existing release channel and publication safeguards remain unchanged.

@@ -5,7 +5,7 @@ const config = normalizeConfig({
   schema_version: 1,
   type: 'custom:aviadilo-map',
 });
-it('initial masonry estimates include touch-sized list rows and visible weather content', () => {
+it('initial masonry estimates include touch-sized list rows and quiet weather overlays', () => {
   const map = { ...config, map: { ...config.map, layout: 'map' as const } };
   expect(estimateCardHeight(map)).toBeGreaterThan(config.map!.height_px!);
   expect(
@@ -16,7 +16,7 @@ it('initial masonry estimates include touch-sized list rows and visible weather 
       ...config,
       layers: { aircraft: true, radar: true, wind: true },
     }),
-  ).toBeGreaterThan(estimateCardHeight(config));
+  ).toBe(estimateCardHeight(config));
   expect(
     estimateCardHeight({
       ...config,

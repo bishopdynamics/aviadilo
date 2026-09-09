@@ -7,11 +7,8 @@ import { createHaAdapter, type HassTransport } from './data/ha';
 import { AircraftController, AircraftLayer } from './layers/aircraft';
 import { RadarController } from './layers/radar/controller';
 import { RadarLayer } from './layers/radar/layer';
-import { radarTimeline } from './layers/radar/presentation';
 import { WindController } from './layers/wind/model';
 import { WindLayer } from './layers/wind/layer';
-import { windPanel } from './layers/wind/controls';
-import { editConfig, type ConfigPath } from './editor/ha-controls';
 import type { Info, SnapshotEvent, Viewport } from './data/types';
 import {
   entityPoint,
@@ -24,6 +21,18 @@ import { createBasemap } from './map/basemap';
 import { estimateCardHeight, mapStyles } from './map/styles';
 import { resolveTheme } from './map/theme';
 import { acquireAssets } from './data/assets';
+import {
+  inspectionKey,
+  publishInspection,
+  type InspectionSnapshot,
+} from './data/status';
+import { PROVIDERS } from './layers/aircraft/model';
+import {
+  StatusTracker,
+  issueDetails,
+  type DataIssue,
+  type LayerHealth,
+} from './map/status';
 import { selectPeople, type PeopleResult } from './layers/people/model';
 import { PeopleLayer } from './layers/people/layer';
 import { LAYER_PANES, type LayerName } from './layers/types';
@@ -40,6 +49,7 @@ export class AviadiloMap extends LitElement {
     peopleResult: { state: true },
     integrationStatus: { state: true },
     listExpanded: { state: true },
+    statusOpen: { state: true },
   };
   static styles = mapStyles;
   declare hass?: HomeAssistant;
@@ -48,6 +58,35 @@ export class AviadiloMap extends LitElement {
   declare private sessionLayers: Record<LayerName, boolean>;
   declare private peopleResult: PeopleResult;
   declare private integrationStatus: string;
+  declare private statusOpen: boolean;
+  private issues: DataIssue[] = [];
+  private readonly statusTracker = new StatusTracker();
+  private stopInspection?: () => void;
+  private lastRadarInspection?: InspectionSnapshot['radar'];
+  private lastWindValidTime: string | null = null;
+  private inspectionConnection?: object;
+  private inspectionUser?: string;
+  private motionMedia?: MediaQueryList;
+  private basemapTiles = new Map<
+    HTMLElement,
+    'loading' | 'current' | 'stale' | 'unavailable'
+  >();
+  private basemapLastSuccess: string | null = null;
+  private readonly outsideStatus = (event: Event) => {
+    if (!this.statusOpen) return;
+    const path = event.composedPath();
+    if (
+      !path.includes(this.renderRoot.querySelector('.status-popover')!) &&
+      !path.includes(this.renderRoot.querySelector('.status-indicator')!)
+    )
+      this.closeStatus(false);
+  };
+  private readonly statusKey = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && this.statusOpen) {
+      event.preventDefault();
+      this.closeStatus(true);
+    }
+  };
   private themeMedia?: MediaQueryList;
   private readonly themeChanged = () => this.requestUpdate();
   private map?: L.Map;
@@ -89,6 +128,12 @@ export class AviadiloMap extends LitElement {
   private discoveryTimeout?: ReturnType<typeof setTimeout>;
   private holdFitUntilData = false;
   private radarReady = false;
+  private currentStatuses: Partial<
+    Record<
+      'aircraft' | 'radar' | 'wind',
+      Extract<SnapshotEvent, { kind: 'status' }>['statuses'][number]
+    >
+  > = {};
   private radarConfigKey = '';
   private refreshing = false;
   private inViewportUpdate = false;
@@ -97,9 +142,11 @@ export class AviadiloMap extends LitElement {
     if (!this.activeVisible) this.suspendWeather();
     this.client?.setVisible(this.activeVisible);
     this.refresh();
+    this.requestUpdate();
   };
   constructor() {
     super();
+    this.statusOpen = false;
     this.preview = false;
     this.listExpanded = true;
     this.peopleResult = { points: [], excluded: 0, anchorMissing: false };
@@ -154,6 +201,12 @@ export class AviadiloMap extends LitElement {
   }
   connectedCallback(): void {
     super.connectedCallback();
+    this.motionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
+    this.motionMedia.addEventListener('change', this.themeChanged);
+    document.addEventListener('pointerdown', this.outsideStatus);
+    document.addEventListener('keydown', this.statusKey);
+    document.addEventListener('scroll', this.positionStatus, true);
+    window.addEventListener('resize', this.positionStatus);
     this.themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
     this.themeMedia.addEventListener('change', this.themeChanged);
     document.addEventListener('visibilitychange', this.visibility);
@@ -168,6 +221,7 @@ export class AviadiloMap extends LitElement {
     this.tick = setInterval(() => {
       if (this.activeVisible) {
         this.refresh();
+        this.requestUpdate();
         if (Date.now() - this.lastDiscovery >= 5000) void this.discover(true);
       }
     }, 1000);
@@ -175,6 +229,17 @@ export class AviadiloMap extends LitElement {
   }
   disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.stopInspection?.();
+    this.stopInspection = undefined;
+    this.inspectionConnection = undefined;
+    this.statusTracker.clear();
+    this.statusOpen = false;
+    this.motionMedia?.removeEventListener('change', this.themeChanged);
+    this.motionMedia = undefined;
+    document.removeEventListener('pointerdown', this.outsideStatus);
+    document.removeEventListener('keydown', this.statusKey);
+    document.removeEventListener('scroll', this.positionStatus, true);
+    window.removeEventListener('resize', this.positionStatus);
     this.themeMedia?.removeEventListener('change', this.themeChanged);
     this.themeMedia = undefined;
     document.removeEventListener('visibilitychange', this.visibility);
@@ -200,6 +265,7 @@ export class AviadiloMap extends LitElement {
     this.discovering = false;
     this.integration = undefined;
     this.viewConfigKey = '';
+    this.basemapTiles.clear();
   }
   protected updated(changed: PropertyValues): void {
     if (!this.config || !this.isConnected) return;
@@ -219,20 +285,22 @@ export class AviadiloMap extends LitElement {
       this.syncBasemap();
       this.refresh();
     }
+    if (!this.issues.length && this.statusOpen) this.closeStatus(false);
+    this.publishState();
+    this.positionStatus();
   }
   private initializeMap(): void {
     const container = this.renderRoot.querySelector<HTMLElement>('.map');
     if (!container) return;
     this.map = L.map(container, {
       zoomControl: true,
-      attributionControl: true,
+      attributionControl: false,
       minZoom: this.config.map!.min_zoom,
       maxZoom: this.config.map!.max_zoom,
       zoomAnimation: false,
       fadeAnimation: false,
       markerZoomAnimation: false,
     });
-    this.map.attributionControl.setPrefix(false);
     this.map.createPane('basemap').style.zIndex = '200';
     for (const [name, zIndex] of Object.entries(LAYER_PANES))
       this.map.createPane(name).style.zIndex = String(zIndex);
@@ -320,6 +388,8 @@ export class AviadiloMap extends LitElement {
     ) {
       this.basemap?.remove();
       this.basemap = undefined;
+      this.basemapTiles.clear();
+      this.basemapLastSuccess = null;
       this.people?.setAssets(undefined);
       this.assets?.release();
       this.assets = undefined;
@@ -342,6 +412,33 @@ export class AviadiloMap extends LitElement {
       this.map.getZoom() !== undefined
     ) {
       this.basemap = createBasemap(this.assets.decoded, entry);
+      this.basemap.on('tileloadstart', (event: L.TileEvent) => {
+        this.basemapTiles.set(event.tile, 'loading');
+        this.requestUpdate();
+      });
+      this.basemap.on('tileload', (event: L.TileEvent) => {
+        this.basemapTiles.set(
+          event.tile,
+          event.tile.dataset.aviadiloCache === 'stale' ? 'stale' : 'current',
+        );
+        if (event.tile.dataset.aviadiloCache !== 'stale')
+          this.basemapLastSuccess = new Date().toISOString();
+        this.requestUpdate();
+      });
+      this.basemap.on('tileerror', (event: L.TileEvent) => {
+        // Generation cancellation is a new load, not a source failure.
+        this.basemapTiles.set(
+          event.tile,
+          event.tile.title === 'Asset generation changed'
+            ? 'loading'
+            : 'unavailable',
+        );
+        this.requestUpdate();
+      });
+      this.basemap.on('tileunload', (event: L.TileEvent) => {
+        this.basemapTiles.delete(event.tile);
+        this.requestUpdate();
+      });
       this.basemap.options.pane = 'basemap';
       this.basemap.addTo(this.map);
     }
@@ -425,6 +522,8 @@ export class AviadiloMap extends LitElement {
     );
   }
   private disposeComposition(): void {
+    this.lastRadarInspection = undefined;
+    this.lastWindValidTime = null;
     this.radarLayer?.dispose();
     this.windLayer?.dispose();
     this.aircraftLayer?.dispose();
@@ -441,6 +540,7 @@ export class AviadiloMap extends LitElement {
     this.windLayer = undefined;
     this.aircraftLayer = undefined;
     this.selectionKey = '';
+    this.currentStatuses = {};
     this.aircraftConfigKey = '';
     this.radarConfigKey = '';
     this.radarReady = false;
@@ -543,6 +643,7 @@ export class AviadiloMap extends LitElement {
     const demanded = visible && Object.values(layers).some(Boolean);
     if (key !== this.selectionKey) {
       this.suspendWeather();
+      this.currentStatuses = {};
       this.selectionKey = key;
       this.client?.setSelection(selection);
     }
@@ -586,8 +687,14 @@ export class AviadiloMap extends LitElement {
       this.aircraft?.update(event);
     }
     if (event.kind === 'status')
-      for (const status of event.statuses)
+      for (const status of event.statuses) {
+        if (
+          status.layer !== 'radar' ||
+          status.provider === this.config.radar!.provider
+        )
+          this.currentStatuses[status.layer] = status;
         if (status.layer === 'aircraft') this.aircraft?.setStatus(status);
+      }
     // Receive the current manifest while hidden; only then permit new tile loads.
     this.radar?.receive(event);
     if (event.kind === 'radar-manifest') {
@@ -597,9 +704,6 @@ export class AviadiloMap extends LitElement {
     this.wind?.receive(event);
     this.refresh();
   }
-  private editLocal = (path: ConfigPath, value: unknown): void => {
-    this.config = editConfig(this.config, path, value);
-  };
   private state(): HomeAssistant | undefined {
     return this.hass;
   }
@@ -707,8 +811,331 @@ export class AviadiloMap extends LitElement {
       [layer]: !this.sessionLayers[layer],
     };
   }
+  private closeStatus(focus: boolean): void {
+    this.statusOpen = false;
+    if (focus)
+      this.renderRoot
+        .querySelector<HTMLButtonElement>('.status-indicator')
+        ?.focus();
+  }
+  private async toggleStatus(): Promise<void> {
+    if (this.statusOpen) {
+      this.closeStatus(true);
+      return;
+    }
+    this.statusOpen = true;
+    await this.updateComplete;
+    const popover =
+      this.renderRoot.querySelector<HTMLElement>('.status-popover');
+    const trigger =
+      this.renderRoot.querySelector<HTMLElement>('.status-indicator');
+    if (!popover || !trigger) return;
+    // Top-layer presentation escapes card clipping, including short list-only
+    // cards, without adding a backdrop or changing the closed card's height.
+    popover.showPopover();
+    this.positionStatus();
+    popover.focus();
+  }
+  private readonly positionStatus = (): void => {
+    if (!this.statusOpen) return;
+    const popover =
+      this.renderRoot.querySelector<HTMLElement>('.status-popover');
+    const trigger =
+      this.renderRoot.querySelector<HTMLElement>('.status-indicator');
+    if (!popover?.matches(':popover-open') || !trigger) return;
+    const bounds = trigger.getBoundingClientRect();
+    const box = popover.getBoundingClientRect();
+    popover.style.left = `${Math.max(12, Math.min(bounds.left, window.innerWidth - box.width - 12))}px`;
+    popover.style.top = `${Math.max(12, Math.min(bounds.bottom + 8, window.innerHeight - box.height - 12))}px`;
+  };
+  private health(): LayerHealth[] {
+    if (!this.activeVisible) return [];
+    const result: LayerHealth[] = [];
+    const flags = this.flags(),
+      map = this.config.map!.layout !== 'list';
+    const connection = this.hass?.connection;
+    const available =
+      !!this.integration?.entry_id &&
+      !!connection?.connected &&
+      this.hasTransport(this.hass);
+    const source = (
+      layer: LayerHealth['layer'],
+      request: string,
+    ): LayerHealth => ({
+      layer,
+      request,
+      state: 'loading',
+      cause: 'Waiting for requested data.',
+      recovery:
+        'Wait for the normal refresh. If loading continues, check the Aviadilo integration and Home Assistant connection.',
+    });
+    const external = (item: LayerHealth): LayerHealth =>
+      available
+        ? this.client?.state === 'unavailable' && item.layer !== 'Basemap'
+          ? {
+              ...item,
+              state: 'unavailable',
+              cause:
+                'The Aviadilo data subscription is unavailable; reconnecting.',
+            }
+          : item
+        : {
+            ...item,
+            state:
+              this.discovering && !this.integration
+                ? 'loading'
+                : this.integration?.entry_id
+                  ? 'unavailable'
+                  : 'configuration-required',
+            cause: this.integration?.entry_id
+              ? 'Home Assistant connection is unavailable.'
+              : this.integrationStatus,
+            recovery:
+              'Check the Home Assistant connection and add or configure the Aviadilo integration in Settings → Devices & services.',
+          };
+    if (map) {
+      if (!resolveAnchor(this.config.map!.anchor, this.state()))
+        result.push({
+          ...source('Map', JSON.stringify(this.config.map!.anchor)),
+          state: 'configuration-required',
+          cause: 'Map anchor is unavailable.',
+          recovery:
+            'Choose a valid home, zone or custom map location in the card editor.',
+        });
+      const tiles = [...this.basemapTiles.values()];
+      result.push(
+        external({
+          ...source('Basemap', this.discoveryKey ?? 'basemap'),
+          state: tiles.includes('unavailable')
+            ? 'unavailable'
+            : tiles.includes('stale')
+              ? 'stale'
+              : !tiles.length || tiles.includes('loading')
+                ? 'loading'
+                : 'current',
+          cause: tiles.includes('unavailable')
+            ? 'Some visible basemap tiles are unavailable.'
+            : tiles.includes('stale')
+              ? 'Some visible basemap tiles are retained stale cache data because their source refresh failed.'
+              : 'Loading visible basemap tiles.',
+          lastSuccess: this.basemapLastSuccess,
+        }),
+      );
+    }
+    if (flags.aircraft) {
+      const view = this.aircraft?.view(),
+        status = this.currentStatuses.aircraft;
+      const expired =
+        !!view?.fetchedAt &&
+        Date.now() - Date.parse(view.fetchedAt) >
+          Math.max(60000, (status?.effective_interval_s ?? 10) * 2000);
+      result.push(
+        external({
+          ...source('Aircraft', this.discoveryKey ?? 'aircraft'),
+          state:
+            expired && (!status || status.state === 'current')
+              ? 'stale'
+              : (status?.state ?? (view?.fetchedAt ? 'current' : 'loading')),
+          cause:
+            status?.message ??
+            (expired
+              ? 'The last aircraft snapshot is stale.'
+              : 'Waiting for aircraft data.'),
+          lastSuccess: status?.last_success ?? view?.fetchedAt,
+        }),
+      );
+    }
+    if (flags.radar) {
+      const view = this.radar?.view();
+      // A normal loop frame transition retains the prior frame while loading.
+      // It is not a source failure unless the load itself exceeds grace.
+      const status = this.currentStatuses.radar;
+      const failed = status && !['loading', 'current'].includes(status.state);
+      const state = failed
+        ? status.state
+        : !this.radarReady
+          ? 'loading'
+          : view?.message === 'Loading radar frame'
+            ? 'loading'
+            : (view?.state ?? 'loading');
+      result.push(
+        external({
+          ...source(
+            'Radar',
+            `${this.selectionKey}:${this.config.radar!.provider}`,
+          ),
+          state,
+          cause: failed
+            ? (status.message ?? `Radar data is ${status.state}.`)
+            : !this.radarReady
+              ? 'Waiting for radar data for this view.'
+              : (view?.message ?? 'Radar data is not current.'),
+          lastSuccess: status?.last_success,
+          displayedTime: view?.displayedTime,
+          ...(state === 'outside-coverage'
+            ? {
+                recovery:
+                  'Recenter within coverage or choose another radar source in the card editor.',
+              }
+            : {}),
+        }),
+      );
+    }
+    if (flags.wind) {
+      const view = this.wind?.view();
+      result.push(
+        external({
+          ...source('Wind', this.selectionKey),
+          state: view?.status?.state ?? (view?.grid ? 'current' : 'loading'),
+          cause:
+            view?.status?.message ?? 'Waiting for wind data for this view.',
+          lastSuccess: view?.status?.last_success,
+          validTime: view?.grid?.valid_time,
+          ...(view?.status?.state === 'outside-coverage'
+            ? { recovery: 'Recenter within the available model coverage.' }
+            : {}),
+        }),
+      );
+    }
+    if (map && this.sessionLayers.people) {
+      const config = this.config.people!;
+      const missing = config.trackers!.some(
+        (tracker) => !entityPoint(this.hass?.states[tracker.entity_id]),
+      );
+      const people = selectPeople(
+        { ...config, show_stale: true },
+        this.hass,
+        this.integration?.area,
+      );
+      const stale = people.points.some((person) => person.stale);
+      result.push({
+        ...source(
+          'People',
+          JSON.stringify([
+            config.trackers!.map((tracker) => tracker.entity_id),
+            config.anchor,
+            config.radius_enabled,
+            config.radius_m,
+            config.max_age_s,
+            config.show_stale,
+          ]),
+        ),
+        state: this.peopleResult.anchorMissing
+          ? 'configuration-required'
+          : missing
+            ? 'unavailable'
+            : stale
+              ? 'stale'
+              : 'current',
+        cause: this.peopleResult.anchorMissing
+          ? 'People radius anchor is unavailable.'
+          : missing
+            ? 'A configured tracker has no available location.'
+            : 'A tracker location is stale.',
+        recovery:
+          'Check the configured device trackers, radius anchor and freshness settings in Home Assistant and the card editor.',
+      });
+    }
+    return result;
+  }
+  private publishState(): void {
+    const connection = this.hass?.connection,
+      user = this.hass?.user?.id;
+    if (
+      connection !== this.inspectionConnection ||
+      user !== this.inspectionUser
+    ) {
+      this.stopInspection?.();
+      this.stopInspection = undefined;
+    }
+    this.inspectionConnection = connection;
+    this.inspectionUser = user;
+    if (!connection) return;
+    const radar = this.radar?.view();
+    const radarSnapshot: InspectionSnapshot['radar'] = {
+      enabled: this.flags().radar,
+      config: { ...this.config.radar },
+      displayedTime: radar?.displayedTime ?? null,
+      state: radar?.state ?? 'loading',
+      message: radar?.message ?? null,
+      coverage: radar?.manifest?.coverage?.description ?? null,
+    };
+    if (radarSnapshot.displayedTime) this.lastRadarInspection = radarSnapshot;
+    const windTime = this.wind?.view().grid?.valid_time ?? null;
+    if (windTime) this.lastWindValidTime = windTime;
+    const pausedRadar =
+      !this.activeVisible &&
+      this.lastRadarInspection &&
+      this.lastRadarInspection.config.provider === this.config.radar!.provider
+        ? { ...this.lastRadarInspection, enabled: this.flags().radar }
+        : radarSnapshot;
+    this.stopInspection = publishInspection(connection, {
+      owner: this,
+      user,
+      key: inspectionKey(this.config),
+      snapshot: {
+        visible: this.activeVisible,
+        issues: this.issues,
+        radar: pausedRadar,
+        wind: {
+          enabled: this.flags().wind,
+          validTime: this.activeVisible ? windTime : this.lastWindValidTime,
+          reducedMotion: this.motionMedia?.matches ?? false,
+          mode: this.config.wind!.mode!,
+        },
+      },
+    });
+  }
+  private attribution() {
+    const map = this.config.map!.layout !== 'list';
+    const aircraft = this.aircraft?.view();
+    const provider =
+      this.sessionLayers.aircraft &&
+      aircraft?.provider &&
+      ((map && this.config.aircraft!.show_map) ||
+        (this.config.map!.layout !== 'map' && this.config.aircraft!.show_list))
+        ? PROVIDERS[aircraft.provider]
+        : null;
+    const radar = map && this.flags().radar && this.radar?.view().displayedTime;
+    const wind = map && this.flags().wind && this.wind?.view().grid;
+    const credits = [
+      ...(map
+        ? [
+            {
+              name: '© OpenStreetMap contributors',
+              url: 'https://www.openstreetmap.org/copyright',
+            },
+          ]
+        : []),
+      ...(provider ? [provider] : []),
+      ...(radar
+        ? [
+            this.config.radar!.provider === 'rainviewer'
+              ? { name: 'RainViewer', url: 'https://www.rainviewer.com' }
+              : { name: 'NOAA / NWS', url: 'https://www.weather.gov' },
+          ]
+        : []),
+      ...(wind
+        ? [{ name: 'DWD ICON-global', url: 'https://www.dwd.de/' }]
+        : []),
+    ];
+    return credits.length
+      ? html`<div class="attribution" aria-label="Map data attribution">
+          ${credits.map(
+            (credit, index) =>
+              html`${index ? ' · ' : ''}<a
+                  href=${credit.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >${credit.name}</a
+                >`,
+          )}
+        </div>`
+      : '';
+  }
   protected render() {
     if (!this.config) return html``;
+    this.issues = this.statusTracker.update(this.health());
     return html`<article
       data-theme=${resolveTheme(
         this.config.map!.theme,
@@ -717,9 +1144,9 @@ export class AviadiloMap extends LitElement {
       )}
       aria-label="Aviadilo map card"
     >
-      <header>
-        <h2>${this.config.title || 'Aviadilo'}</h2>
-      </header>
+      ${this.config.title
+        ? html`<header><h2>${this.config.title}</h2></header>`
+        : ''}
       <nav aria-label="Map layers">
         ${(['aircraft', 'radar', 'wind', 'people'] as const).map(
           (layer) =>
@@ -735,37 +1162,49 @@ export class AviadiloMap extends LitElement {
               Recenter
             </button>`
           : ''}
+        ${this.issues.length
+          ? html`<div class="status-anchor">
+              <button
+                class="status-indicator"
+                aria-label="Map data needs attention"
+                aria-expanded=${String(this.statusOpen)}
+                aria-controls="map-data-status"
+                aria-haspopup="dialog"
+                @click=${this.toggleStatus}
+              >
+                ⚠
+              </button>
+              ${this.statusOpen
+                ? html`<div
+                    id="map-data-status"
+                    class="status-popover"
+                    popover="manual"
+                    role="dialog"
+                    aria-modal="false"
+                    aria-label="Map data status"
+                    tabindex="-1"
+                  >
+                    <button
+                      aria-label="Close status"
+                      @click=${() => this.closeStatus(true)}
+                    >
+                      Close
+                    </button>
+                    <h3>Map data status</h3>
+                    ${issueDetails(this.issues)}
+                  </div>`
+                : ''}
+            </div>`
+          : ''}
       </nav>
-      <div
-        class=${`map${this.config.map!.layout === 'list' ? ' hidden' : ''}`}
-        style=${`height:${this.config.map!.height_px}px`}
-        role="region"
-        aria-label="Interactive household map"
-      ></div>
-      <div class="status" aria-live="polite">
-        <p>
-          ${this.sessionLayers.people
-            ? `${this.peopleResult.points.length} people visible · ${this.peopleResult.excluded} filtered or unavailable`
-            : 'People hidden'}
-        </p>
-        ${this.peopleResult.anchorMissing
-          ? html`<p>People hidden: radius anchor unavailable.</p>`
-          : ''}${!resolveAnchor(this.config.map!.anchor, this.state())
-          ? html`<p>
-              Map anchor unavailable. Choose a valid home, zone or custom
-              location.
-            </p>`
-          : ''}
-        <p>${this.integrationStatus}</p>
-        ${this.flags().aircraft && this.aircraft
-          ? html`<p>
-              Aircraft:
-              ${this.aircraft.view().status?.state ??
-              (this.aircraft.view().provider
-                ? 'current'
-                : 'waiting for integration')}
-            </p>`
-          : ''}
+      <div class="map-shell">
+        <div
+          class=${`map${this.config.map!.layout === 'list' ? ' hidden' : ''}`}
+          style=${`height:${this.config.map!.height_px}px`}
+          role="region"
+          aria-label="Interactive household map"
+        ></div>
+        ${this.config.map!.layout !== 'list' ? this.attribution() : ''}
       </div>
       ${this.config.map!.layout !== 'map' &&
       this.config.aircraft!.show_list &&
@@ -783,27 +1222,7 @@ export class AviadiloMap extends LitElement {
             ></aviadilo-aircraft-list>
           </details>`
         : ''}
-      ${this.flags().radar && this.radar
-        ? html`<section class="weather" aria-label="Radar">
-            ${radarTimeline(this.radar.view(), this.radar)}
-          </section>`
-        : ''}
-      ${this.config.map!.layout !== 'list' &&
-      this.sessionLayers.wind &&
-      this.wind
-        ? html`<details class="weather">
-            <summary>
-              Wind ·
-              ${this.wind.view().status?.state ??
-              (this.wind.view().grid
-                ? 'current'
-                : this.flags().wind
-                  ? 'waiting for integration'
-                  : 'display off')}
-            </summary>
-            ${windPanel(this.wind.view(), this.editLocal)}
-          </details>`
-        : ''}
+      ${this.config.map!.layout === 'list' ? this.attribution() : ''}
     </article>`;
   }
 }

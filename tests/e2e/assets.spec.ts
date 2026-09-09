@@ -158,17 +158,35 @@ test('existing missing integration card recovers basemap on passive discovery wi
     window.aviadiloTest.unavailable(true);
     window.aviadiloTest.attach(0);
   });
-  await expect(
-    page
-      .locator('aviadilo-map')
-      .getByText('Integration unavailable · people still use Home Assistant', {
-        exact: true,
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const card = document.querySelector('aviadilo-map') as unknown as {
+          integration?: { entry_id?: string };
+          discovering: boolean;
+        };
+        return {
+          entry: card.integration?.entry_id ?? null,
+          discovering: card.discovering,
+          assets: window.aviadiloTest.stats().assetSubscriptions,
+        };
       }),
-  ).toBeVisible();
+    )
+    .toEqual({ entry: null, discovering: false, assets: 0 });
+  await expect(page.locator('aviadilo-map .leaflet-tile img')).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => !!window.aviadiloTest.inspect(0).center))
+    .toBe(true);
+  const before = await page.evaluate(
+    () => window.aviadiloTest.inspect(0).center,
+  );
   await page.evaluate(() => window.aviadiloTest.unavailable(false));
   await expect(
     page.locator('aviadilo-map .leaflet-tile img').first(),
   ).toBeVisible({ timeout: 12000 });
+  expect(
+    await page.evaluate(() => window.aviadiloTest.inspect(0).center),
+  ).toEqual(before);
 });
 
 test('extremely wide zoom-zero views group world copies without changing map zoom', async ({

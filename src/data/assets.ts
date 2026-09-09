@@ -587,12 +587,14 @@ export type AssetNeed =
       entry_id?: string;
     };
 export interface DecodedAsset {
+  readonly stale: boolean;
   readonly url: string;
   readonly signal: AbortSignal;
   current(): boolean;
   release(): void;
 }
 interface DecodedEntry {
+  stale?: boolean;
   key: string;
   need: AssetNeed;
   controller: AbortController;
@@ -755,6 +757,7 @@ export class DecodedAssets {
         throw abortError();
       return {
         url: item.url!,
+        stale: item.stale === true,
         signal: item.controller.signal,
         current: () => !released && !item.controller.signal.aborted && valid(),
         release,
@@ -820,6 +823,7 @@ export class DecodedAssets {
           throw new AssetFailure('upstream_error');
       }
       const headers = opened.response.headers;
+      entry.stale = headers.get('X-Aviadilo-Cache') === 'stale';
       const control = headers.get('Cache-Control') ?? '';
       const maxAge = /(?:^|,)\s*max-age\s*=\s*"?(\d+)/i.exec(control);
       const rawAge = Number(headers.get('Age') ?? 0);

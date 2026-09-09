@@ -3,7 +3,6 @@ import { repeat } from 'lit/directives/repeat.js';
 import {
   aircraftName,
   formatField,
-  PROVIDERS,
   type AircraftController,
   type AircraftView,
 } from './model';
@@ -61,9 +60,6 @@ export class AviadiloAircraftList extends LitElement {
     a {
       color: var(--primary-color, #176bb3);
     }
-    footer {
-      padding: 8px;
-    }
     .detail {
       padding: 8px;
     }
@@ -106,15 +102,11 @@ export class AviadiloAircraftList extends LitElement {
   }
   protected render() {
     const view = this.view;
-    if (!view) return html`<p>Waiting for aircraft data</p>`;
+    if (!view) return nothing;
     const config = view.config.aircraft!;
-    const provider = view.provider ? PROVIDERS[view.provider] : null;
     const selected = view.selected;
-    const sourceStale =
-      view.fetchedAt !== null &&
-      Date.now() - Date.parse(view.fetchedAt) >
-        Math.max(60000, (view.status?.effective_interval_s ?? 10) * 2000);
-    return html` ${config.show_list
+    return html`
+      ${config.show_list
         ? html`<div class="scroll">
             <table aria-label="Aircraft">
               <thead>
@@ -124,7 +116,6 @@ export class AviadiloAircraftList extends LitElement {
                     (field) =>
                       html`<th scope="col">${field.replaceAll('_', ' ')}</th>`,
                   )}
-                  <th scope="col">Position</th>
                 </tr>
               </thead>
               <tbody>
@@ -148,19 +139,11 @@ export class AviadiloAircraftList extends LitElement {
                         (field) =>
                           html`<td>${formatField(row, field, config)}</td>`,
                       )}
-                      <td>
-                        ${row.stale
-                          ? row.ageS === null
-                            ? 'Freshness unknown'
-                            : 'Stale'
-                          : 'Current'}
-                        · ${formatField(row, 'position_age', config)}
-                      </td>
                     </tr>`,
                 )}
               </tbody>
             </table>
-            ${view.rows.length
+            ${view.rows.length || !view.fetchedAt
               ? nothing
               : html`<p>No aircraft match the current filters.</p>`}
           </div>`
@@ -184,40 +167,7 @@ export class AviadiloAircraftList extends LitElement {
             </dl>
           </section>`
         : nothing}
-      <footer>
-        ${provider
-          ? html`Aircraft data:
-              <a href=${provider.url} target="_blank" rel="noopener noreferrer"
-                >${provider.name}</a
-              >`
-          : 'Aircraft source pending'}
-        ${html`<div role="status">
-          ${sourceStale && view.status?.state === 'current'
-            ? 'stale'
-            : (view.status?.state ??
-              (sourceStale
-                ? 'stale'
-                : view.fetchedAt
-                  ? 'current'
-                  : 'loading'))}${view.status?.message
-            ? ` · ${view.status.message}`
-            : ''}
-        </div>`}
-        ${html`<div>
-          Last update:
-          ${view.fetchedAt
-            ? html`<time datetime=${view.fetchedAt}
-                >${new Date(view.fetchedAt).toLocaleString()}</time
-              >`
-            : 'Unknown'}
-        </div>`}
-        ${html`<div>
-          Effective refresh:
-          ${view.status?.effective_interval_s != null
-            ? `${view.status.effective_interval_s} s`
-            : 'Unknown'}
-        </div>`}
-      </footer>`;
+    `;
   }
 }
 if (!customElements.get('aviadilo-aircraft-list'))

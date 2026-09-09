@@ -11,6 +11,7 @@ export const mapStyles = [
       --aviadilo-accent: var(--primary-color, #4da3ff);
     }
     article {
+      position: relative;
       overflow: hidden;
       color: var(--primary-text-color, #e6edf5);
       background: var(
@@ -76,7 +77,7 @@ export const mapStyles = [
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      padding: 0 16px 12px;
+      padding: 12px 16px;
     }
     button {
       cursor: pointer;
@@ -105,43 +106,61 @@ export const mapStyles = [
     .map.hidden {
       display: none;
     }
-    .weather {
-      padding: 12px 16px;
+    .map-shell {
+      position: relative;
+    }
+    .attribution {
+      font-size: 10px;
+      line-height: 1.5;
+      padding: 2px 5px;
       overflow-wrap: anywhere;
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
+    }
+    .map-shell > .attribution {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      z-index: 500;
+      max-width: calc(100% - 12px);
+    }
+    .status-popover {
+      box-sizing: border-box;
+      position: fixed;
+      z-index: 1100;
+      inset: auto;
+      margin: 0;
+      width: min(360px, calc(100vw - 24px));
+      max-height: min(420px, calc(100dvh - 24px));
+      overflow: auto;
+      overflow-wrap: anywhere;
+      padding: 12px;
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
+      border: 1px solid var(--divider-color);
+      border-radius: 8px;
+      box-shadow: 0 4px 16px #0005;
+      font-size: 0.875rem;
+    }
+    .status-popover h3,
+    .status-popover h4 {
+      margin: 8px 0;
+    }
+    .status-popover p {
+      margin: 6px 0;
     }
     summary {
       cursor: pointer;
       min-height: 44px;
       line-height: 44px;
     }
-    .weather label {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      margin: 10px 0;
-    }
-    .weather input,
-    .weather select {
-      max-width: 100%;
-      min-height: 44px;
-      font: inherit;
-    }
     a {
       color: var(--aviadilo-accent);
     }
-    .status,
     .aircraft-list {
       padding: 12px 16px;
       font-size: 0.875rem;
       line-height: 1.5;
-    }
-    .status p {
-      margin: 4px 0;
-    }
-    .preview-label {
-      color: var(--warning-color, #ffc776);
-      font-size: 0.8rem;
     }
     .schematic-tile {
       box-sizing: border-box;
@@ -221,18 +240,13 @@ export const mapStyles = [
  */
 export function estimateCardHeight(config?: CardConfig): number {
   const layout = config?.map?.layout ?? 'combined';
-  let height = 200; // Header, wrapping layer controls and source/people status.
+  let height = 80 + (config?.title ? 56 : 0); // Wrapping layer controls and optional title.
   if (layout !== 'list') height += config?.map?.height_px ?? 480;
   if (
     layout !== 'map' &&
     config?.layers?.aircraft !== false &&
     config?.aircraft?.show_list !== false
   )
-    height += 168 + (config?.aircraft?.list_rows ?? 10) * 52;
-  if (layout !== 'list' && config?.layers?.radar) {
-    height += 144;
-    height += 144; // Frame timestamp, coverage and legend until kiosk presentation lands.
-  }
-  if (layout !== 'list' && config?.layers?.wind) height += 68;
+    height += 80 + (config?.aircraft?.list_rows ?? 10) * 52;
   return height;
 }

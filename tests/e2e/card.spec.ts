@@ -52,9 +52,7 @@ test('composes four layers with responsive keyboard list selection and stable ma
     window.aviadiloTest.updateHass(true);
     window.aviadiloTest.emit();
   });
-  await expect(
-    card.getByText('1 people visible · 1 filtered or unavailable'),
-  ).toBeVisible();
+  await expect(card.locator('.person-marker')).toHaveCount(1);
   expect(
     await page.evaluate(() => window.aviadiloTest.inspect(0).center),
   ).toEqual(before);
@@ -139,11 +137,7 @@ test('list layout requests aircraft alone and disabled wind has no demand', asyn
   await expect
     .poll(() => page.evaluate(() => window.aviadiloTest.stats().subscriptions))
     .toBe(0);
-  await expect(
-    page
-      .locator('aviadilo-map')
-      .getByText('2 people visible · 0 filtered or unavailable'),
-  ).toBeVisible();
+  await expect(page.locator('aviadilo-map .person-marker')).toHaveCount(2);
 });
 test('viewport race aborts old tiles, ignores stale events, and preserves paused frame on metadata refresh', async ({
   page,
@@ -191,11 +185,7 @@ test('recovers HA reconnect and integration recreation while people remain usabl
   await expect
     .poll(() => page.evaluate(() => window.aviadiloTest.stats().subscriptions))
     .toBe(0);
-  await expect(
-    page
-      .locator('aviadilo-map')
-      .getByText('2 people visible · 0 filtered or unavailable'),
-  ).toBeVisible();
+  await expect(page.locator('aviadilo-map .person-marker')).toHaveCount(2);
   await page.evaluate(() => {
     window.aviadiloTest.entry('replacement');
     window.aviadiloTest.connectionEvent(true);
@@ -214,11 +204,19 @@ test('recovers HA reconnect and integration recreation while people remain usabl
       ),
     )
     .toBe('replacement');
-  await page.evaluate(() => window.aviadiloTest.sourceError());
+  await page.evaluate(() => {
+    window.aviadiloTest.stopFeed();
+    window.aviadiloTest.sourceError();
+  });
+  const indicator = page.getByRole('button', {
+    name: 'Map data needs attention',
+  });
+  await expect(indicator).toBeVisible({ timeout: 20000 });
+  await indicator.click();
   await expect(
     page
-      .locator('aviadilo-map')
-      .getByText('Aircraft: unavailable', { exact: true }),
+      .getByRole('dialog', { name: 'Map data status' })
+      .getByText('Aircraft · unavailable', { exact: true }),
   ).toBeVisible();
 });
 test('raw HA picker without transport is honestly unavailable and settings round trip', async ({
@@ -247,13 +245,17 @@ test('raw HA picker without transport is honestly unavailable and settings round
     document.body.prepend(picker);
     await card.updateComplete;
   });
+  const pickerIndicator = page
+    .locator('hui-card-picker')
+    .getByRole('button', { name: 'Map data needs attention' });
+  await expect(pickerIndicator).toHaveCount(0);
+  await expect(pickerIndicator).toBeVisible({ timeout: 20000 });
+  await pickerIndicator.click();
   await expect(
     page
       .locator('hui-card-picker')
-      .getByText('Integration unavailable · people still use Home Assistant', {
-        exact: true,
-      }),
-  ).toBeVisible();
+      .getByRole('dialog', { name: 'Map data status' }),
+  ).toContainText('Integration unavailable');
   await expect(
     page
       .locator('hui-card-picker')
@@ -317,18 +319,17 @@ test('initial unavailable integration and explicit entry selection recover throu
     window.aviadiloTest.unavailable(true);
     window.aviadiloTest.attach(0);
   });
+  const unavailable = page.getByRole('button', {
+    name: 'Map data needs attention',
+  });
+  await expect(unavailable).toHaveCount(0);
+  await expect(unavailable).toBeVisible({ timeout: 20000 });
+  await unavailable.click();
   await expect(
-    page
-      .locator('aviadilo-map')
-      .getByText('Integration unavailable · people still use Home Assistant', {
-        exact: true,
-      }),
-  ).toBeVisible();
-  await expect(
-    page
-      .locator('aviadilo-map')
-      .getByText('2 people visible · 0 filtered or unavailable'),
-  ).toBeVisible();
+    page.getByRole('dialog', { name: 'Map data status' }),
+  ).toContainText('Integration unavailable');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('aviadilo-map .person-marker')).toHaveCount(2);
   await page.evaluate(() => {
     window.aviadiloTest.unavailable(false);
     window.aviadiloTest.entry('recreated');
@@ -366,7 +367,7 @@ test('people-only runtime works without an HA transport and never requests exter
     card.setConfig({
       schema_version: 1,
       type: 'custom:aviadilo-map',
-      map: { layout: 'list' },
+      map: { layout: 'map' },
       layers: { aircraft: false, radar: false, wind: false },
       people: { trackers: [{ entity_id: 'device_tracker.synthetic' }] },
     });
@@ -385,11 +386,7 @@ test('people-only runtime works without an HA transport and never requests exter
     };
     await card.updateComplete;
   });
-  await expect(
-    page
-      .locator('aviadilo-map')
-      .getByText('1 people visible · 0 filtered or unavailable'),
-  ).toBeVisible();
+  await expect(page.locator('aviadilo-map .person-marker')).toHaveCount(1);
   expect(external).toEqual([]);
 });
 
@@ -441,8 +438,9 @@ test('public sizing contract keeps a following sections card below expanded cont
     following.textContent = 'Following dashboard card';
     grid.append(following);
   });
+  await page.locator('aviadilo-map .aircraft-list > summary').click();
   const before = await page.locator('#following-card').boundingBox();
-  await page.locator('aviadilo-map details.weather > summary').click();
+  await page.locator('aviadilo-map .aircraft-list > summary').click();
   await expect
     .poll(async () => (await page.locator('#following-card').boundingBox())!.y)
     .toBeGreaterThan(before!.y);
@@ -503,10 +501,10 @@ test('theme and wind edits reuse mounted data, viewport, requests and selected m
             .getAttribute('data-theme'),
           mode: card.config.wind!.mode,
           attributionBackground: getComputedStyle(
-            card.shadowRoot!.querySelector('.leaflet-control-attribution')!,
+            card.shadowRoot!.querySelector('.attribution')!,
           ).backgroundColor,
           attributionText: getComputedStyle(
-            card.shadowRoot!.querySelector('.leaflet-control-attribution')!,
+            card.shadowRoot!.querySelector('.attribution')!,
           ).color,
         });
       }
@@ -627,4 +625,194 @@ test('graphical wind editor retains inactive settings and blocks all saves while
           .schema_version,
     ),
   ).toBe(2);
+});
+
+test('healthy card stays quiet and errors have accessible keyboard and outside dismissal', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await runtime(page);
+  const card = page.locator('aviadilo-map');
+  const indicator = card.getByRole('button', {
+    name: 'Map data needs attention',
+  });
+  await expect(indicator).toHaveCount(0);
+  await expect(card.locator('.weather, .status, footer')).toHaveCount(0);
+  await expect(
+    card.getByRole('button', { name: /^(Latest|Loop|Pause)$/ }),
+  ).toHaveCount(0);
+  await expect(card.locator('figure, input, select')).toHaveCount(0);
+  await expect(card.locator('.attribution')).toHaveCount(1);
+  for (const name of [
+    '© OpenStreetMap contributors',
+    'adsb.fi',
+    'RainViewer',
+    'DWD ICON-global',
+  ])
+    await expect(
+      card.locator('.attribution').getByRole('link', { name, exact: true }),
+    ).toBeVisible();
+  await page.evaluate(() => window.aviadiloTest.stopFeed());
+  await page.clock.fastForward(16000);
+  await expect(indicator).toHaveCount(0);
+  await page.evaluate(() => window.aviadiloTest.sourceError());
+  await expect(indicator).toBeVisible();
+  await indicator.focus();
+  await page.keyboard.press('Enter');
+  const dialog = card.getByRole('dialog', { name: 'Map data status' });
+  await expect(dialog).toBeFocused();
+  await expect(indicator).toHaveAttribute('aria-expanded', 'true');
+  await expect(dialog).toContainText('Aircraft · unavailable');
+  await expect(dialog).toContainText('Radar · unavailable');
+  await expect(dialog).toContainText('Model valid:');
+  await expect(dialog).toContainText('Displayed radar frame:');
+  await expect(dialog.locator('input, select')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(indicator).toBeFocused();
+  await indicator.click();
+  await page.locator('h1').click();
+  await expect(dialog).toHaveCount(0);
+  await card.getByRole('button', { name: 'Recenter', exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => window.aviadiloTest.inspect(0).suspended))
+    .toBe(false);
+  await page.evaluate(() => window.aviadiloTest.emit());
+  await expect(indicator).toHaveCount(0);
+  await page.evaluate(() =>
+    window.aviadiloTest.config(0, { map: { layout: 'list' } }),
+  );
+  await expect(card.locator('.attribution')).toHaveCount(1);
+  await expect(card.locator('.attribution a')).toHaveCount(1);
+  await expect(
+    card.locator('.attribution').getByRole('link', { name: 'adsb.fi' }),
+  ).toBeVisible();
+});
+
+test('editor inspection observes matching rendered timestamps and reduced motion without collecting data', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await runtime(page);
+  await page.evaluate(async () => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    card.setConfig({
+      ...card.config,
+      wind: { ...card.config.wind, mode: 'particles' },
+    });
+    await card.updateComplete;
+    const editor = document.createElement(
+      'aviadilo-map-editor',
+    ) as import('../../src/editor/editor').AviadiloEditor;
+    editor.hass = card.hass;
+    editor.setConfig(card.config);
+    document.querySelector('main')!.style.cssText =
+      'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px';
+    editor.style.cssText = 'height:700px;overflow:auto';
+    document.querySelector('main')!.append(editor);
+    window.aviadiloTest.stopFeed();
+  });
+  // Adding the second column resizes the map and starts an ordinary revision.
+  // Capture the last displayed frame after that revision, before editor scrolling
+  // can hide the source card and release its renderer resources.
+  await expect
+    .poll(() => page.evaluate(() => window.aviadiloTest.inspect(0).radar?.time))
+    .toEqual(expect.any(String));
+  const time = await page.evaluate(
+    () => window.aviadiloTest.inspect(0).radar!.time,
+  );
+  expect(time).not.toBeNull();
+  const before = await page.evaluate(
+    () =>
+      window.aviadiloTest
+        .stats()
+        .calls.filter((call) => call.type === 'aviadilo/subscribe').length,
+  );
+  const editor = page.locator('aviadilo-map-editor');
+  await editor.getByText('Live inspection', { exact: true }).click();
+  const inspection = editor.getByLabel('Live inspection', { exact: true });
+  await expect(inspection).toContainText(
+    'Reduced motion is enabled: saved particle mode uses arrows.',
+  );
+  await expect(inspection.locator('time').first()).toHaveAttribute(
+    'datetime',
+    time!,
+  );
+  await expect(
+    inspection.getByRole('figure', {
+      name: 'RainViewer Universal Blue reflectivity in dBZ',
+    }),
+  ).toBeVisible();
+  await expect(inspection.locator('input, select, button')).toHaveCount(0);
+  await editor.getByText('Live inspection', { exact: true }).click();
+  expect(
+    await page.evaluate(
+      () =>
+        window.aviadiloTest
+          .stats()
+          .calls.filter((call) => call.type === 'aviadilo/subscribe').length,
+    ),
+  ).toBe(before);
+  await page.evaluate(() => {
+    (document.querySelector('aviadilo-map') as HTMLElement).style.display =
+      'none';
+  });
+  await editor.getByText('Live inspection', { exact: true }).click();
+  await expect(inspection).toContainText(
+    'Card is not visible; data collection is paused.',
+  );
+  await expect(inspection.locator('time').first()).toHaveAttribute(
+    'datetime',
+    time!,
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.aviadiloTest.stats().subscriptions))
+    .toBe(0);
+  await page.evaluate(() => window.aviadiloTest.detach(0));
+  await expect(inspection).toContainText(
+    'No matching mounted card is available',
+  );
+});
+
+test('short list-only cards keep failure details readable without changing closed height', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await runtime(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => {
+    window.aviadiloTest.stopFeed();
+    window.aviadiloTest.detach(0);
+    window.aviadiloTest.config(0, {
+      title: '',
+      map: { layout: 'list', show_recenter: false },
+      layers: { aircraft: true, radar: false, wind: false, people: false },
+    });
+    window.aviadiloTest.unavailable(true);
+    window.aviadiloTest.attach(0);
+  });
+  await expect(page.locator('aviadilo-map .map')).toBeHidden();
+  await page.clock.runFor(1000);
+  await page.clock.fastForward(16000);
+  const card = page.locator('aviadilo-map');
+  const indicator = card.getByRole('button', {
+    name: 'Map data needs attention',
+  });
+  await expect(indicator).toBeVisible();
+  const before = await card.boundingBox();
+  expect(before!.height).toBeLessThan(240);
+  await indicator.click();
+  const dialog = card.getByRole('dialog', { name: 'Map data status' });
+  await expect(dialog).toBeVisible();
+  const box = await dialog.boundingBox();
+  expect(box!.height).toBeGreaterThan(150);
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(844);
+  await expect(dialog).toContainText('Aircraft · configuration required');
+  await expect(dialog).toContainText('Devices & services');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(indicator).toBeFocused();
+  expect((await card.boundingBox())!.height).toBe(before!.height);
 });

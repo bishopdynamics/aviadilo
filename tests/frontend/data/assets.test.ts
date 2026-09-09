@@ -519,6 +519,27 @@ describe('shared bounded decoded resources', () => {
     ha.fetch.mockImplementation(async () => pngResponse());
     return { ha, client, decoded: new DecodedAssets(client) };
   }
+  it('carries stale response metadata across shared decoded leases without extra requests', async () => {
+    const { ha, client, decoded } = await cache();
+    ha.fetch.mockImplementation(async () =>
+      pngResponse(256, 'public,max-age=3600', { 'X-Aviadilo-Cache': 'stale' }),
+    );
+    const signal = new AbortController().signal;
+    const a = await decoded.acquire(need, signal);
+    const b = await decoded.acquire(need, signal);
+    expect(a.stale).toBe(true);
+    expect(b.stale).toBe(true);
+    expect(ha.fetch).toHaveBeenCalledOnce();
+    a.release();
+    b.release();
+    decoded.clear();
+    ha.fetch.mockImplementation(async () => pngResponse());
+    const current = await decoded.acquire(need, signal);
+    expect(current.stale).toBe(false);
+    current.release();
+    decoded.dispose();
+    client.dispose();
+  });
   it('bounds waiting owners before HA metadata exists and cancels their admission', async () => {
     const ha = new FakeHa(),
       client = new AssetClient(ha),
