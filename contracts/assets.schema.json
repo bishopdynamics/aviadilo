@@ -95,7 +95,7 @@
         },
         "entity_id": {
           "type": "string",
-          "pattern": "^device_tracker\\.[a-z0-9_]+(?![\\s\\S])",
+          "pattern": "^(?:person|device_tracker)\\.[a-z0-9_]+(?![\\s\\S])",
           "maxLength": 255
         },
         "picture_key": {

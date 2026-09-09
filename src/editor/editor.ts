@@ -25,6 +25,7 @@ import {
   storedDistance,
   readPath,
   entitySuggestions,
+  peopleSuggestions,
   type ConfigPath,
 } from './ha-controls';
 interface FieldSchema {
@@ -357,10 +358,7 @@ export class AviadiloEditor extends LitElement {
                     : key === 'trackers'
                       ? trackerControls(
                           draft.people!.trackers!,
-                          entitySuggestions(
-                            this.hass?.states,
-                            'device_tracker',
-                          ),
+                          peopleSuggestions(this.hass?.states),
                           this.edit,
                         )
                       : this.field([panel, key], spec),

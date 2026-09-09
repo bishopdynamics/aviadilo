@@ -50,3 +50,13 @@ export function entitySuggestions(
     .filter((id) => id.startsWith(`${domain}.`))
     .sort();
 }
+
+/** HA persons choose their associated tracker; explicit trackers remain available. */
+export function peopleSuggestions(
+  states: Record<string, unknown> | undefined,
+): string[] {
+  return [
+    ...entitySuggestions(states, 'person'),
+    ...entitySuggestions(states, 'device_tracker'),
+  ];
+}

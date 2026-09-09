@@ -28,7 +28,7 @@ MAX_BYTES = 2 * 1024 * 1024
 MAX_COUNTER = 999999999999999
 ENTRY = r"[A-Za-z0-9_-]{1,128}"
 GENERATION = r"[a-f0-9]{32}:(0|[1-9][0-9]{0,14})"
-ENTITY = r"device_tracker\.[a-z0-9_]{1,240}"
+ENTITY = r"(?:device_tracker\.[a-z0-9_]{1,240}|person\.[a-z0-9_]{1,248})"
 PICTURE_KEY = r"[a-f0-9]{64}"
 ERRORS = {
     "invalid_request": (400, "Invalid asset request"),

@@ -1424,5 +1424,149 @@
         "types": [7]
       }
     }
+  },
+  {
+    "name": "v1 people entity 'device_tracker.synthetic'",
+    "schema": "card-config-v1",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "type": "custom:aviadilo-map",
+      "people": {
+        "trackers": [
+          {
+            "entity_id": "device_tracker.synthetic"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "v1 people entity 'person.synthetic'",
+    "schema": "card-config-v1",
+    "valid": false,
+    "value": {
+      "schema_version": 1,
+      "type": "custom:aviadilo-map",
+      "people": {
+        "trackers": [
+          {
+            "entity_id": "person.synthetic"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "v1 people entity 'sensor.synthetic'",
+    "schema": "card-config-v1",
+    "valid": false,
+    "value": {
+      "schema_version": 1,
+      "type": "custom:aviadilo-map",
+      "people": {
+        "trackers": [
+          {
+            "entity_id": "sensor.synthetic"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "v1 people entity 'person.'",
+    "schema": "card-config-v1",
+    "valid": false,
+    "value": {
+      "schema_version": 1,
+      "type": "custom:aviadilo-map",
+      "people": {
+        "trackers": [
+          {
+            "entity_id": "person."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "v2 people entity 'device_tracker.synthetic'",
+    "schema": "card-config",
+    "valid": true,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "people": {
+        "trackers": [
+          {
+            "entity_id": "device_tracker.synthetic"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "v2 people entity 'person.synthetic'",
+    "schema": "card-config",
+    "valid": true,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "people": {
+        "trackers": [
+          {
+            "entity_id": "person.synthetic"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "v2 people entity 'sensor.synthetic'",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "people": {
+        "trackers": [
+          {
+            "entity_id": "sensor.synthetic"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "v2 people entity 'person.'",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "people": {
+        "trackers": [
+          {
+            "entity_id": "person."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "v2 people entity 'person.synthetic\\n'",
+    "schema": "card-config",
+    "valid": false,
+    "value": {
+      "schema_version": 2,
+      "type": "custom:aviadilo-map",
+      "people": {
+        "trackers": [
+          {
+            "entity_id": "person.synthetic\n"
+          }
+        ]
+      }
+    }
   }
 ]

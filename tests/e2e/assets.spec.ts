@@ -99,66 +99,71 @@ test('live, preview and raw picker share transport and assets; edits preserve vi
     page.getByText('Synthetic · offline preview', { exact: true }),
   ).toHaveCount(0);
 });
-test('clear releases old decoded resources, failed assets stay honest, photos are private and initials survive failures', async ({
-  page,
-}) => {
-  await page.goto('/runtime.html');
-  await expect(
-    page.locator('aviadilo-map .leaflet-tile img').first(),
-  ).toBeVisible();
-  await page.evaluate(() => {
-    window.aviadiloTest.config(0, {
-      people: {
-        trackers: [{ entity_id: 'device_tracker.synthetic', show_photo: true }],
-      },
+for (const [entityId, initials] of [
+  ['device_tracker.synthetic', 'AL'],
+  ['person.synthetic', 'CA'],
+])
+  test(`clear releases decoded resources and ${entityId} photos stay private through failures`, async ({
+    page,
+  }) => {
+    await page.goto('/runtime.html');
+    await expect(
+      page.locator('aviadilo-map .leaflet-tile img').first(),
+    ).toBeVisible();
+    await page.evaluate((entityId) => {
+      window.aviadiloTest.config(0, {
+        schema_version: 2,
+        people: {
+          trackers: [{ entity_id: entityId, show_photo: true }],
+        },
+      });
+      window.aviadiloTest.photo(
+        entityId,
+        'https://photos.aviadilo.invalid/alex?private=secret',
+      );
+    }, entityId);
+    await expect(page.locator('.person-marker img')).toHaveCount(1);
+    expect(
+      await page.locator('.person-marker img').getAttribute('src'),
+    ).toMatch(/^blob:/);
+    expect(
+      await page.evaluate(
+        () =>
+          window.aviadiloTest
+            .stats()
+            .assets.filter((path) => path.includes('/photo?')).length,
+      ),
+    ).toBeGreaterThan(0);
+    await page.evaluate(() => {
+      window.aviadiloTest.assets(0, true);
+      window.aviadiloTest.clearAssets();
     });
-    window.aviadiloTest.photo(
-      'device_tracker.synthetic',
-      'https://photos.aviadilo.invalid/alex?private=secret',
+    await expect(page.locator('.person-marker')).toHaveText(initials);
+    await expect(page.locator('.person-marker img')).toHaveCount(0);
+    await page.locator('.person-marker').click();
+    await expect(page.locator('.leaflet-popup')).toContainText(
+      'Asset source is unavailable',
     );
+    expect(await page.locator('aviadilo-map').innerHTML()).not.toContain(
+      'private=secret',
+    );
+    await page.evaluate(() => {
+      window.aviadiloTest.assets();
+      window.aviadiloTest.clearAssets();
+    });
+    await expect(
+      page.locator('aviadilo-map .leaflet-tile img').first(),
+    ).toBeVisible();
+    await page.evaluate(() => window.aviadiloTest.detach(0));
+    await expect
+      .poll(() =>
+        page.evaluate(() => window.aviadiloTest.stats().assetSubscriptions),
+      )
+      .toBe(0);
+    await expect
+      .poll(() => page.evaluate(() => window.aviadiloTest.stats().assetActive))
+      .toBe(0);
   });
-  await expect(page.locator('.person-marker img')).toHaveCount(1);
-  expect(await page.locator('.person-marker img').getAttribute('src')).toMatch(
-    /^blob:/,
-  );
-  expect(
-    await page.evaluate(
-      () =>
-        window.aviadiloTest
-          .stats()
-          .assets.filter((path) => path.includes('/photo?')).length,
-    ),
-  ).toBeGreaterThan(0);
-  await page.evaluate(() => {
-    window.aviadiloTest.assets(0, true);
-    window.aviadiloTest.clearAssets();
-  });
-  await expect(page.locator('.person-marker')).toHaveText('AL');
-  await expect(page.locator('.person-marker img')).toHaveCount(0);
-  await page.locator('.person-marker').click();
-  await expect(page.locator('.leaflet-popup')).toContainText(
-    'Asset source is unavailable',
-  );
-  expect(await page.locator('aviadilo-map').innerHTML()).not.toContain(
-    'private=secret',
-  );
-  await page.evaluate(() => {
-    window.aviadiloTest.assets();
-    window.aviadiloTest.clearAssets();
-  });
-  await expect(
-    page.locator('aviadilo-map .leaflet-tile img').first(),
-  ).toBeVisible();
-  await page.evaluate(() => window.aviadiloTest.detach(0));
-  await expect
-    .poll(() =>
-      page.evaluate(() => window.aviadiloTest.stats().assetSubscriptions),
-    )
-    .toBe(0);
-  await expect
-    .poll(() => page.evaluate(() => window.aviadiloTest.stats().assetActive))
-    .toBe(0);
-});
 test('existing missing integration card recovers basemap on passive discovery without pan', async ({
   page,
 }) => {

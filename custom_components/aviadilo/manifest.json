@@ -1,20 +1,14 @@
 {
   "domain": "aviadilo",
   "name": "Aviadilo",
-  "codeowners": [
-    "@bishopdynamics"
-  ],
+  "codeowners": ["@bishopdynamics"],
   "config_flow": true,
-  "dependencies": [
-    "frontend",
-    "http",
-    "websocket_api"
-  ],
+  "dependencies": ["frontend", "http", "websocket_api"],
   "documentation": "https://github.com/bishopdynamics/aviadilo",
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/bishopdynamics/aviadilo/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "0.2.0-dev.5"
+  "version": "0.2.0-dev.6"
 }

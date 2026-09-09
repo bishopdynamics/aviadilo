@@ -1263,3 +1263,160 @@ test('graphical aircraft type checkboxes use friendly names and respect invalid 
     page.locator('aviadilo-map .aviadilo-aircraft-icon'),
   ).toHaveAttribute('data-aircraft-kind', 'helicopters');
 });
+
+test('person zone fallback keeps selected identity, truthful freshness, health and a stable manual view', async ({
+  page,
+}) => {
+  await runtime(page);
+  await page.evaluate(() => {
+    window.aviadiloTest.config(0, {
+      schema_version: 2,
+      layers: { aircraft: false, radar: false, wind: false, people: true },
+      people: {
+        trackers: [{ entity_id: 'person.zone_only' }],
+        accuracy_circles: true,
+      },
+    });
+  });
+  const card = page.locator('aviadilo-map');
+  await expect(card.locator('.person-marker')).toHaveCount(1);
+  await expect(card.locator('.person-marker')).toHaveText('JO');
+  await card.locator('.person-marker').click();
+  await expect(card.locator('.leaflet-popup-content')).toContainText(
+    'Jordan · synthetic zone person',
+  );
+  await expect(card.locator('.leaflet-popup-content')).toContainText(
+    'Zone location: Synthetic home · GPS age unknown',
+  );
+  expect(
+    await card.evaluate((element) => {
+      // The context pane also contains the reference marker and aircraft trail.
+      // Inspect only the people group; Leaflet circles expose getRadius().
+      const people = (
+        element as unknown as {
+          people: { group: import('leaflet').LayerGroup };
+        }
+      ).people;
+      return people.group.getLayers().filter((layer) => 'getRadius' in layer)
+        .length;
+    }),
+  ).toBe(0);
+  await expect(card.locator('.status-indicator')).toHaveCount(0);
+  await page.evaluate(() => window.aviadiloTest.move(0, 34.25, -117.85));
+  const before = await page.evaluate(
+    () => window.aviadiloTest.inspect(0).center,
+  );
+  await page.evaluate(async () => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    const hass = card.hass!;
+    card.hass = {
+      ...hass,
+      states: {
+        ...hass.states,
+        'zone.home': {
+          ...hass.states['zone.home'],
+          attributes: {
+            ...hass.states['zone.home'].attributes,
+            longitude: 139.76,
+          },
+        },
+      },
+    };
+    await card.updateComplete;
+  });
+  await expect(card.locator('.person-marker')).toHaveCount(0);
+  expect(
+    await page.evaluate(() => window.aviadiloTest.inspect(0).center),
+  ).toEqual(before);
+  await page.evaluate(async () => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    const hass = card.hass!;
+    card.hass = {
+      ...hass,
+      states: {
+        ...hass.states,
+        'zone.home': {
+          ...hass.states['zone.home'],
+          attributes: {
+            ...hass.states['zone.home'].attributes,
+            longitude: -117.72,
+          },
+        },
+      },
+    };
+    await card.updateComplete;
+  });
+  await expect(card.locator('.person-marker')).toHaveCount(1);
+  expect(
+    await page.evaluate(() => window.aviadiloTest.inspect(0).center),
+  ).toEqual(before);
+  expect(external).toEqual([]);
+});
+
+test('people editor prefers persons and saves an existing tracker row without losing preferences', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const editor = page.locator('aviadilo-map-editor');
+  await expect(editor.locator('#title')).toBeVisible();
+  await page.evaluate(() => {
+    const editor = document.querySelector(
+      'aviadilo-map-editor',
+    ) as import('../../src/editor/editor').AviadiloEditor;
+    editor.setConfig({
+      schema_version: 2,
+      type: 'custom:aviadilo-map',
+      people: {
+        trackers: [
+          {
+            entity_id: 'device_tracker.synthetic',
+            name: 'Custom person',
+            icon: 'mdi:account',
+            color: '#abcdef',
+            show_photo: true,
+          },
+        ],
+      },
+    });
+    editor.addEventListener('config-changed', (event) => {
+      editor.setAttribute(
+        'data-saved',
+        JSON.stringify((event as CustomEvent).detail.config),
+      );
+    });
+  });
+  await editor
+    .locator('summary')
+    .filter({ hasText: /^People$/ })
+    .click();
+  await expect(
+    editor.locator('#tracker-entities option').first(),
+  ).toHaveAttribute('value', 'person.synthetic');
+  const entity = editor.getByLabel('Person or device tracker entity', {
+    exact: true,
+  });
+  await entity.fill('person.synthetic');
+  await entity.press('Tab');
+  await expect(editor.getByRole('alert')).toHaveCount(0);
+  const saved = JSON.parse((await editor.getAttribute('data-saved'))!);
+  expect(saved.people.trackers).toEqual([
+    {
+      entity_id: 'person.synthetic',
+      name: 'Custom person',
+      icon: 'mdi:account',
+      color: '#abcdef',
+      show_photo: true,
+    },
+  ]);
+  await page.evaluate((config) => {
+    const editor = document.querySelector(
+      'aviadilo-map-editor',
+    ) as import('../../src/editor/editor').AviadiloEditor;
+    editor.setConfig(config);
+  }, saved);
+  await expect(entity).toHaveValue('person.synthetic');
+  await entity.fill('sensor.synthetic');
+  await entity.press('Tab');
+  await expect(editor.getByRole('alert')).toBeVisible();
+  expect(JSON.parse((await editor.getAttribute('data-saved'))!)).toEqual(saved);
+});

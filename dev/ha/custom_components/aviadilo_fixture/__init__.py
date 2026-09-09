@@ -255,6 +255,38 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
                 ),
             },
         )
+    # Additional unselected entities preserve the original tracker acceptance counts.
+    hass.states.async_set(
+        "person.synthetic",
+        "home",
+        {
+            "latitude": 34.12,
+            "longitude": -117.71,
+            "friendly_name": "Casey · SYNTHETIC person",
+            "source": "device_tracker.synthetic_0",
+            "gps_accuracy": 75,
+            "entity_picture": "https://photos.aviadilo.invalid/avatar.png?fixture=person",
+        },
+    )
+    hass.states.async_set(
+        "zone.synthetic_person",
+        "0",
+        {
+            "latitude": 34.1,
+            "longitude": -117.72,
+            "friendly_name": "Synthetic person zone",
+            "passive": False,
+        },
+    )
+    hass.states.async_set(
+        "person.zone_only",
+        "Synthetic person zone",
+        {
+            "friendly_name": "Jordan · SYNTHETIC zone person",
+            "in_zones": ["zone.synthetic_person"],
+            "entity_picture": "/local/aviadilo-fixture-avatar.png",
+        },
+    )
     # First-party resource is written only into this isolated dev HA instance.
     from pathlib import Path
 

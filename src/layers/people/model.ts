@@ -7,6 +7,44 @@ import {
   type Point,
 } from '../../map/geo';
 export type PeopleConfig = NonNullable<CardConfig['people']>;
+export type PeopleLocation = Point &
+  (
+    | { locationKind: 'coordinates' }
+    | {
+        locationKind: 'zone';
+        zoneId: string;
+        zoneName: string;
+      }
+  );
+
+/** Resolve only the selected entity and its explicitly reported active zones. */
+export function resolvePeopleLocation(
+  entityId: string,
+  hass: HomeAssistant | undefined,
+): PeopleLocation | null {
+  const entity = hass?.states[entityId];
+  const coordinates = entityPoint(entity);
+  if (coordinates) return { ...coordinates, locationKind: 'coordinates' };
+  const zones = entity?.attributes.in_zones;
+  if (!entityId.startsWith('person.') || !Array.isArray(zones)) return null;
+  for (const zoneId of zones) {
+    if (typeof zoneId !== 'string' || !zoneId.startsWith('zone.')) continue;
+    const zone = hass?.states[zoneId];
+    if (!zone || zone.attributes.passive) continue;
+    const position = entityPoint(zone);
+    if (position)
+      return {
+        ...position,
+        locationKind: 'zone',
+        zoneId,
+        zoneName:
+          typeof zone.attributes.friendly_name === 'string'
+            ? zone.attributes.friendly_name
+            : zoneId,
+      };
+  }
+  return null;
+}
 export interface PersonPoint extends Point {
   entityId: string;
   name: string;
@@ -17,6 +55,9 @@ export interface PersonPoint extends Point {
   stale: boolean;
   timestamp: string | null;
   timestampKind: 'position' | 'updated' | 'unknown';
+  locationKind: PeopleLocation['locationKind'];
+  zoneId?: string;
+  zoneName?: string;
 }
 export interface PeopleResult {
   points: PersonPoint[];
@@ -37,7 +78,7 @@ export function selectPeople(
   };
   for (const tracker of config.trackers ?? []) {
     const entity = hass?.states[tracker.entity_id];
-    const position = entityPoint(entity);
+    const position = resolvePeopleLocation(tracker.entity_id, hass);
     if (!entity || !position || result.anchorMissing) {
       result.excluded++;
       continue;
@@ -51,7 +92,9 @@ export function selectPeople(
       Date.parse(value) <= now
         ? value
         : null;
-    const positionTime = validTime(explicit);
+    // A zone point is not a GPS observation, even if an old GPS time remains.
+    const positionTime =
+      position.locationKind === 'coordinates' ? validTime(explicit) : null;
     const timestamp = positionTime ?? validTime(entity.last_updated);
     const timestampKind = positionTime
       ? 'position'
@@ -92,6 +135,7 @@ export function selectPeople(
           ? entity.attributes.entity_picture
           : undefined,
       accuracyM:
+        position.locationKind === 'coordinates' &&
         typeof accuracy === 'number' &&
         Number.isFinite(accuracy) &&
         accuracy >= 0

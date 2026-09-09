@@ -6,6 +6,8 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 
 ## Project-specific rules
 
+- People follow-up 2026-09-09: prefer Home Assistant `person` entities for household members, while retaining direct `device_tracker` support and existing selections. Match the stock map's person coordinates/active-zone fallback without reimplementing tracker priority or changing household links. See docs/spec/FEATURE_SPEC_person_locations.md. User diagnostic downloads belong in ignored root `tmp/`; never publish their contents.
+
 - Kiosk permission regression (2026-09-08): asset acceptance must include explicit non-owner regular and read-only HA users. HA automatically makes the first test user an owner; owner-only success is insufficient. Use Aviadilo's authenticated metadata subscription, without changing HA's global event allowlist or granting kiosk administrator access.
 
 - Release workflow preference explicitly endorsed by the user on 2026-09-08: verify changes, publish a prerelease for their hands-on testing, incorporate feedback, then deliver a normal release. Use this as the established Aviadilo workflow; the user considers the prerelease testing pattern the right approach.
@@ -27,7 +29,7 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 - Design around independent aircraft, radar, wind, and household-location layers on one map. The shared map controls the viewport; individual layers must not recenter it independently.
 - The user currently uses HACS `weather-radar-card` and values its wind markers/animations. Include optional static and animated wind display in the revised design.
 - Target geography is California, North America. Weather source selection approved after the Claremont spike (2026-09-06): radar supports RainViewer (default), NOAA MRMS, and NOAA KSOX; wind uses DWD ICON global only. Other researched weather sources are outside the selected implementation scope.
-- All of the user's household locations use `device_tracker` entities. Support these directly; do not require conversion to `person` entities.
+- Direct `device_tracker` support remains required for existing configurations. The later person-entity follow-up above extends the original tracker-only selection.
 - A configurable people-radius filter is mandatory. Apply it before rendering and automatic fitting so distant travellers cannot force the map to zoom out.
 - The user approved `docs/spec/ROOT_SPEC.md` in full on 2026-09-06, including aircraft providers/defaults, one shared integration area, cache budgets, transport, HACS packaging, display defaults, and deferrals.
 - Implementation began 2026-09-06 with approved slice 1 bootstrap work; do not reopen accepted decisions. First-run setup is complete. Follow the serial slice handoff cadence and use `docs/development.md` for toolchains and verification.

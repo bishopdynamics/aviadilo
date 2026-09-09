@@ -678,37 +678,40 @@ describe('shared bounded decoded resources', () => {
     client.dispose();
     expect(revoke).toHaveBeenCalledTimes(create.mock.calls.length);
   });
-  it('external photos reauthorize on revisit, validate current entity and have a 128px decode bound', async () => {
-    const { ha, client, decoded } = await cache();
-    width = 128;
-    ha.fetch.mockImplementation(async () => pngResponse(128, 'no-store'));
-    const signal = new AbortController().signal;
-    const photo = {
-      kind: 'photo' as const,
-      entity_id: 'device_tracker.synthetic',
-      picture_key: pictureKey('https://example.invalid/photo'),
-    };
-    let valid = true;
-    const a = await decoded.acquire(photo, signal, () => valid);
-    expect(decoded.diagnostics().bytes).toBe(128 * 128 * 4);
-    a.release();
-    expect(decoded.diagnostics().bytes).toBe(0);
-    const b = await decoded.acquire(photo, signal, () => valid);
-    expect(ha.fetch).toHaveBeenCalledTimes(2);
-    valid = false;
-    expect(b.current()).toBe(false);
-    b.release();
-    await expect(
-      decoded.acquire(photo, signal, () => valid),
-    ).rejects.toMatchObject({ name: 'AbortError' });
-    width = 256;
-    ha.fetch.mockImplementation(async () => pngResponse(256));
-    await expect(decoded.acquire(photo, signal)).rejects.toMatchObject({
-      code: 'upstream_error',
-    });
-    decoded.dispose();
-    client.dispose();
-  });
+  it.each(['device_tracker.synthetic', 'person.synthetic'])(
+    'external %s photos reauthorize on revisit, validate current entity and have a 128px decode bound',
+    async (entityId) => {
+      const { ha, client, decoded } = await cache();
+      width = 128;
+      ha.fetch.mockImplementation(async () => pngResponse(128, 'no-store'));
+      const signal = new AbortController().signal;
+      const photo = {
+        kind: 'photo' as const,
+        entity_id: entityId,
+        picture_key: pictureKey('https://example.invalid/photo'),
+      };
+      let valid = true;
+      const a = await decoded.acquire(photo, signal, () => valid);
+      expect(decoded.diagnostics().bytes).toBe(128 * 128 * 4);
+      a.release();
+      expect(decoded.diagnostics().bytes).toBe(0);
+      const b = await decoded.acquire(photo, signal, () => valid);
+      expect(ha.fetch).toHaveBeenCalledTimes(2);
+      valid = false;
+      expect(b.current()).toBe(false);
+      b.release();
+      await expect(
+        decoded.acquire(photo, signal, () => valid),
+      ).rejects.toMatchObject({ name: 'AbortError' });
+      width = 256;
+      ha.fetch.mockImplementation(async () => pngResponse(256));
+      await expect(decoded.acquire(photo, signal)).rejects.toMatchObject({
+        code: 'upstream_error',
+      });
+      decoded.dispose();
+      client.dispose();
+    },
+  );
   it('aborts late decode and oversized bodies without publishing or retaining buffers', async () => {
     const { ha, client, decoded } = await cache();
     const pending = deferred<void>();

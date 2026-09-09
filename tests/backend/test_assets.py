@@ -115,9 +115,11 @@ def request(
     return req
 
 
-def photo_request() -> web.Request:
+def photo_request(entity_id: str = "device_tracker.synthetic") -> web.Request:
     key = hashlib.sha256(b"https://photo.invalid/avatar").hexdigest()
-    return request(PATHS[1]["path"].replace("0" * 64, key))
+    return request(
+        PATHS[1]["path"].replace("0" * 64, key).replace("device_tracker.synthetic", entity_id)
+    )
 
 
 async def test_ha_views_enforce_entry_generation_and_auth_before_backend() -> None:
@@ -161,14 +163,19 @@ async def test_success_is_png_with_generation_safe_referer_and_validators() -> N
     ).status == 200
 
 
-async def test_photo_permission_and_current_key_are_rechecked_on_every_hit() -> None:
+@pytest.mark.parametrize("entity_id", ["device_tracker.synthetic", "person.synthetic"])
+async def test_photo_permission_and_current_key_are_rechecked_on_every_hit(entity_id: str) -> None:
     backend = Backend()
     backend.payload = png(128, 64)
     gateway = AssetGateway(lambda: backend)
-    req = photo_request()
+    req = photo_request(entity_id)
     result = await PhotoView(gateway).get(req)
     assert result.status == 200
     assert result.headers["Cache-Control"] == "no-store"
+    from homeassistant.auth.permissions.const import POLICY_READ
+
+    req["hass_user"].permissions.check_entity.assert_called_with(entity_id, POLICY_READ)
+    assert backend.calls[0][0].entity_id == entity_id
     req["hass_user"].permissions.check_entity.return_value = False
     assert (await gateway.get(req)).status == 403
     req["hass_user"].permissions.check_entity.return_value = True
@@ -181,7 +188,8 @@ async def test_photo_permission_and_current_key_are_rechecked_on_every_hit() -> 
     assert len(backend.calls) == 1
 
 
-async def test_late_generation_and_permission_changes_prevent_publication() -> None:
+@pytest.mark.parametrize("entity_id", ["device_tracker.synthetic", "person.synthetic"])
+async def test_late_generation_and_permission_changes_prevent_publication(entity_id: str) -> None:
     backend = Backend()
     backend.wait = asyncio.Event()
     gateway = AssetGateway(lambda: backend)
@@ -194,7 +202,7 @@ async def test_late_generation_and_permission_changes_prevent_publication() -> N
     assert result.headers[GENERATION_HEADER].endswith(":1")
     backend.generation.counter = 0
     backend.wait.clear()
-    req = photo_request()
+    req = photo_request(entity_id)
     pending = asyncio.create_task(gateway.get(req))
     await asyncio.sleep(0)
     req["hass_user"].permissions.check_entity.return_value = False
@@ -331,6 +339,30 @@ async def test_real_ha_http_auth_websocket_info_and_generation_event(
         assert response.status == 200
         assert await response.read() == backend.payload
         assert response.headers[GENERATION_HEADER] == GENERATION
+        picture = "https://photo.invalid/avatar"
+        hass.states.async_set(
+            "person.synthetic",
+            "home",
+            {
+                "entity_picture": picture,
+                "source": "device_tracker.unreadable",
+            },
+        )
+        key = hashlib.sha256(picture.encode()).hexdigest()
+        person_path = (
+            PATHS[1]["path"]
+            .replace("device_tracker.synthetic", "person.synthetic")
+            .replace("0" * 64, key)
+        )
+        backend.payload = png(128, 128)
+        photo = await client.get(person_path, headers=headers)
+        assert photo.status == 200
+        assert photo.headers["Cache-Control"] == "no-store"
+        assert backend.calls[-1][0].entity_id == "person.synthetic"
+        mismatched = await client.get(person_path.replace(key, "0" * 64), headers=headers)
+        assert mismatched.status == 409
+        assert (await mismatched.json())["code"] == "picture_changed"
+        backend.payload = png()
         invalid = await client.get(PATHS[0]["path"] + "&schema_version=1", headers=headers)
         assert invalid.status == 400
         validate_asset(await invalid.json())
@@ -647,3 +679,21 @@ async def test_asset_subscription_user_total_limits_and_idempotent_disconnect(
     assert not gateway.subscription_users and not gateway.subscription_connections
     assert ASSETS_CHANGED not in hass.bus.async_listeners()
     assert not backend.calls
+
+
+async def test_denied_person_never_reads_its_source_or_fetches_a_photo() -> None:
+    from homeassistant.auth.permissions.const import POLICY_READ
+
+    backend = Backend()
+    gateway = AssetGateway(lambda: backend)
+    req = photo_request("person.synthetic")
+    req["hass_user"].permissions.check_entity.side_effect = (
+        lambda entity, policy: entity == "device_tracker.synthetic" and policy == POLICY_READ
+    )
+    result = await gateway.get(req)
+    assert result.status == 403
+    req["hass_user"].permissions.check_entity.assert_called_once_with(
+        "person.synthetic", POLICY_READ
+    )
+    cast(Any, req.app[KEY_HASS]).states.get.assert_not_called()
+    assert backend.calls == []

@@ -252,7 +252,7 @@
             "properties": {
               "entity_id": {
                 "type": "string",
-                "pattern": "^device_tracker\\.[a-z0-9_]+$",
+                "pattern": "^(?:person|device_tracker)\\.[a-z0-9_]+(?![\\s\\S])",
                 "maxLength": 256
               },
               "name": {

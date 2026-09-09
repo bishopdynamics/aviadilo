@@ -3,6 +3,63 @@ import { readFile } from 'node:fs/promises';
 import { normalizeConfig } from '../../../src/config/defaults';
 const base = { schema_version: 1, type: 'custom:aviadilo-map' };
 
+it('accepts persons only in v2 without converting saved trackers or losing row preferences', () => {
+  const people = {
+    trackers: [
+      {
+        entity_id: 'person.alex',
+        name: 'Alias',
+        icon: 'mdi:account',
+        color: 'red',
+        show_photo: true,
+        future: 0,
+      },
+      { entity_id: 'device_tracker.phone' },
+    ],
+  };
+  expect(() => normalizeConfig({ ...base, people })).toThrow();
+  const input = {
+    ...base,
+    schema_version: 2,
+    people,
+    map: { follow_theme: false },
+  };
+  const before = structuredClone(input);
+  const saved = normalizeConfig(input);
+  expect(saved.people!.trackers).toEqual(people.trackers);
+  expect(saved.map!.theme).toBe('dark');
+  expect(normalizeConfig(JSON.parse(JSON.stringify(saved)))).toEqual(saved);
+  expect(input).toEqual(before);
+});
+
+it('keeps invalid v2 people drafts and mixed legacy fields gated', () => {
+  const person = { trackers: [{ entity_id: 'person.alex' }] };
+  for (const people of [
+    null,
+    [],
+    { trackers: null },
+    { trackers: [null] },
+    { trackers: [{ entity_id: 'zone.home' }] },
+    { trackers: [{ entity_id: 'person.' }] },
+    { trackers: [{ entity_id: 'person.alex', show_photo: 'yes' }] },
+    { ...person, radius_m: -1 },
+    { ...person, show_stale: 'yes' },
+  ])
+    expect(() =>
+      normalizeConfig({ ...base, schema_version: 2, people }),
+    ).toThrow();
+  for (const patch of [
+    { map: { follow_theme: 'no' } },
+    { wind: { particles: 'yes' } },
+    { wind: { static_style: 'invalid' } },
+    { radar: { show_legend: 'no' } },
+    { freshness: { show_source_status: null } },
+  ])
+    expect(() =>
+      normalizeConfig({ ...base, schema_version: 2, people: person, ...patch }),
+    ).toThrow();
+});
+
 describe('card v1 to v2 migration', () => {
   it('freezes the original v1 schema verbatim', async () => {
     const { createHash } = await import('node:crypto');

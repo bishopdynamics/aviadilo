@@ -24,7 +24,7 @@ const labels: Record<string, string> = {
   selected_trail_s: 'Selected aircraft trail (seconds)',
   max_position_age_s: 'Maximum position age (seconds)',
   stale_retention_s: 'Stale retention (seconds)',
-  show_stale: 'Show stale or unavailable trackers',
+  show_stale: 'Show stale or unavailable people and trackers',
   show_photo: 'Show entity photo',
   animation_speed: 'Animation speed',
   trail_length_s: 'Particle trail (seconds)',

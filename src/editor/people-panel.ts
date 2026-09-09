@@ -7,19 +7,23 @@ export function trackerControls(
   edit: (path: ConfigPath, value: unknown) => void,
 ) {
   return html`<fieldset>
-    <legend>Selected device trackers</legend>
+    <legend>Selected people and device trackers</legend>
+    <p>
+      Prefer a person entity to use Home Assistant’s associated trackers. Direct
+      device trackers are also supported.
+    </p>
     <datalist id="tracker-entities">
       ${suggestions.map((id) => html`<option value=${id}></option>`)}
     </datalist>
     ${trackers.map(
       (tracker, index) =>
         html`<fieldset>
-          <legend>Tracker ${index + 1}</legend>
+          <legend>Person or tracker ${index + 1}</legend>
           ${(['entity_id', 'name', 'icon', 'color'] as const).map(
             (key) =>
               html`<label
                 >${{
-                  entity_id: 'Device tracker entity',
+                  entity_id: 'Person or device tracker entity',
                   name: 'Name override',
                   icon: 'Icon (mdi:account)',
                   color: 'Colour',
@@ -50,7 +54,7 @@ export function trackerControls(
                 trackers.filter((_, i) => i !== index),
               )}
           >
-            Remove tracker ${index + 1}
+            Remove person or tracker ${index + 1}
           </button>
         </fieldset>`,
     )}
@@ -65,12 +69,12 @@ export function trackerControls(
               entity_id:
                 suggestions.find(
                   (id) => !trackers.some((t) => t.entity_id === id),
-                ) ?? 'device_tracker.example',
+                ) ?? 'person.example',
             },
           ],
         )}
     >
-      Add tracker
+      Add person or tracker
     </button>
   </fieldset>`;
 }

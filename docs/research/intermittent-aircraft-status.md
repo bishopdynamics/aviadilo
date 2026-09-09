@@ -32,3 +32,7 @@ One request per provider over a synthetic ocean location, with no retries or hou
 Obtain Aviadilo's integration diagnostics while the warning is active, along with the selected provider and whether aircraft remain visible/moving, disappear, or the warning follows reopening the dashboard. The warning's time and any displayed Last success also help. No credentials or household coordinates are needed for this diagnosis.
 
 If existing diagnostics are insufficient, the next justified code change is bounded, sanitized failure categories/timestamps and product state in diagnostics, excluding URLs, response bodies, coordinates, aircraft identifiers and raw exception messages. That is a possible next step, not an implemented fix or a diagnosed cause.
+
+## Supplied diagnostic capture and person follow-up
+
+On 2026-09-09 the user supplied an HA 2026.9.1 / Aviadilo dev.5 diagnostic under ignored root tmp. Aggregate scheduler state shows adsb.fi current, zero failures/backoff and zero active viewers; no failure was recorded at capture. Raw diagnostic contents remain local and untracked. This does not establish the earlier aircraft incident's cause. The user independently identified a working stock-map person versus a failing direct device tracker; FEATURE_SPEC_person_locations.md addresses that concrete people-location discrepancy.

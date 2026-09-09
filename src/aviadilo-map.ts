@@ -35,7 +35,11 @@ import {
   type DataIssue,
   type LayerHealth,
 } from './map/status';
-import { selectPeople, type PeopleResult } from './layers/people/model';
+import {
+  resolvePeopleLocation,
+  selectPeople,
+  type PeopleResult,
+} from './layers/people/model';
 import { PeopleLayer } from './layers/people/layer';
 import { LAYER_PANES, type LayerName } from './layers/types';
 import './editor/editor';
@@ -1053,7 +1057,7 @@ export class AviadiloMap extends LitElement {
     if (map && this.sessionLayers.people) {
       const config = this.config.people!;
       const missing = config.trackers!.some(
-        (tracker) => !entityPoint(this.hass?.states[tracker.entity_id]),
+        (tracker) => !resolvePeopleLocation(tracker.entity_id, this.hass),
       );
       const people = selectPeople(
         { ...config, show_stale: true },
@@ -1083,10 +1087,10 @@ export class AviadiloMap extends LitElement {
         cause: this.peopleResult.anchorMissing
           ? 'People radius anchor is unavailable.'
           : missing
-            ? 'A configured tracker has no available location.'
-            : 'A tracker location is stale.',
+            ? 'A configured person or tracker has no available location.'
+            : 'A person or tracker location is stale.',
         recovery:
-          'Check the configured device trackers, radius anchor and freshness settings in Home Assistant and the card editor.',
+          'Check the configured people or device trackers, radius anchor and freshness settings in Home Assistant and the card editor.',
       });
     }
     return result;

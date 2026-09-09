@@ -7,6 +7,7 @@ it('keeps HA pictures first-party and sends only supported external addresses to
   const origin = 'https://ha.example';
   for (const value of [
     '/api/image_proxy/device_tracker.alex',
+    '/api/image_proxy/person.alex',
     '/local/avatar.png',
     'https://ha.example/photo?key=x',
   ])

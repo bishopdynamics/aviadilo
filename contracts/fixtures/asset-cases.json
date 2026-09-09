@@ -191,7 +191,7 @@
       "kind": "photo",
       "schema_version": 1,
       "generation": "0123456789abcdef0123456789abcdef:0",
-      "entity_id": "person.synthetic",
+      "entity_id": "sensor.synthetic",
       "picture_key": "0000000000000000000000000000000000000000000000000000000000000000"
     }
   },
@@ -555,6 +555,72 @@
     "value": {
       "id": 1,
       "type": "aviadilo/subscribe_assets"
+    }
+  },
+  {
+    "name": "person photo",
+    "valid": true,
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "person.synthetic",
+      "picture_key": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "name": "person photo maximal id",
+    "valid": true,
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "person.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "picture_key": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "name": "person photo excessive id",
+    "valid": false,
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "person.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "picture_key": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "name": "person photo newline",
+    "valid": false,
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "person.synthetic\n",
+      "picture_key": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "name": "person photo no object",
+    "valid": false,
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "person.",
+      "picture_key": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "name": "zone photo",
+    "valid": false,
+    "value": {
+      "kind": "photo",
+      "schema_version": 1,
+      "generation": "0123456789abcdef0123456789abcdef:0",
+      "entity_id": "zone.synthetic",
+      "picture_key": "0000000000000000000000000000000000000000000000000000000000000000"
     }
   }
 ]

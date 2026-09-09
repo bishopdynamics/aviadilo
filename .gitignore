@@ -53,3 +53,6 @@ src/config/validators.js
 # Offline browser acceptance artifacts (HA instance/auth remains outside repo)
 test-results/
 playwright-report/
+
+# Local diagnostic downloads and temporary user files
+/tmp/

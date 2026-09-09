@@ -4,6 +4,7 @@ import {
   displayDistance,
   storedDistance,
   entitySuggestions,
+  peopleSuggestions,
 } from '../../../src/editor/ha-controls';
 import { normalizeConfig } from '../../../src/config/defaults';
 const config = normalizeConfig({
@@ -16,6 +17,51 @@ const config = normalizeConfig({
   },
 });
 describe('editor edits', () => {
+  it('offers persons first and edits an existing tracker identity while retaining its preferences', () => {
+    expect(
+      peopleSuggestions({
+        'device_tracker.z': {},
+        'person.z': {},
+        'person.a': {},
+        'zone.a': {},
+        'device_tracker.a': {},
+      }),
+    ).toEqual(['person.a', 'person.z', 'device_tracker.a', 'device_tracker.z']);
+    const source = normalizeConfig({
+      ...config,
+      people: {
+        trackers: [
+          {
+            entity_id: 'device_tracker.test',
+            name: 'Custom',
+            icon: 'mdi:account',
+            color: '#abcdef',
+            show_photo: true,
+            future: { keep: true },
+          },
+        ],
+      },
+    });
+    const changed = editConfig(
+      source,
+      ['people', 'trackers', 0, 'entity_id'],
+      'person.test',
+    );
+    expect(changed.people!.trackers![0]).toEqual({
+      ...source.people!.trackers![0],
+      entity_id: 'person.test',
+    });
+    expect(normalizeConfig(JSON.parse(JSON.stringify(changed)))).toEqual(
+      changed,
+    );
+    expect(() =>
+      editConfig(
+        changed,
+        ['people', 'trackers', 0, 'entity_id'],
+        'sensor.test',
+      ),
+    ).toThrow();
+  });
   it('round trips future root/panel/tracker fields', () => {
     const next = editConfig(
       config,

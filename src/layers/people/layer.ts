@@ -182,6 +182,11 @@ export class PeopleLayer {
       const title = document.createElement('strong');
       title.textContent = person.name;
       details.append(title);
+      if (person.locationKind === 'zone') {
+        const location = document.createElement('p');
+        location.textContent = `Zone location: ${person.zoneName ?? person.zoneId} · GPS age unknown`;
+        details.append(location);
+      }
       const status = document.createElement('p');
       status.textContent = `${person.stale ? 'Stale / unavailable · ' : ''}${person.timestampKind === 'unknown' ? 'Position freshness unknown' : `${person.timestampKind === 'position' ? 'Position time' : 'Entity updated (GPS age unknown)'}: ${new Date(person.timestamp!).toLocaleString()}`}`;
       details.append(status, reason);

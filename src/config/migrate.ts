@@ -10,9 +10,15 @@ export function migrateConfig(input: unknown): CardConfig {
   if (version !== 1 && version !== 2)
     throw new ContractError('Unsupported Aviadilo schema version');
   const legacy = structuredClone(input) as Record<string, unknown>;
-  // The frozen reader checks legacy fields even in a mixed v2 object. The v2
-  // check below also validates explicit theme/mode/color before defaults merge.
-  validateContract('card-config-v1', { ...legacy, schema_version: 1 });
+  const frozenInput = { ...legacy, schema_version: 1 };
+  if (version === 2) {
+    // Current people settings have no consumed legacy keys and now allow persons.
+    // Validate the entire v2 draft first, then retain frozen validation of all
+    // other sections so malformed mixed legacy fields cannot be discarded.
+    validateContract('card-config', legacy);
+    delete (frozenInput as Record<string, unknown>).people;
+  }
+  validateContract('card-config-v1', frozenInput);
   const result = legacy as unknown as CardConfig;
   result.schema_version = 2;
   const map = result.map;

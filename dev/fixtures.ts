@@ -12,6 +12,28 @@ export function previewHass(tokyo = false): HomeAssistant {
           friendly_name: 'Synthetic home',
         },
       },
+      'person.synthetic': {
+        state: 'home',
+        last_updated,
+        attributes: {
+          latitude: 34.12,
+          longitude: -117.71,
+          friendly_name: 'Casey · synthetic person',
+          entity_picture:
+            'https://photos.aviadilo.invalid/avatar.png?fixture=person',
+          source: 'device_tracker.synthetic',
+          gps_accuracy: 75,
+        },
+      },
+      'person.zone_only': {
+        state: 'home',
+        last_updated,
+        attributes: {
+          friendly_name: 'Jordan · synthetic zone person',
+          in_zones: ['zone.home'],
+          entity_picture: '/local/aviadilo-fixture-avatar.png',
+        },
+      },
       'device_tracker.synthetic': {
         state: 'home',
         last_updated,
