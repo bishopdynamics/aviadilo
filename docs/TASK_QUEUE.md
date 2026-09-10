@@ -4,7 +4,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-1. [in-progress] Publish normal 0.2.0 after explicit user sign-off on 2026-09-09. Promote the exact dev.7 behavior, verify ordinary HACS fresh installs and updates from 0.1.0/dev.7, publish the immutable release and check its actual public ZIP/Latest metadata.
+No approved implementation tasks remain for the signed-off 0.2.0 release. New user intake in docs/TODO.md awaits its own review/spec; it is not part of this publication.
 
 ## Awaiting incident evidence
 
@@ -12,7 +12,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Completed
 
-- 2026-09-09 — User signed off the original [implementation](spec/ROOT_SPEC.md) and all kiosk/layout/permissions/reference/aircraft/person/marker-layout addenda through v0.2.0-dev.7. Both final user TODO items are marked done. Release delivery is tracked above.
+- 2026-09-09 — User signed off the original [implementation](spec/ROOT_SPEC.md) and all kiosk/layout/permissions/reference/aircraft/person/marker-layout addenda through v0.2.0-dev.7. Both final user TODO items were marked done in the release commit. Normal [v0.2.0](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.0) is published as GitHub Latest/HACS default; actual public ZIP and six default HACS install/update cases passed.
 - 2026-09-08 — HACS metadata/topics and normal-channel update repair verified and user-confirmed.
 - 2026-09-06 — Initial planning completed by approval of ROOT_SPEC.md.
 
