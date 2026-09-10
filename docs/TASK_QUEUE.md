@@ -4,7 +4,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-1. [in-progress] Implement [singleton marker priority and clearer connectors](spec/FEATURE_SPEC_marker_anchor_priority.md), requested2026-09-09. Reserve original singleton positions before fanout; thicker contrast-outlined connectors. Implementation and parent431/576/41 checks plus native three-role/theme/101-member acceptance passed. Publish0.2.1-dev.3 for testing.
+1. [in-progress, awaiting user assessment] [Singleton priority and clearer connectors](spec/FEATURE_SPEC_marker_anchor_priority.md) delivered as [v0.2.1-dev.3](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.3) from 2197808. Parent 431 frontend / 576 backend / 41 browser checks, native three-role/theme/grouping/101-member acceptance, all remote gates and actual public-ZIP HACS upgrade passed. Originally isolated in-bounds markers stay anchored; outlined leaders improve contrast. Stable 0.2.0 remains Latest.
 
 ## Awaiting user assessment
 

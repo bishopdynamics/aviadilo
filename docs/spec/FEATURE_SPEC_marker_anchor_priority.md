@@ -1,6 +1,6 @@
 # SPEC: Preserve singleton locations while spreading household icons
 
-- **Status:** implemented and verified — parent 431 frontend / 576 backend / 41 browser gates and native three-role acceptance passed; dev.3 publication in progress.
+- **Status:** implemented, verified and published as [v0.2.1-dev.3](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.3) from 2197808; awaiting user assessment.
 - **Parent:** [ROOT_SPEC.md](ROOT_SPEC.md); refines [household layout](FEATURE_SPEC_marker_layout.md).
 - **Baseline:** published 0.2.1-dev.2, including user-confirmed tile streaming and one-hour idle basemap retention.
 
@@ -60,6 +60,8 @@ None blocking. User supplied the behavior and visual direction; routine placemen
 No new technical features. Prior cache-hour assessment, aircraft-warning evidence and general weather-client remount questions remain separate.
 
 ## Change Log
+
+- 2026-09-09 — Published dev.3 from 2197808 after all local/native/remote checks. Public ZIP exactly matches the tested candidate; actual published-metadata/bytes HACS upgrade from dev.2 preserves settings/cache/dashboard. Stable 0.2.0 remains Latest. Screenshots after tile completion confirm clear leaders in both themes. User assessment follows.
 
 - 2026-09-09 — Implemented original-footprint singleton reservation, including grouped centroid controls and edge priority. Remaining placements keep reference-first/stable-ID order; no extra per-group representative reservation. Connectors use 3px dark strokes over 6px white casings, all casings first. Parent 431/576/41 gates and native admin/regular/read-only true-anchor, accuracy, photos, light/dark, keyboard/touch, click-through, grouping, capacity and cleanup checks pass. Publication follows.
 
