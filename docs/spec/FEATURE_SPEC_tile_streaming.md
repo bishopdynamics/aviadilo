@@ -1,6 +1,6 @@
 # SPEC: Reliable tile streaming and recent-view caching
 
-- **Status:** implemented and independently verified — parent427frontend/576backend/40browser gates pass; packaged native acceptance and prerelease delivery in progress. User approved the discussed plan on2026-09-09.
+- **Status:** implemented, verified and published as [v0.2.1-dev.1](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.1) from39f3565; awaiting household assessment before stable.
 - **Parent:** [ROOT_SPEC.md](ROOT_SPEC.md).
 - **Baseline:** signed-off normal 0.2.0, release commit 0b3a4d5; HA 2026.9.1 and Chromium 153.0.8010.12.
 
@@ -73,6 +73,8 @@ None blocking. The optional question about whether household kiosks share one lo
 - Existing aircraft-warning and general weather-client remount questions remain separate.
 
 ## Change Log
+
+- 2026-09-09 — Published v0.2.1-dev.1 from39f3565 after all remote gates. Public ZIP matches the exact final native-tested package; actual published-metadata/bytes HACS upgrade passed and normal 0.2.0 remains Latest. Parent427 frontend/576 backend/40 browser gates, final native three-role/shared-user/stream-failure/navigation/idle-clear/resource checks passed. No upstream pacing change. User assessment follows.
 
 - 2026-09-09 — Implementation complete with paired gateway/retry/retention tests and coherent0.2.1-dev.1 packaging. Parent full gates pass427frontend/576backend/40browser scenarios. Native baseline defects reproduced; repaired gateway, retry and navigation checks pass. Review also reproduced/fixed interrupted JSON error-stream cleanup and verified Retry-After in native Chromium. Final native multi-context/package/publication checks remain in progress.
 
