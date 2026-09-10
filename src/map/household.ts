@@ -11,6 +11,7 @@ import {
 import {
   LABEL_HEIGHT,
   LABEL_WIDTH,
+  originalSingletonIds,
   overlapGroups,
   spreadMembers,
   visibleMembers,
@@ -142,7 +143,12 @@ export class HouseholdLayer {
       width: 56,
       height: 56,
     }));
-    const layout = spreadMembers([...individuals, ...glyphs], size.x, size.y);
+    const layout = spreadMembers(
+      [...individuals, ...glyphs],
+      size.x,
+      size.y,
+      originalSingletonIds(members),
+    );
     const positions = new Map(
       layout.positions.map((position) => [position.id, position]),
     );
@@ -167,6 +173,7 @@ export class HouseholdLayer {
       );
     const placements = new Map<string, { point?: Point; host?: HTMLElement }>();
     this.connectors.clearLayers();
+    const endpoints: L.LatLng[][] = [];
     for (const member of individuals) {
       const display = positions.get(member.id);
       const host = this.slots.get(member.id);
@@ -175,21 +182,26 @@ export class HouseholdLayer {
         host,
       });
       if (display && Math.hypot(display.x - member.x, display.y - member.y) > 1)
-        L.polyline(
-          [
-            this.map.containerPointToLatLng([member.x, member.y]),
-            this.map.containerPointToLatLng([display.x, display.y]),
-          ],
-          {
-            pane: 'context',
-            color: '#718fa2',
-            weight: 1.5,
-            opacity: 0.85,
-            interactive: false,
-            className: 'household-connector',
-          },
-        ).addTo(this.connectors);
+        endpoints.push([
+          this.map.containerPointToLatLng([member.x, member.y]),
+          this.map.containerPointToLatLng([display.x, display.y]),
+        ]);
     }
+    // All casings precede all foregrounds so a crossing cannot erase a line.
+    for (const casing of [true, false])
+      for (const points of endpoints)
+        L.polyline(points, {
+          pane: 'context',
+          color: casing ? '#ffffff' : '#102131',
+          weight: casing ? 6 : 3,
+          opacity: 1,
+          lineCap: 'round',
+          lineJoin: 'round',
+          interactive: false,
+          className: casing
+            ? 'household-connector-casing'
+            : 'household-connector',
+        }).addTo(this.connectors);
     const visible = new Set(individuals.map((p) => p.id));
     this.people.update(
       people.filter((p) => visible.has(p.entityId)),

@@ -1580,6 +1580,174 @@ test('optional counted grouping expands by keyboard, collapses without changing 
   ).toHaveCount(0);
 });
 
+test('a true singleton keeps its anchor through spreading and grouping with contrasting noninteractive connectors', async ({
+  page,
+}) => {
+  await runtime(page);
+  await overlappingHousehold(page);
+  await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    window.aviadiloTest.config(0, {
+      map: { ...card.config.map, show_you_are_here: false },
+    });
+  });
+  const card = page.locator('aviadilo-map');
+  await expect(card.locator('.reference-marker')).toHaveCount(0);
+  const scene = await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    const map = (card as unknown as { map: import('leaflet').Map }).map;
+    const x = Math.round(map.getSize().x / 2);
+    const origin = map.containerPointToLatLng([x, 240]);
+    const singleton = map.containerPointToLatLng([x, 104]);
+    for (const id of [
+      'person.layout_000',
+      'person.layout_001',
+      'person.layout_002',
+      'person.z_singleton',
+    ]) {
+      const position = id === 'person.z_singleton' ? singleton : origin;
+      window.aviadiloTest.entity(id, {
+        state: 'not_home',
+        last_updated: new Date().toISOString(),
+        attributes: {
+          latitude: position.lat,
+          longitude: position.lng,
+          friendly_name: id,
+          gps_accuracy: 10,
+        },
+      });
+    }
+    window.aviadiloTest.config(0, {
+      people: {
+        ...card.config.people,
+        trackers: [
+          ...card.config.people!.trackers!,
+          { entity_id: 'person.z_singleton' },
+        ],
+      },
+    });
+    return { x, y: 104, center: window.aviadiloTest.inspect(0).center };
+  });
+  const singleton = card.locator(
+    '.person-icon[data-member-id="person.z_singleton"]',
+  );
+  const anchor = () =>
+    singleton.evaluate((node) => {
+      const box = node.getBoundingClientRect();
+      const map = node.closest('.leaflet-container')!.getBoundingClientRect();
+      return {
+        x: box.x + box.width / 2 - map.x,
+        y: box.y + box.height / 2 - map.y,
+      };
+    });
+  const assertAnchor = async () => {
+    await expect(singleton).toBeVisible();
+    expect(await anchor()).toEqual({ x: scene.x, y: scene.y });
+  };
+  const assertClearFootprints = async () => {
+    const points = await card
+      .locator('.person-icon, .household-group-icon')
+      .evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const box = node.getBoundingClientRect();
+          const group = node.classList.contains('household-group-icon');
+          return {
+            x: box.x + box.width / 2,
+            y: box.y + box.height / 2,
+            width: group ? 56 : 144,
+            height: group ? 56 : 128,
+          };
+        }),
+      );
+    for (const [index, a] of points.entries())
+      for (const b of points.slice(index + 1))
+        expect(
+          Math.abs(a.x - b.x) >= (a.width + b.width) / 2 + 8 ||
+            Math.abs(a.y - b.y) >= (a.height + b.height) / 2 + 8,
+        ).toBe(true);
+  };
+  await expect(card.locator('.person-marker')).toHaveCount(4);
+  await assertAnchor();
+  await assertClearFootprints();
+  for (const theme of ['light', 'dark'] as const) {
+    await page.evaluate((theme) => {
+      const card = document.querySelector('aviadilo-map') as AviadiloMap;
+      window.aviadiloTest.config(0, { map: { ...card.config.map, theme } });
+    }, theme);
+    await expect(card.locator('article')).toHaveAttribute('data-theme', theme);
+    const paths = await card
+      .locator('.household-connector-casing, .household-connector')
+      .evaluateAll((nodes) =>
+        nodes.map((node) => ({
+          casing: node.classList.contains('household-connector-casing'),
+          stroke: node.getAttribute('stroke'),
+          width: node.getAttribute('stroke-width'),
+          cap: node.getAttribute('stroke-linecap'),
+          pointer: getComputedStyle(node).pointerEvents,
+          interactive: node.classList.contains('leaflet-interactive'),
+          path: node.getAttribute('d'),
+          belowMarkers:
+            Number(getComputedStyle(node.closest('.leaflet-pane')!).zIndex) <
+            Number(
+              getComputedStyle(
+                node.getRootNode() instanceof ShadowRoot
+                  ? (node.getRootNode() as ShadowRoot).querySelector(
+                      '.leaflet-people-pane',
+                    )!
+                  : document.querySelector('.leaflet-people-pane')!,
+              ).zIndex,
+            ),
+        })),
+      );
+    expect(paths).toHaveLength(4);
+    expect(paths.map((p) => p.casing)).toEqual([true, true, false, false]);
+    for (const [index, path] of paths.entries()) {
+      expect(path).toMatchObject({
+        stroke: path.casing ? '#ffffff' : '#102131',
+        width: path.casing ? '6' : '3',
+        cap: 'round',
+        pointer: 'none',
+        interactive: false,
+        belowMarkers: true,
+      });
+      if (index < 2) expect(path.path).toBe(paths[index + 2].path);
+    }
+    await assertAnchor();
+  }
+  await page.evaluate(() => {
+    const card = document.querySelector('aviadilo-map') as AviadiloMap;
+    window.aviadiloTest.config(0, {
+      people: { ...card.config.people, group_overlapping: true },
+    });
+  });
+  const group = card.locator('.household-group');
+  await expect(group).toHaveText('3');
+  await expect(
+    card.locator('.household-connector, .household-connector-casing'),
+  ).toHaveCount(0);
+  await assertAnchor();
+  await assertClearFootprints();
+  await group.focus();
+  await page.keyboard.press('Enter');
+  await expect(card.locator('.person-marker')).toHaveCount(4);
+  await assertAnchor();
+  await assertClearFootprints();
+  await page.keyboard.press('Escape');
+  await expect(group).toBeFocused();
+  await assertAnchor();
+  expect(
+    await page.evaluate(() => window.aviadiloTest.inspect(0).center),
+  ).toEqual(scene.center);
+  await page.evaluate(() =>
+    window.aviadiloTest.config(0, { layers: { people: false } }),
+  );
+  await expect(
+    card.locator(
+      '.person-marker, .household-group, .household-connector, .household-connector-casing',
+    ),
+  ).toHaveCount(0);
+});
+
 test('constrained hundred-person view exposes every member in a scrollable keyboard-safe panel', async ({
   page,
 }) => {

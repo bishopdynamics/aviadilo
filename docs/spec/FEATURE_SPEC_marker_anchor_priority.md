@@ -1,6 +1,6 @@
 # SPEC: Preserve singleton locations while spreading household icons
 
-- **Status:** in-progress — user requested implementation on 2026-09-09.
+- **Status:** implemented and verified — parent 431 frontend / 576 backend / 41 browser gates and native three-role acceptance passed; dev.3 publication in progress.
 - **Parent:** [ROOT_SPEC.md](ROOT_SPEC.md); refines [household layout](FEATURE_SPEC_marker_layout.md).
 - **Baseline:** published 0.2.1-dev.2, including user-confirmed tile streaming and one-hour idle basemap retention.
 
@@ -60,5 +60,7 @@ None blocking. User supplied the behavior and visual direction; routine placemen
 No new technical features. Prior cache-hour assessment, aircraft-warning evidence and general weather-client remount questions remain separate.
 
 ## Change Log
+
+- 2026-09-09 — Implemented original-footprint singleton reservation, including grouped centroid controls and edge priority. Remaining placements keep reference-first/stable-ID order; no extra per-group representative reservation. Connectors use 3px dark strokes over 6px white casings, all casings first. Parent 431/576/41 gates and native admin/regular/read-only true-anchor, accuracy, photos, light/dark, keyboard/touch, click-through, grouping, capacity and cleanup checks pass. Publication follows.
 
 - 2026-09-09 — Recorded user-requested singleton priority and clearer connectors; no new permission/schema/provider scope. One serial native worker because Hanuman is absent.

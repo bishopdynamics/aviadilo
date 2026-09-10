@@ -53,15 +53,26 @@ function clamp(
     ),
   };
 }
+/** Classify real footprints before edge adjustment or synthetic group controls. */
+export function originalSingletonIds(members: ScreenMember[]): Set<string> {
+  return new Set(
+    members
+      .filter(
+        (member) =>
+          !members.some(
+            (other) => other.id !== member.id && overlaps(member, other),
+          ),
+      )
+      .map((member) => member.id),
+  );
+}
 /** Connected components use stable entity IDs, including the distinct reference ID. */
 export function overlapGroups(
   members: ScreenMember[],
   width: number,
   height: number,
 ): HouseholdGroup[] {
-  const points = visibleMembers(members, width, height).map((p) =>
-    clamp(p, width, height),
-  );
+  const points = visibleMembers(members, width, height);
   const pending = new Set(points.map((p) => p.id));
   const groups: HouseholdGroup[] = [];
   for (const seed of points) {
@@ -91,20 +102,40 @@ export function spreadMembers(
   members: ScreenMember[],
   width: number,
   height: number,
+  protectedIds: ReadonlySet<string> = originalSingletonIds(members),
 ): {
   positions: ScreenMember[];
   fallback: boolean;
 } {
-  // The reference remains the visual anchor of its household whenever it fits.
+  // Reserve only true, in-bounds singletons. Edge-clamped footprints must wait
+  // with all other placements, even when they were originally isolated.
   const ordered = [...members].sort(
     (a, b) =>
       Number(b.id === 'reference') - Number(a.id === 'reference') ||
       a.id.localeCompare(b.id),
   );
-  const placed: ScreenMember[] = [];
+  if (
+    ordered.some(
+      (member) =>
+        member.width + 2 * GAP > width || member.height + 2 * GAP > height,
+    )
+  )
+    return { positions: [], fallback: true };
+  const placed = ordered
+    .filter(
+      (member) =>
+        protectedIds.has(member.id) &&
+        member.x >= member.width / 2 + GAP &&
+        member.x <= width - member.width / 2 - GAP &&
+        member.y >= member.height / 2 + GAP &&
+        member.y <= height - member.height / 2 - GAP,
+    )
+    .map((member) => ({ ...member }));
+  const reserved = new Set(placed.map((member) => member.id));
+  // Among the remaining colliding members, retain reference-first/stable-ID
+  // placement. Every fanout and group control avoids the reserved originals.
   for (const member of ordered) {
-    if (member.width + 2 * GAP > width || member.height + 2 * GAP > height)
-      return { positions: [], fallback: true };
+    if (reserved.has(member.id)) continue;
     const origin = clamp(member, width, height);
     const fits = (p: ScreenMember) =>
       !placed.some((other) => overlaps(p, other));

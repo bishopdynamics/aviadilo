@@ -3,7 +3,7 @@
 from typing import Any
 
 DOMAIN = "aviadilo"
-VERSION = "0.2.1-dev.2"
+VERSION = "0.2.1-dev.3"
 HEARTBEAT_SECONDS = 20
 LEASE_SECONDS = 60
 MEMORY_BYTES = 64 * 1024 * 1024

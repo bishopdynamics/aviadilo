@@ -4,7 +4,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-1. [in-progress] Implement [singleton marker priority and clearer connectors](spec/FEATURE_SPEC_marker_anchor_priority.md), requested2026-09-09. Reserve original singleton positions before fanout; thicker contrast-outlined connectors. Verify and publish0.2.1-dev.3 for testing.
+1. [in-progress] Implement [singleton marker priority and clearer connectors](spec/FEATURE_SPEC_marker_anchor_priority.md), requested2026-09-09. Reserve original singleton positions before fanout; thicker contrast-outlined connectors. Implementation and parent431/576/41 checks plus native three-role/theme/101-member acceptance passed. Publish0.2.1-dev.3 for testing.
 
 ## Awaiting user assessment
 

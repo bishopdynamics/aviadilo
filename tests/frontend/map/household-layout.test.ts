@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   LABEL_HEIGHT,
   LABEL_WIDTH,
+  originalSingletonIds,
   overlapGroups,
   overlaps,
   spreadMembers,
@@ -19,8 +20,9 @@ function expectAccessible(
   members: ScreenMember[],
   width: number,
   height: number,
+  protectedIds?: ReadonlySet<string>,
 ) {
-  const layout = spreadMembers(members, width, height);
+  const layout = spreadMembers(members, width, height, protectedIds);
   expect(layout.fallback).toBe(false);
   expect(layout.positions).toHaveLength(members.length);
   for (const [i, p] of layout.positions.entries()) {
@@ -34,6 +36,99 @@ function expectAccessible(
   return layout;
 }
 describe('bounded household screen layout', () => {
+  it('reserves a labelled singleton at the old preferred fanout slot before a coincident triple', () => {
+    const singleton = point('person.z', 400, 104, true);
+    const input = [
+      point('person.a', 400, 240, true),
+      point('person.b', 400, 240, true),
+      point('person.c', 400, 240, true),
+      singleton,
+    ];
+    const before = structuredClone(input);
+    const layout = expectAccessible(input, 800, 480);
+    expect(originalSingletonIds(input)).toEqual(new Set(['person.z']));
+    expect(layout.positions.find((p) => p.id === singleton.id)).toEqual(
+      singleton,
+    );
+    for (let i = 0; i < input.length; i++) {
+      const rotated = [...input.slice(i), ...input.slice(0, i)];
+      expect(spreadMembers(rotated, 800, 480)).toEqual(layout);
+      expect(spreadMembers(rotated.reverse(), 800, 480)).toEqual(layout);
+    }
+    expect(input).toEqual(before);
+  });
+  it('protects multiple singletons from multiple groups while keeping a colliding reference anchored', () => {
+    const singletons = [
+      point('z.left', 250, 164, true),
+      point('z.right', 900, 164, true),
+    ];
+    const input = [
+      point('reference', 250, 300),
+      point('a.left', 250, 300, true),
+      point('b.left', 250, 300, true),
+      point('a.right', 900, 300, true),
+      point('b.right', 900, 300, true),
+      ...singletons,
+    ];
+    const layout = expectAccessible(input, 1200, 700);
+    for (const singleton of singletons)
+      expect(layout.positions.find((p) => p.id === singleton.id)).toEqual(
+        singleton,
+      );
+    expect(layout.positions.find((p) => p.id === 'reference')).toEqual(
+      input[0],
+    );
+    expect(spreadMembers([...input].reverse(), 1200, 700)).toEqual(layout);
+  });
+  it('lets an edge-adjusted isolated reference yield to an in-bounds singleton', () => {
+    const input = [point('reference', -10, 200), point('person.z', 60, 200)];
+    expect(originalSingletonIds(input)).toEqual(
+      new Set(['reference', 'person.z']),
+    );
+    expect(overlapGroups(input, 800, 480)).toHaveLength(2);
+    const layout = expectAccessible(input, 800, 480);
+    expect(layout.positions.find((p) => p.id === 'person.z')).toEqual(input[1]);
+    expect(
+      layout.positions.find((p) => p.id === 'reference')!.x,
+    ).toBeGreaterThanOrEqual(34);
+  });
+  it('protects original singletons when a collapsed or expanded group centroid newly overlaps them', () => {
+    const singleton = point('person.z');
+    const ring = Array.from({ length: 12 }, (_, i) =>
+      point(
+        `person.ring_${i}`,
+        400 + 100 * Math.cos((i * Math.PI) / 6),
+        240 + 100 * Math.sin((i * Math.PI) / 6),
+      ),
+    );
+    const input = [...ring, singleton];
+    const protectedIds = originalSingletonIds(input);
+    expect(protectedIds).toEqual(new Set(['person.z']));
+    const cluster = overlapGroups(input, 800, 480).find(
+      (group) => group.members.length > 1,
+    )!;
+    expect(cluster.members).toHaveLength(12);
+    const glyph = {
+      id: `group:${cluster.id}`,
+      x: cluster.x,
+      y: cluster.y,
+      width: 56,
+      height: 56,
+    };
+    expect(overlaps(glyph, singleton)).toBe(true);
+    for (const members of [
+      [singleton, glyph],
+      [...input, glyph],
+    ]) {
+      const layout = expectAccessible(members, 800, 480, protectedIds);
+      expect(layout.positions.find((p) => p.id === singleton.id)).toEqual(
+        singleton,
+      );
+      expect(
+        spreadMembers([...members].reverse(), 800, 480, protectedIds),
+      ).toEqual(layout);
+    }
+  });
   it('spreads coincident individual markers, including a reference, without mutating true inputs', () => {
     const input = [
       point('person.alex'),

@@ -278,7 +278,8 @@ export const mapStyles = [
       margin: 0 !important;
       flex: none;
     }
-    .household-connector {
+    .household-connector,
+    .household-connector-casing {
       pointer-events: none;
     }
     .person-marker {
