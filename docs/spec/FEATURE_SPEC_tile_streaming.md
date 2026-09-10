@@ -1,6 +1,6 @@
 # SPEC: Reliable tile streaming and recent-view caching
 
-- **Status:** dev.1 user-confirmed working; one-hour retention follow-up implemented and locally verified on 2026-09-09; dev.2 publication in progress.
+- **Status:** dev.1 user-confirmed working; one-hour refinement published as [v0.2.1-dev.2](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.2) from a9a15f7, awaiting assessment.
 - **Parent:** [ROOT_SPEC.md](ROOT_SPEC.md).
 - **Baseline:** signed-off normal 0.2.0, release commit 0b3a4d5; HA 2026.9.1 and Chromium 153.0.8010.12.
 
@@ -73,6 +73,8 @@ None blocking. The optional question about whether household kiosks share one lo
 - Existing aircraft-warning and general weather-client remount questions remain separate.
 
 ## Change Log
+
+- 2026-09-09 — Published v0.2.1-dev.2 after all local/native/remote checks. Public ZIP matches the tested candidate and actual published-bytes HACS upgrade from dev.1 passes. One-hour retention honors original freshness and memory limits. Stable0.2.0 remains Latest; the original tile-streaming TODO is user-confirmed and marked done.
 
 - 2026-09-09 — User confirms dev.1 works and requests reuse for up to one hour. Extend only the idle basemap retention timer; original HTTP expiry, identity checks, memory limits and photo handling remain. Existing timer regression now proves reuse after59minutes and disposal at the one-hour boundary; earlier provider-expiry tests remain. This narrow constant/test/metadata refinement is handled directly by the orchestrator as trivial glue. Deliver dev.2 for testing.
 

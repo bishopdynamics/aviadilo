@@ -4,7 +4,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-1. [in-progress] Extend the confirmed [tile-streaming repair](spec/FEATURE_SPEC_tile_streaming.md) to one hour of idle basemap reuse; publish 0.2.1-dev.2 after verification. The user confirmed dev.1 works, and its original TODO item is marked done. Normal0.2.0 remains Latest.
+1. [in-progress, awaiting user assessment] One-hour idle basemap retention delivered as [v0.2.1-dev.2](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.2) from a9a15f7. Original dev.1 tile-streaming repair is user-confirmed and its TODO marked done. Parent 427 frontend / 576 backend / 40 browser checks, native package navigation, all remote gates and actual published-byte HACS upgrade from dev.1 passed. Stable0.2.0 remains Latest.
 
 ## Awaiting incident evidence
 
