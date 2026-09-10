@@ -586,7 +586,7 @@ const connections = new WeakMap<
     owners: Map<object, () => HassTransport>;
   }
 >();
-const IDLE_RETENTION_MS = 10 * 60 * 1000;
+const IDLE_RETENTION_MS = 60 * 60 * 1000;
 interface RetiredBasemap {
   connection: object;
   userId?: string;

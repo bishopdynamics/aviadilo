@@ -725,9 +725,12 @@ describe('shared bounded decoded resources', () => {
     };
     return { hass, unsub };
   }
-  it('retains only decoded basemap bytes across navigation and gates adoption on a new metadata handshake', async () => {
+  it('reuses fresh basemap bytes after 59 minutes, gates adoption and releases at one hour', async () => {
     vi.useFakeTimers();
     const { hass, unsub } = transport();
+    vi.mocked(hass.fetchWithAuth).mockImplementation(async () =>
+      pngResponse(256, 'public,max-age=86400'),
+    );
     const a = acquireAssets(() => hass);
     const old = await a.decoded.acquire(need, new AbortController().signal);
     a.release();
@@ -735,7 +738,7 @@ describe('shared bounded decoded resources', () => {
     expect(unsub).toHaveBeenCalledOnce();
     expect(revoke).not.toHaveBeenCalled();
     expect(vi.getTimerCount()).toBe(1);
-    await vi.advanceTimersByTimeAsync(10000);
+    await vi.advanceTimersByTimeAsync(59 * 60 * 1000);
     const metadata = deferred<AssetInfo>();
     vi.mocked(hass.callWS).mockReturnValueOnce(metadata.promise);
     const b = acquireAssets(() => hass);
@@ -763,7 +766,10 @@ describe('shared bounded decoded resources', () => {
     old.release();
     current.release();
     b.release();
-    await vi.advanceTimersByTimeAsync(600000);
+    await vi.advanceTimersByTimeAsync(60 * 60 * 1000 - 1);
+    expect(revoke).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(1);
+    await vi.advanceTimersByTimeAsync(1);
     expect(revoke).toHaveBeenCalledOnce();
     expect(vi.getTimerCount()).toBe(0);
     vi.useRealTimers();
@@ -798,7 +804,7 @@ describe('shared bounded decoded resources', () => {
       expect(revoke).toHaveBeenCalledOnce();
       held.release();
       b.release();
-      await vi.advanceTimersByTimeAsync(600000);
+      await vi.advanceTimersByTimeAsync(60 * 60 * 1000);
       expect(revoke).toHaveBeenCalledTimes(2);
       expect(vi.getTimerCount()).toBe(0);
       vi.useRealTimers();
@@ -892,7 +898,7 @@ describe('shared bounded decoded resources', () => {
     expect(hass.fetchWithAuth).toHaveBeenCalledTimes(2);
     held.release();
     b.release();
-    await vi.advanceTimersByTimeAsync(600000);
+    await vi.advanceTimersByTimeAsync(60 * 60 * 1000);
     expect(vi.getTimerCount()).toBe(0);
     vi.useRealTimers();
   });

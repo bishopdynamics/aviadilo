@@ -1,6 +1,6 @@
 # SPEC: Reliable tile streaming and recent-view caching
 
-- **Status:** implemented, verified and published as [v0.2.1-dev.1](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.1) from39f3565; awaiting household assessment before stable.
+- **Status:** dev.1 user-confirmed working; one-hour retention follow-up implemented and locally verified on 2026-09-09; dev.2 publication in progress.
 - **Parent:** [ROOT_SPEC.md](ROOT_SPEC.md).
 - **Baseline:** signed-off normal 0.2.0, release commit 0b3a4d5; HA 2026.9.1 and Chromium 153.0.8010.12.
 
@@ -32,9 +32,9 @@ Visible basemap tiles must recover from transient failures and load promptly fro
 | Admission limits | Up to 64 outstanding requests/user and 256 total; cache probes 8/user and 32 total; cold fetches 8/user and 32 total | Waiting requests retain small request state; work/image budgets remain bounded. Per-user FIFO and round-robin ready users prevent starvation. HTTP requests over admission capacity still get retryable 429. |
 | Cache lookup | Authenticated fresh-basemap-only lookup before cold-slot admission; recheck cache when a queued miss runs | No public bypass or photo fast path; concurrent requests reuse integration cache/coalescing. |
 | Retry | Shared cancellable scheduling, exponential backoff/jitter, Retry-After support; wait outside active transfer slots | A temporarily rejected tile must not become permanently blank. Retries stop on removal/hide/dispose; terminal auth/path/data failures remain errors. |
-| Navigation cache | Fresh basemap decoded images retained for up to 10 minutes after the last owner releases; globally bounded idle retention at 32 MiB/128 entries | Fits the existing per-connection decoded budget. No extra permanent data store or retained household photos. |
+| Navigation cache | Fresh basemap decoded images retained for up to 60 minutes after the last owner releases; globally bounded idle retention at 32 MiB/128 entries | Fits the existing per-connection decoded budget. No extra permanent data store or retained household photos. |
 | Identity | Reuse only same HA connection/user/entry/generation after fresh authenticated asset-info acquisition | Idle cache does not preserve authority; clear/reload/log-out cannot resurrect invalid images. |
-| Delivery | 0.2.1-dev.1 / Python 0.2.1.dev1 | Fresh immutable prerelease after stable 0.2.0; stable Latest remains 0.2.0 until user assessment. |
+| Delivery | 0.2.1-dev.2 / Python 0.2.1.dev2 | Fresh immutable prerelease after stable 0.2.0; stable Latest remains 0.2.0 until user assessment. |
 
 ## Design
 
@@ -60,7 +60,7 @@ Separate idle basemap cache lifetime from active network/viewer lifetime. Last-o
    - Owned files: `custom_components/aviadilo/assets.py`, `custom_components/aviadilo/service.py`, `custom_components/aviadilo/providers/osm.py`; new narrowly named asset-admission helper module if useful; `src/data/assets.ts`, new narrowly named asset-cache/retry helper modules if useful, `src/map/basemap.ts`; `tests/backend/test_assets.py`, `tests/backend/test_osm.py` (or the existing OSM test filename), new focused admission tests if needed; `tests/frontend/data/assets.test.ts`, existing basemap/fixture-asset tests as required; `tests/e2e/assets.spec.ts`, `dev/runtime.ts` only for synthetic fault controls. No broad unrelated refactors.
    - Worker verification: full lint, frontend/backend tests and package build. Parent runs offline browser and actual HA checks, reviews and commits the slice.
 2. **(M) [serial] Packaged acceptance and prerelease delivery.** Orchestrator owns singleton environment and trivial version promotion.
-   - Owned files: `scripts/check_release.py` required-module list, six package version files (`package.json`, `package-lock.json`, `pyproject.toml`, `uv.lock`, integration `const.py`/`manifest.json`), README/user guide/development notes, `docs/releases/0.2.1-dev.1.md`. Orchestrator-only continuity: this spec, ROOT addendum, PROJECT, task queue, DEFERRED and handoff. User TODO only marked done after user assessment.
+   - Owned files: `scripts/check_release.py` required-module list, six package version files (`package.json`, `package-lock.json`, `pyproject.toml`, `uv.lock`, integration `const.py`/`manifest.json`), README/user guide/development notes, `docs/releases/0.2.1-dev.2.md`. Orchestrator-only continuity: this spec, ROOT addendum, PROJECT, task queue, DEFERRED and handoff. User TODO only marked done after user assessment.
    - Verify cold multi-browser same-user pressure, warm hits during miss saturation, injected temporary failures recovering without movement, cancellation while waiting, navigation cache reuse, idle generation clear, reconnect and regular/read-only photo safety. Use synthetic upstream only for automated pan/zoom/load tests. Run full make check; package and actual HACS upgrade from stable; native multi-context resource/idle checks; remote native/HACS/hassfest; public ZIP equality and actual published-metadata/bytes HACS install. Normal Latest remains 0.2.0.
 
 ## Open Questions
@@ -73,6 +73,8 @@ None blocking. The optional question about whether household kiosks share one lo
 - Existing aircraft-warning and general weather-client remount questions remain separate.
 
 ## Change Log
+
+- 2026-09-09 — User confirms dev.1 works and requests reuse for up to one hour. Extend only the idle basemap retention timer; original HTTP expiry, identity checks, memory limits and photo handling remain. Existing timer regression now proves reuse after59minutes and disposal at the one-hour boundary; earlier provider-expiry tests remain. This narrow constant/test/metadata refinement is handled directly by the orchestrator as trivial glue. Deliver dev.2 for testing.
 
 - 2026-09-09 — Published v0.2.1-dev.1 from39f3565 after all remote gates. Public ZIP matches the exact final native-tested package; actual published-metadata/bytes HACS upgrade passed and normal 0.2.0 remains Latest. Parent427 frontend/576 backend/40 browser gates, final native three-role/shared-user/stream-failure/navigation/idle-clear/resource checks passed. No upstream pacing change. User assessment follows.
 

@@ -4,7 +4,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-1. [in-progress, awaiting user assessment] [Reliable tile streaming](spec/FEATURE_SPEC_tile_streaming.md) delivered as [v0.2.1-dev.1](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.1) from39f3565. Parent427 frontend/576 backend/40 browser checks, final packaged native same-user/regular/read-only/recovery/cache-clear/60-second resource checks, all remote gates and actual public-ZIP HACS upgrade passed. Normal 0.2.0 remains Latest. User TODO remains untouched until assessment.
+1. [in-progress] Extend the confirmed [tile-streaming repair](spec/FEATURE_SPEC_tile_streaming.md) to one hour of idle basemap reuse; publish 0.2.1-dev.2 after verification. The user confirmed dev.1 works, and its original TODO item is marked done. Normal0.2.0 remains Latest.
 
 ## Awaiting incident evidence
 

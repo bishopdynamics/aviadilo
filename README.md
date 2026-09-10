@@ -12,7 +12,7 @@ The public repository is [bishopdynamics/aviadilo](https://github.com/bishopdyna
 
 See [the user guide](docs/user-guide.md) for installation, controls and troubleshooting. [Version 0.2.0](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.0) is the normal HACS release. Use **Update**, restart Home Assistant and reload your dashboards. It includes person/device tracking, distinct aircraft icons and type filters, automatic spreading of overlapping household markers, optional counted grouping and people-only auto-fit. Integration settings, dashboards and shared caches are retained when upgrading from 0.1.0 or a 0.2.0 prerelease.
 
-The optional [0.2.1-dev.1 prerelease](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.1) adds automatic recovery for temporary tile failures, improved sharing across kiosks and recent-view basemap reuse. See the [prerelease instructions](docs/user-guide.md#optional-tile-streaming-prerelease) to test it.
+The optional [0.2.1-dev.2 prerelease](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.2) adds automatic recovery for temporary tile failures, improved sharing across kiosks and up to one hour of recent-view basemap reuse. See the [prerelease instructions](docs/user-guide.md#optional-tile-streaming-prerelease) to test it.
 
 The [approved implementation spec](docs/spec/ROOT_SPEC.md) targets Home Assistant 2026.9.1 and the user's Chromium tablet-PC kiosk.
 
