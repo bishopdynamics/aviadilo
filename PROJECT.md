@@ -6,6 +6,8 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 
 ## Project-specific rules
 
+- README audience (2026-09-09): the GitHub project page must let a new end-user complete HACS installation, HA integration setup and their first card directly from the README. Keep developer/toolchain/release-engineering details in linked developer docs; README is the canonical setup path.
+
 - Release acceptance (2026-09-09): the user confirmed the combined0.2.1-dev.3 build and authorized normal0.2.1, accepting tile recovery, one-hour retention and singleton/connector refinements. Broader tester feedback follows this release; keep first-install instructions clear and preserve the prerelease feedback workflow for future changes.
 
 - Marker refinement (2026-09-09): prioritize originally isolated household icons at their true positions; relocated group members use remaining space. Make connectors thicker with strong light/dark contrast. See docs/spec/FEATURE_SPEC_marker_anchor_priority.md.

@@ -1,17 +1,12 @@
 # Using Aviadilo
 
-Aviadilo 0.2.1 combines aircraft, radar, wind, and household locations in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. Shared basemap caching and the same real data serve saved, editor and picker views; synthetic data is confined to the developer test harness.
+Aviadilo 0.2.1 combines aircraft, radar, wind, and household locations in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. Shared basemap caching and the same real data serve saved, editor and picker views.
 
 ## Installation
 
-For a first installation and a short testing checklist, see the [quick-start guide](quick-start.md).
+Follow the complete [README setup instructions](../README.md#set-up-aviadilo) for HACS installation, integration setup and your first map card. Then use this guide for additional settings and troubleshooting, or the [feedback checklist](quick-start.md) to report your first experience.
 
-1. In HACS, add `https://github.com/bishopdynamics/aviadilo` as a custom repository with type **Integration**. Download the latest normal release (`v0.2.1`). If already installed, use the ordinary Update action. Restart Home Assistant when requested.
-2. Open **Settings → Devices & services → Add integration → Aviadilo**. Choose the shared collection anchor, aircraft provider, radius, and cache settings. Leave conservative provider pacing at its defaults unless you want slower collection.
-3. Reload the dashboard in your browser. Edit the dashboard, add a card, and select **Aviadilo**. The integration loads its matching card automatically; no manual JavaScript resource is needed.
-4. Use the graphical editor to choose layers and add your `person` or `device_tracker` entities under People. **Save the card, then click Done to leave dashboard edit mode.**
-
-The card picker, card editor and dashboard edit mode use the same HA states, source fetching and shared caches as the saved card. **Done** exits dashboard editing. Missing HA context, integration or source data produces a real loading/unavailable state. HA may recreate its preview card after a settings change, which creates a new viewer while shared data/cache remains available.
+The card picker, card editor and dashboard edit mode use the same data as the saved card. **Done** exits dashboard editing. Missing HA context, integration or source data produces a loading/unavailable state.
 
 ## Upgrading to 0.2.1
 
@@ -47,7 +42,7 @@ Defaults: aircraft and people layers are enabled; radar and wind are disabled. P
 
 Missing aircraft metadata, a wind model run marked unknown, and unavailable coverage detail are explicit missing-information states. They are not unimplemented placeholders. Flight route/photo enrichment and synchronized historical people/aircraft replay are outside this release.
 
-The combined-card automated and isolated HA endurance checks used synthetic provider responses; bounded real provider checks were separate. If a check fails, record whether you were editing or viewing, which layer/source was affected, its exact status text and the action that triggered it.
+If a check fails, record whether you were editing or viewing, which layer/source was affected, its exact status text and the action that triggered it.
 
 ## Map and layer controls
 
@@ -98,4 +93,4 @@ If Aviadilo is missing from the card picker, confirm that its integration loaded
 
 Use the integration's diagnostics download for aggregate scheduler/cache status. Cache clearing is a separate confirmed action in Configure; it affects every viewer and causes later requests to refill the cache. Avoid clearing it repeatedly when investigating a provider outage.
 
-For development or offline acceptance, follow [the isolated HA guide](../dev/ha/README.md). Its clearly synthetic instance is separate from an existing household installation.
+For contributing and development setup, see the [developer guide](development.md).

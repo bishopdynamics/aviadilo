@@ -4,6 +4,8 @@ Durable handoff info — the kind of stuff that should be read at the start of e
 
 ## Evergreen Entries
 
+- README is the canonical end-user setup guide (explicit user request2026-09-09). Developer setup/architecture/release tooling lives in docs/development.md, and chronological evidence in docs/development-history.md. Quick-start and detailed user guide point to README for installation, preventing parallel setup instructions from drifting.
+
 - Reusable HA/HACS development and release guide: Elefant wiki `AI/runbooks/home-assistant-hacs-development-and-releases.md`. Covers distribution models, packaging/versioning, card lifecycle, permissions, CI, prerelease feedback, public-asset verification and troubleshooting, with official sources and pinned Aviadilo examples. Consult it for future HA/HACS projects; recheck compatibility against current releases.
 
 - **Current release: [normal0.2.1](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1), GitHub Latest/HACS default.** User confirmed dev.3 and authorized stable promotion, accepting tile recovery, one-hour reuse and singleton/connector refinements. Published from a8ab75e; public ZIP and eight actual HACS fresh/update cases passed. See live handoff for hashes and evidence. New testers can use docs/quick-start.md; keep fresh installation and standard HACS upgrades verified alongside existing-user checks. Future changes retain the prerelease → feedback → normal-release workflow.

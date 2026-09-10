@@ -1,22 +1,8 @@
-# First install and feedback
+# Getting started and sharing feedback
 
-Aviadilo puts aircraft, weather and household locations on one Home Assistant map. Version **0.2.1** is the normal HACS release.
+The [README setup instructions](../README.md#set-up-aviadilo) are the complete starting point for a new installation. Follow them through saving your first map card, then use this checklist to share feedback.
 
-## Before starting
-
-- Home Assistant **2026.9.1 or newer**, with HACS installed. The current tested baseline is HA 2026.9.1 and Chromium.
-- Existing `person` or `device_tracker` entities if you want to show household members. Aviadilo displays their HA locations; it does not set up phone tracking.
-
-## Install
-
-1. In HACS, add **https://github.com/bishopdynamics/aviadilo** as a custom repository with type **Integration**. Download the normal **v0.2.1** release and restart Home Assistant.
-2. Open **Settings → Devices & services → Add integration → Aviadilo**. Choose the collection area and keep the default provider pacing initially.
-3. Reload your dashboard browser. Edit a dashboard, add a card and choose **Aviadilo**. The integration loads its matching card automatically.
-4. In the graphical editor, select a nearby `person` entity under People; direct `device_tracker` entities also work. Save, then click **Done** to leave dashboard editing.
-
-Start with the basemap, Aircraft and one nearby person. The default people-radius filter is 50 km, so a distant person may be intentionally hidden. Radar and Wind start disabled; enable them separately once the basic map is working. A new area can load progressively while uncached tiles are fetched.
-
-For an existing installation, use the normal HACS **Update** action, restart HA and reload dashboards. See the [full user guide](user-guide.md) for layout, aircraft types, weather, people filters and troubleshooting.
+For advanced settings and troubleshooting, see the [user guide](user-guide.md).
 
 ## Useful first feedback
 
