@@ -2,6 +2,8 @@
 
 ## Current
 
+- **Reusable wiki guide created:** `AI/runbooks/home-assistant-hacs-development-and-releases.md` in Elefant. Full content saved/read-back verified; use it for future HA integration/card/HACS projects. Product code and release remain unchanged.
+
 - **2026-09-09 — Released normal [v0.2.1](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1) after user confirmation of dev.3**, tagged commit **a8ab75eadef65f0c1e12e4a33d67b18de4a8ebcd**. Non-prerelease, GitHub Latest and default HACS release. All tile-streaming, one-hour-retention and singleton/connector refinements are accepted. Runtime is byte-identical to confirmed dev.3 after substituting version labels; no functional changes.
 - Public ZIP **29 files, 1,258,308 bytes**, SHA256 **d5f73f846c9c232612be1ded79af8cbcfa3192b3ae181dd44945a1b51aca94aa**, published `2026-09-10T05:17:24Z`. Exact candidate/GitHub digest match. Remote Native **34439857900**, HA/HACS **34439857936**, Publication **34440216982** all passed. Actual HACS2.0.5 default Download/Update with published metadata/bytes passed **eight cases**: fresh,0.1.0,0.2.0,dev.3 × beta off/on; settings/cache/dashboard retained.
 - Parent **431 frontend /576 backend /41 Chromium** and native stable HA **2026.9.1 /Chromium153.0.8010.12** admin/regular/read-only smoke passed. Stable module, aircraft, person coordinate/zone fallback, photos and people-fit checked; no JS/Aviadilo-command/external-browser errors. Native replacement retained38 external files unchanged. Prior full streaming/marker acceptance applies through exact runtime equivalence. Evidence `/tmp/aviadilo-release-021`.
