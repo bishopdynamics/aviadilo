@@ -4,7 +4,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-No approved implementation tasks remain for the signed-off 0.2.0 release. New user intake in docs/TODO.md awaits its own review/spec; it is not part of this publication.
+1. [in-progress] Implement [reliable tile streaming](spec/FEATURE_SPEC_tile_streaming.md), approved 2026-09-09. Cache-first bounded admission, automatic transient recovery and recent-view basemap retention; verify shared-login kiosks and publish 0.2.1-dev.1 for user assessment. Stable 0.2.0 remains Latest.
 
 ## Awaiting incident evidence
 
