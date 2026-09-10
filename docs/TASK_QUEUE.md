@@ -4,7 +4,11 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-1. [in-progress, awaiting user assessment] One-hour idle basemap retention delivered as [v0.2.1-dev.2](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.2) from a9a15f7. Original dev.1 tile-streaming repair is user-confirmed and its TODO marked done. Parent 427 frontend / 576 backend / 40 browser checks, native package navigation, all remote gates and actual published-byte HACS upgrade from dev.1 passed. Stable0.2.0 remains Latest.
+1. [in-progress] Implement [singleton marker priority and clearer connectors](spec/FEATURE_SPEC_marker_anchor_priority.md), requested2026-09-09. Reserve original singleton positions before fanout; thicker contrast-outlined connectors. Verify and publish0.2.1-dev.3 for testing.
+
+## Awaiting user assessment
+
+- One-hour idle basemap retention delivered as [v0.2.1-dev.2](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.2) from a9a15f7. Original dev.1 tile-streaming repair is user-confirmed and its TODO marked done. Parent 427 frontend / 576 backend / 40 browser checks, native package navigation, all remote gates and actual published-byte HACS upgrade from dev.1 passed. Stable0.2.0 remains Latest.
 
 ## Awaiting incident evidence
 

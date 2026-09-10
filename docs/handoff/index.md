@@ -2,13 +2,14 @@
 
 ## Current
 
-- **2026-09-09 — User-confirmed tile-streaming fix extended to one hour**, delivered as [v0.2.1-dev.2](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.2) from **a9a15f750ef2c5a934a0ea5b688221952c9cbc6f**. Dev.1 is accepted; the hour refinement awaits assessment. Original tile-streaming TODO marked done, wording preserved. Normal **0.2.0 remains Latest/HACS default**; explicitly select dev.2, restart HA and reload dashboards.
-- Runtime change is only the idle decoded-basemap timer: ten minutes → one hour after the last map releases it. Every packaged runtime byte matches public dev.1 after version substitution except the timer expression. Provider freshness, 32 MiB / 128 entries, identity/generation checks, private-photo disposal and idle network behavior remain intact. This does not extend HTTP expiry or change weather freshness.
-- Parent **427 frontend / 576 backend / 40 Chromium** checks passed. Updated fake-clock regression proves reuse after 59 minutes and disposal at the one-hour boundary; earlier provider-expiry and invalidation coverage remains. Native HA **2026.9.1 / Chromium153.0.8010.12**, regular user, actual dev.2 module: 12-tile return uses **zero HTTP/upstream requests**. Native package replacement retained 29 external files unchanged. Actual HACS2.0.5 dev.1→dev.2 upgrade with published metadata/bytes preserves settings/cache/dashboard.
-- Published `2026-09-10T02:28:39Z`: **29 files, 1,257,688 bytes**, SHA256 **d302ae66001a7991f1b713b9c5dfa985ec77ba26e4c8005e64bd132a78f7dafc**. Public ZIP equals the tested candidate/GitHub digest. Remote Native **34428945681**, HA/HACS **34428945747**, Publication **34429351835** passed. Evidence `/tmp/aviadilo-cache-hour`; prior broader streaming acceptance in `/tmp/aviadilo-tile-streaming`.
-- Trivial constant/test/metadata refinement handled by orchestrator, no workers. Hanuman absent; only main worktree. All owned HA/browser/test processes stopped. Isolated HA retains synthetic persons; no household HA or private diagnostic contents touched. Root tmp/ stays ignored. No .bishop changes observed. Final docs commit follows the immutable release tag. Aircraft-warning and general weather-client remount questions remain separate.
+- **2026-09-09 — Singleton marker priority and clearer connectors requested, in progress.** User reports a relocated member of a coincident triple displacing an unrelated singleton and wants the singleton to keep its true location. Reserve original singleton footprints before fanout; use thicker dark lines with light casing. Spec docs/spec/FEATURE_SPEC_marker_anchor_priority.md.
+- Native gpt-6-astra/high serial worker `/root/anchor_priority` owns pure geometry/coordinator/styles and tests in main; Hanuman absent. Parent owns docs/version/native/browser/release. Baseline copied to `/tmp/aviadilo-anchor-priority/baseline-layout.ts`: labelled triple at400,240 moves isolated person.z from400,104 to248,104. Original footprints did not overlap. Evidence/scripts under `/tmp/aviadilo-anchor-priority`.
+- Expected prerelease0.2.1-dev.3, normal0.2.0 staysLatest. One-hour dev.2 remains delivered pending its own assessment; do not infer acceptance from the new marker request. Original tile-streaming dev.1 was user-confirmed. Preserve one-hour cache behavior and all true data/fit/permission rules.
+- Initial working tree clean. User TODO already has the confirmed streaming item marked done; leave it unchanged. No .bishop changes observed. Private root tmp/ stays ignored. Only main worktree; native HA currently stopped before parent acceptance preparation. Household HA remains untouched.
 
 ## Archives
+
+- `archive_36.md` — one-hour cache delivery before marker-priority refinement.
 
 - `archive_35.md` — tile-streaming dev.1 delivery before confirmation and one-hour refinement.
 

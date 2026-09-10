@@ -6,6 +6,8 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 
 ## Project-specific rules
 
+- Marker refinement (2026-09-09): prioritize originally isolated household icons at their true positions; relocated group members use remaining space. Make connectors thicker with strong light/dark contrast. See docs/spec/FEATURE_SPEC_marker_anchor_priority.md.
+
 - Release acceptance (2026-09-09): the user signed off v0.2.0-dev.7 and authorized normal v0.2.0. The original implementation and all feature addenda through marker layout are accepted. Promote the tested behavior without functional changes; future work follows the established prerelease feedback process.
 
 - Household marker preference (2026-09-09): spread overlapping person/device/You are here icons individually by default, with an optional grouping checkbox. Display offsets must retain true-coordinate connectors and must not affect radius or auto-fit. People-only auto-fit uses filtered people/device positions. See docs/spec/FEATURE_SPEC_marker_layout.md.
