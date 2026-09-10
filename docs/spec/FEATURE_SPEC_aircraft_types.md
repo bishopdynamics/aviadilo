@@ -1,6 +1,6 @@
 # SPEC: Aircraft icons and type filters
 
-- **Status:** implemented, verified and published as v0.2.0-dev.5 from c686f72; awaiting user assessment.
+- **Status:** complete — user signed off v0.2.0-dev.7 on 2026-09-09 and authorized promotion to normal v0.2.0.
 
 ## Summary
 
@@ -53,6 +53,8 @@ None blocking. Broad kind groups are the stated interpretation of aircraft types
 None added to the backlog. Exact-model silhouettes or supplemental classification databases are outside this request.
 
 ## Change Log
+
+- 2026-09-09 — User signed off the final v0.2.0-dev.7 behavior and authorized normal v0.2.0 publication. Promotion changes version metadata only.
 
 - 2026-09-09 — Published [v0.2.0-dev.5](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.0-dev.5) from c686f72 after all remote workflows passed. Public ZIP exactly matches the native-tested candidate; actual HACS installation with published metadata/bytes passed. Normal v0.1.0 remains Latest.
 

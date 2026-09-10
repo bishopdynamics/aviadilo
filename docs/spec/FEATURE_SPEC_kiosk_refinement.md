@@ -1,6 +1,6 @@
 # SPEC: Shared map cache, unified data pipeline, and kiosk presentation
 
-- **Status:** in-progress — the user approved the complete spec on 2026-09-08; slices 1 (asset contracts) and 2 (backend assets) implemented and independently verified. Slice 3 is implemented with automated and native evidence; acceptance awaits the HA preview-remount decision described under Open Questions.
+- **Status:** complete — user signed off v0.2.0-dev.7 on 2026-09-09 and authorized promotion to normal v0.2.0.
 - **Parent:** [ROOT_SPEC.md](ROOT_SPEC.md).
 - **Inputs:** `docs/TODO.md`, “Notes from initial completed version,” and the subsequent discussion.
 - **Baseline:** published `v0.1.0-dev.2`; HA 2026.9.1, Node 24.20.0, Python 3.14.2, current pinned Chromium tooling.
@@ -228,14 +228,17 @@ All slices are **(M), [serial]**. Freeze interfaces in slice 1 before behavior w
 
 ## Open Questions
 
-The user approved the design, but native slice 3 verification found one platform constraint requiring clarification: HA frontend 20260826.6 replaces custom-card preview elements on every changed configuration, so each replacement gets a new per-element weather client. The shared real-data pipeline and connection-owned asset cache remain unchanged. The user has been asked whether to accept native replacement semantics or specify a general session handoff; the answer is pending. See [HA preview lifecycle](../research/ha-preview-lifecycle.md). If a technical constraint would require different editor/live data behavior, a new public provider, weaker cache/auth guarantees or a materially different resource budget, stop and discuss it with the user before changing this design.
+The user approved the design, but native slice 3 verification found one platform constraint requiring clarification: HA frontend 20260826.6 replaces custom-card preview elements on every changed configuration, so each replacement gets a new per-element weather client. The shared real-data pipeline and connection-owned asset cache remain unchanged. The user signed off the shipped behavior for 0.2.0 on 2026-09-09. This accepts the release without adding a general session handoff or claiming uninterrupted per-element clients across HA-forced replacement; that stronger behavior remains unspecified. See [HA preview lifecycle](../research/ha-preview-lifecycle.md). If a technical constraint would require different editor/live data behavior, a new public provider, weaker cache/auth guarantees or a materially different resource budget, stop and discuss it with the user before changing this design.
 
 ## Deferred / Follow-ups
 
 - Alternative basemap providers, native vector dark styles or self-hosted tile stacks; revisit if locally styled Standard tiles do not meet the user's visual needs. No bulk/offline prefetch support is added by this feature.
-- Inherited ROOT_SPEC deferrals remain unchanged. Physical kiosk and HACS upgrade checks described above are acceptance work, not deferred features.
+- General weather-client continuity across HA-forced preview element replacement remains unspecified and unimplemented; the current release behavior is user-accepted. See the lifecycle research above.
+- Inherited ROOT_SPEC deferrals remain unchanged. The final prerelease completed user acceptance on 2026-09-09.
 
 ## Change Log
+
+- 2026-09-09 — User signed off the final v0.2.0-dev.7 behavior and authorized normal v0.2.0 publication. Promotion changes version metadata only.
 
 - 2026-09-08 — Remaining slices 4–6 implemented, verified and delivered as prerelease v0.2.0-dev.1 from c2ddc49. Public ZIP matches the tested candidate exactly; published-metadata/bytes HACS installation and retained-data upgrade passed. Twenty-minute saved/native-editor run, warm return/second-browser/restart and all remote workflows passed. Normal v0.1.0 stays Latest. User kiosk assessment and the distinct unanswered native-preview-remount choice remain; no stronger continuity guarantee is inferred.
 

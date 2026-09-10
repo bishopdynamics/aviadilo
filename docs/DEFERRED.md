@@ -18,3 +18,5 @@ One line per item: `- <what> — from docs/spec/<file>.md (YYYY-MM-DD)`
 - Alerts, lightning, wildfire, additional geographic layers, and a 3D globe — from docs/spec/ROOT_SPEC.md (2026-09-06; approved).
 - Additional browser/older-HA support after dedicated compatibility testing — from docs/spec/ROOT_SPEC.md (2026-09-06; approved).
 - Alternative basemap providers, native vector dark styles or self-hosted tiles if styling cached Standard raster tiles proves insufficient — from docs/spec/FEATURE_SPEC_kiosk_refinement.md (2026-09-08; approved).
+
+- General weather-client continuity across HA-forced preview element replacement remains unspecified; the shipped behavior is accepted for 0.2.0. Shared data/assets already survive through the common pipeline. See [kiosk refinement](spec/FEATURE_SPEC_kiosk_refinement.md) and [native lifecycle evidence](research/ha-preview-lifecycle.md).

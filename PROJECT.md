@@ -6,6 +6,8 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 
 ## Project-specific rules
 
+- Release acceptance (2026-09-09): the user signed off v0.2.0-dev.7 and authorized normal v0.2.0. The original implementation and all feature addenda through marker layout are accepted. Promote the tested behavior without functional changes; future work follows the established prerelease feedback process.
+
 - Household marker preference (2026-09-09): spread overlapping person/device/You are here icons individually by default, with an optional grouping checkbox. Display offsets must retain true-coordinate connectors and must not affect radius or auto-fit. People-only auto-fit uses filtered people/device positions. See docs/spec/FEATURE_SPEC_marker_layout.md.
 
 - People follow-up 2026-09-09: prefer Home Assistant `person` entities for household members, while retaining direct `device_tracker` support and existing selections. Match the stock map's person coordinates/active-zone fallback without reimplementing tracker priority or changing household links. See docs/spec/FEATURE_SPEC_person_locations.md. User diagnostic downloads belong in ignored root `tmp/`; never publish their contents.
@@ -17,7 +19,7 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 - User follow-up 2026-09-08: current kiosk release works very well. Graphical options for hiding layer buttons (fixed saved layers) and auto-sizing height to the page are delivered in v0.2.0-dev.2. See docs/spec/FEATURE_SPEC_map_layout.md; default controls/fixed sizing remain compatible.
 
 - Follow-up direction approved 2026-09-08: production card viewing, dashboard editing, card editing and picker previews must use the same real-data clients, integration cache, upstream fetching and refresh rules. A preview flag must not select synthetic data or a cache-only path. Discuss any technical reason for an exception with the user before implementing it. Synthetic feeds remain confined to development/test harnesses.
-- Kiosk refinement retains layer buttons, Recenter, the optional aircraft list and selection popups while removing routine status/weather settings panels. Shared basemap caching, map themes and mutually exclusive wind display modes/color are covered by `docs/spec/FEATURE_SPEC_kiosk_refinement.md` (approved by the user on 2026-09-08; implementation in progress).
+- Kiosk refinement retains layer buttons, Recenter, the optional aircraft list and selection popups while removing routine status/weather settings panels. Shared basemap caching, map themes and mutually exclusive wind display modes/color are covered by `docs/spec/FEATURE_SPEC_kiosk_refinement.md` (approved on 2026-09-08; final behavior signed off on 2026-09-09).
 - License: MIT, explicitly selected by the user on 2026-09-08. Keep the license notice in the repository and distributed release ZIP.
 - Commit the `.bishop/` folder with the project, including app-generated updates. The user explicitly requires it to remain version-controlled (2026-09-07); do not leave those changes out of project commits merely because the app generated them.
 - Approved stack (2026-09-06): TypeScript + Lit + Vite + Leaflet, with a companion Python Home Assistant integration for shared data collection and caching.

@@ -1,6 +1,6 @@
 # SPEC: Optional layer controls and automatic page height
 
-- **Status:** implemented and verified — published v0.2.0-dev.2; awaiting user assessment.
+- **Status:** complete — user signed off v0.2.0-dev.7 on 2026-09-09 and authorized promotion to normal v0.2.0.
 
 ## Summary
 
@@ -52,6 +52,8 @@ None blocking implementation. The optional height clarification can steer implem
 No new deferred work. Existing provider and physical-device limitations remain as recorded in the parent specs.
 
 ## Change Log
+
+- 2026-09-09 — User signed off the final v0.2.0-dev.7 behavior and authorized normal v0.2.0 publication. Promotion changes version metadata only.
 
 - 2026-09-08 — Published v0.2.0-dev.2 from 9d714aa. Actual public ZIP matches the tested candidate; tagged package and published-bytes HACS installation passed with normal v0.1.0 Latest unchanged. All local/native/remote checks passed; user assessment remains.
 

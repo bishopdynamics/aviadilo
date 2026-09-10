@@ -1,6 +1,6 @@
 # SPEC: Optional you-are-here reference marker
 
-- **Status:** implemented, verified and published as v0.2.0-dev.4 from 8b89254; user-confirmed working and visually accepted on 2026-09-09.
+- **Status:** complete — user signed off v0.2.0-dev.7 on 2026-09-09 and authorized promotion to normal v0.2.0.
 
 ## Summary
 
@@ -50,6 +50,8 @@ No blocking question. The optional location clarification can steer the work; th
 No new deferred work; live-device location is outside this requested reference-marker implementation unless the user selects it.
 
 ## Change Log
+
+- 2026-09-09 — User signed off the final v0.2.0-dev.7 behavior and authorized normal v0.2.0 publication. Promotion changes version metadata only.
 
 - 2026-09-09 — User confirms the marker works and looks good; next requested refinement is aircraft-kind icons and filters.
 

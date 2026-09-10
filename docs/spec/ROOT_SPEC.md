@@ -1,6 +1,6 @@
 # SPEC: Aviadilo household map
 
-- **Status:** in-progress — person support is user-confirmed and fixed the missing person. Household marker spreading/optional grouping and people-only auto-fit are the final requested refinement before stable release assessment.
+- **Status:** complete — user signed off v0.2.0-dev.7 on 2026-09-09 and authorized promotion to normal v0.2.0.
 - **Addenda:** [FEATURE_SPEC_kiosk_refinement.md](FEATURE_SPEC_kiosk_refinement.md) — delivered in v0.2.0-dev.1 and positively assessed by the user; shared basemap caching, identical edit/live data, quiet presentation, themes and wind controls.
 - **Addenda:** [FEATURE_SPEC_map_layout.md](FEATURE_SPEC_map_layout.md) — requested 2026-09-08 after positive kiosk acceptance; optional layer buttons and auto page height.
 - **Addenda:** [FEATURE_SPEC_kiosk_permissions.md](FEATURE_SPEC_kiosk_permissions.md) — non-admin kiosk asset subscription repair, requested 2026-09-08.
@@ -16,7 +16,7 @@
 
 Aviadilo replaces separate aircraft, radar, and household-location maps with one large Lovelace map suitable for the user's Chromium kiosk. A Python Home Assistant integration shares external data collection and caching across cards and devices. A TypeScript/Lit/Leaflet card renders aircraft, precipitation radar, wind, and existing household trackers as independent layers. Every supported setting has a graphical editor, and distant travellers cannot pull the home view out to a world map.
 
-The initial implementation, kiosk refinement, optional layer controls, automatic page height, non-admin permission fix and reference marker are delivered. The user confirms the current release works and looks good, and requests aircraft-kind icons with graphical type filters. The addenda supersede the original production-preview and presentation choices below; the separate native-preview-remount policy question remains recorded in the kiosk addendum.
+The initial implementation and all addenda are delivered and user-accepted for 0.2.0, including aircraft types, person locations, household marker layout and people-only auto-fit. The addenda supersede the original production-preview and presentation choices below. Native HA preview replacement remains a documented lifecycle limitation; no cross-remount client-continuity guarantee is added.
 
 ## Goals
 
@@ -269,6 +269,8 @@ None. The user approved all remaining engineering choices on 2026-09-06.
 - Additional browser/older-HA support after dedicated compatibility testing.
 
 ## Change Log
+
+- 2026-09-09 — User signed off the final v0.2.0-dev.7 behavior and authorized normal v0.2.0 publication. Promotion changes version metadata only.
 
 - 2026-09-06 — Drafted from the accepted combined-map direction, source-selection spike, and latest-HA/Chromium tablet compatibility input. Added proposed cache/transport/package choices and serial owned-file slices. No implementation approval inferred.
 - 2026-09-06 — User corrected delivery to HACS from the beginning and created/pushed public `bishopdynamics/aviadilo` with remote `github`. Replaced manual-first/GitLab assumptions with bundled HACS Integration packaging, automatic card-module loading, GitHub Actions, and HACS install/upgrade acceptance.

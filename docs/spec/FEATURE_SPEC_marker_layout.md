@@ -1,6 +1,6 @@
 # SPEC: Non-overlapping household markers and people auto-fit
 
-- **Status:** implemented, verified and published as v0.2.0-dev.7 from 239fb4b; awaiting final user assessment before stable.
+- **Status:** complete — user signed off v0.2.0-dev.7 on 2026-09-09 and authorized promotion to normal v0.2.0.
 
 ## Summary
 
@@ -57,9 +57,11 @@ None blocking. Explicit user preference: always spread, grouping optional. Peopl
 
 ## Deferred / Follow-ups
 
-No new technical features are deferred. Stable 0.2.0 follows the user's assessment of the final prerelease. The previously documented intermittent-aircraft and preview-remount questions remain separate; do not invent new findings or suppress existing errors here.
+No new technical features are deferred. The user signed off the final prerelease and authorized stable 0.2.0 on 2026-09-09. The previously documented intermittent-aircraft and preview-remount questions remain separate; do not invent new findings or suppress existing errors here.
 
 ## Change Log
+
+- 2026-09-09 — User signed off the final v0.2.0-dev.7 behavior and authorized normal v0.2.0 publication. Promotion changes version metadata only.
 
 - 2026-09-09 — Published [v0.2.0-dev.7](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.0-dev.7) from 239fb4b. Remote native/hassfest/HACS/publication checks passed; public ZIP exactly matches tested bytes and actual published-metadata/bytes HACS install passed. Normal 0.1.0 remains Latest pending final assessment and stable 0.2.0.
 

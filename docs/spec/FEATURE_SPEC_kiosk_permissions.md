@@ -1,6 +1,6 @@
 # SPEC: Asset subscriptions for ordinary kiosk users
 
-- **Status:** complete — published v0.2.0-dev.3; user confirmed on 2026-09-09 that it works great.
+- **Status:** complete — user signed off v0.2.0-dev.7 on 2026-09-09 and authorized promotion to normal v0.2.0.
 
 ## Summary
 
@@ -48,6 +48,8 @@ None. The source and frontend dependency explain the reported log and blank map;
 No new deferred work.
 
 ## Change Log
+
+- 2026-09-09 — User signed off the final v0.2.0-dev.7 behavior and authorized normal v0.2.0 publication. Promotion changes version metadata only.
 
 - 2026-09-09 — User confirms the kiosk fix works great and requests only a new optional reference marker. Do not reopen the permission repair.
 

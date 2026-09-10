@@ -1,6 +1,6 @@
 # SPEC: Person entities and stock-map location parity
 
-- **Status:** implemented, verified and published as v0.2.0-dev.6 from cb3a4d4; user-confirmed working and fixed the missing person on 2026-09-09.
+- **Status:** complete — user signed off v0.2.0-dev.7 on 2026-09-09 and authorized promotion to normal v0.2.0.
 
 ## Summary
 
@@ -57,6 +57,8 @@ None blocking. The selected household person/entity values remain the user's con
 No new deferred feature. The separately open aircraft-warning investigation retains its existing need for incident evidence.
 
 ## Change Log
+
+- 2026-09-09 — User signed off the final v0.2.0-dev.7 behavior and authorized normal v0.2.0 publication. Promotion changes version metadata only.
 
 - 2026-09-09 — User confirms this works much better and fixes the missing person; next refinement is non-overlapping household markers and people auto-fit.
 
