@@ -214,14 +214,14 @@ async def test_shared_admission_limits_and_cancellation_release_slots() -> None:
     backend = Backend()
     backend.wait = asyncio.Event()
     gateway = AssetGateway(lambda: backend)
-    pending = [asyncio.create_task(gateway.get(request())) for _ in range(8)]
+    pending = [asyncio.create_task(gateway.get(request())) for _ in range(64)]
     await asyncio.sleep(0)
     req = photo_request()
     result = await gateway.get(req)
     assert result.status == 429
     assert result.headers["Retry-After"] == "1"
     for i in range(3):
-        for _ in range(8):
+        for _ in range(64):
             req = request()
             req["hass_user"].id = f"synthetic-user-{i}"
             pending.append(asyncio.create_task(gateway.get(req)))
@@ -697,3 +697,74 @@ async def test_denied_person_never_reads_its_source_or_fetches_a_photo() -> None
     )
     cast(Any, req.app[KEY_HASS]).states.get.assert_not_called()
     assert backend.calls == []
+
+
+async def test_warm_hits_bypass_saturated_cold_lane_and_queued_misses_recheck() -> None:
+    class CachedBackend(Backend):
+        cached = False
+
+        async def lookup(self, request: AssetRequest) -> AssetPayload | None:
+            if self.cached:
+                return AssetPayload(self.payload, 60)
+            return None
+
+    backend = CachedBackend()
+    backend.wait = asyncio.Event()
+    gateway = AssetGateway(lambda: backend)
+    pending = [asyncio.create_task(gateway.get(request())) for _ in range(16)]
+    async with asyncio.timeout(1):
+        while len(backend.calls) != 8 or len(gateway.cold.waiting.get("synthetic-user", [])) != 8:
+            await asyncio.sleep(0)
+    backend.cached = True
+    async with asyncio.timeout(1):
+        hit = await gateway.get(request())
+        conditional = await gateway.get(
+            request(extra_headers={"If-None-Match": hit.headers["ETag"]})
+        )
+    assert hit.status == 200 and conditional.status == 304
+    assert len(backend.calls) == 8 and sum(gateway.cold.active.values()) == 8
+    backend.wait.set()
+    assert all(result.status == 200 for result in await asyncio.gather(*pending))
+    assert len(backend.calls) == 8
+    assert not gateway.users and not gateway.cold.active and not gateway.cold.waiting
+    assert not gateway.probes.active and not gateway.probes.waiting
+
+
+async def test_queued_disconnect_and_generation_change_never_start_stale_fetch() -> None:
+    backend = Backend()
+    backend.wait = asyncio.Event()
+    gateway = AssetGateway(lambda: backend)
+    active = [asyncio.create_task(gateway.get(request())) for _ in range(8)]
+    async with asyncio.timeout(1):
+        while len(backend.calls) < 8:
+            await asyncio.sleep(0)
+    req = request()
+    disconnected = asyncio.create_task(gateway.get(req))
+    stale = asyncio.create_task(gateway.get(request()))
+    async with asyncio.timeout(1):
+        while len(gateway.cold.waiting.get("synthetic-user", [])) < 2:
+            await asyncio.sleep(0)
+    cast(Any, req.transport).is_closing.return_value = True
+    with pytest.raises(asyncio.CancelledError):
+        async with asyncio.timeout(1):
+            await disconnected
+    assert len(gateway.cold.waiting["synthetic-user"]) == 1
+    backend.generation.counter += 1
+    backend.wait.set()
+    assert (await stale).status == 409
+    await asyncio.gather(*active)
+    assert len(backend.calls) == 8
+    assert not gateway.users and not gateway.cold.waiting and not gateway.cold.active
+
+
+async def test_probe_rechecks_identity_before_returning_cached_bytes() -> None:
+    class ChangedBackend(Backend):
+        async def lookup(self, request: AssetRequest) -> AssetPayload | None:
+            self.generation.counter += 1
+            return AssetPayload(self.payload, 60)
+
+    backend = ChangedBackend()
+    gateway = AssetGateway(lambda: backend)
+    result = await gateway.get(request(extra_headers={"If-None-Match": "*"}))
+    assert result.status == 409 and not backend.calls
+    assert not gateway.probes.active and not gateway.users

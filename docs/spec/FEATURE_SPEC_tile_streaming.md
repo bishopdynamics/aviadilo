@@ -1,6 +1,6 @@
 # SPEC: Reliable tile streaming and recent-view caching
 
-- **Status:** in-progress — user approved the discussed repair/reuse plan on 2026-09-09 ("that sounds good, lets do it"). Implement and deliver a verified prerelease for household testing.
+- **Status:** implemented and independently verified — parent427frontend/576backend/40browser gates pass; packaged native acceptance and prerelease delivery in progress. User approved the discussed plan on2026-09-09.
 - **Parent:** [ROOT_SPEC.md](ROOT_SPEC.md).
 - **Baseline:** signed-off normal 0.2.0, release commit 0b3a4d5; HA 2026.9.1 and Chromium 153.0.8010.12.
 
@@ -60,7 +60,7 @@ Separate idle basemap cache lifetime from active network/viewer lifetime. Last-o
    - Owned files: `custom_components/aviadilo/assets.py`, `custom_components/aviadilo/service.py`, `custom_components/aviadilo/providers/osm.py`; new narrowly named asset-admission helper module if useful; `src/data/assets.ts`, new narrowly named asset-cache/retry helper modules if useful, `src/map/basemap.ts`; `tests/backend/test_assets.py`, `tests/backend/test_osm.py` (or the existing OSM test filename), new focused admission tests if needed; `tests/frontend/data/assets.test.ts`, existing basemap/fixture-asset tests as required; `tests/e2e/assets.spec.ts`, `dev/runtime.ts` only for synthetic fault controls. No broad unrelated refactors.
    - Worker verification: full lint, frontend/backend tests and package build. Parent runs offline browser and actual HA checks, reviews and commits the slice.
 2. **(M) [serial] Packaged acceptance and prerelease delivery.** Orchestrator owns singleton environment and trivial version promotion.
-   - Owned files: six package version files (`package.json`, `package-lock.json`, `pyproject.toml`, `uv.lock`, integration `const.py`/`manifest.json`), README/user guide/development notes, `docs/releases/0.2.1-dev.1.md`. Orchestrator-only continuity: this spec, ROOT addendum, PROJECT, task queue, DEFERRED and handoff. User TODO only marked done after user assessment.
+   - Owned files: `scripts/check_release.py` required-module list, six package version files (`package.json`, `package-lock.json`, `pyproject.toml`, `uv.lock`, integration `const.py`/`manifest.json`), README/user guide/development notes, `docs/releases/0.2.1-dev.1.md`. Orchestrator-only continuity: this spec, ROOT addendum, PROJECT, task queue, DEFERRED and handoff. User TODO only marked done after user assessment.
    - Verify cold multi-browser same-user pressure, warm hits during miss saturation, injected temporary failures recovering without movement, cancellation while waiting, navigation cache reuse, idle generation clear, reconnect and regular/read-only photo safety. Use synthetic upstream only for automated pan/zoom/load tests. Run full make check; package and actual HACS upgrade from stable; native multi-context resource/idle checks; remote native/HACS/hassfest; public ZIP equality and actual published-metadata/bytes HACS install. Normal Latest remains 0.2.0.
 
 ## Open Questions
@@ -73,5 +73,7 @@ None blocking. The optional question about whether household kiosks share one lo
 - Existing aircraft-warning and general weather-client remount questions remain separate.
 
 ## Change Log
+
+- 2026-09-09 — Implementation complete with paired gateway/retry/retention tests and coherent0.2.1-dev.1 packaging. Parent full gates pass427frontend/576backend/40browser scenarios. Native baseline defects reproduced; repaired gateway, retry and navigation checks pass. Review also reproduced/fixed interrupted JSON error-stream cleanup and verified Retry-After in native Chromium. Final native multi-context/package/publication checks remain in progress.
 
 - 2026-09-09 — Recorded the user-approved implementation sequence and bounded engineering choices. One serial paired worker; native acceptance and release remain orchestrator-owned. No new behavior is approved for stable promotion before prerelease assessment.

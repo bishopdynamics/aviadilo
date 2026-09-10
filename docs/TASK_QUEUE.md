@@ -4,7 +4,7 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-1. [in-progress] Implement [reliable tile streaming](spec/FEATURE_SPEC_tile_streaming.md), approved 2026-09-09. Cache-first bounded admission, automatic transient recovery and recent-view basemap retention; verify shared-login kiosks and publish 0.2.1-dev.1 for user assessment. Stable 0.2.0 remains Latest.
+1. [in-progress] Implement [reliable tile streaming](spec/FEATURE_SPEC_tile_streaming.md), approved 2026-09-09. Cache-first bounded admission, automatic transient recovery and recent-view basemap retention; verify shared-login kiosks and publish 0.2.1-dev.1 for user assessment. Implementation and parent427frontend/576backend/40browser gates pass. Final native acceptance/publication in progress. Stable0.2.0 remains Latest.
 
 ## Awaiting incident evidence
 

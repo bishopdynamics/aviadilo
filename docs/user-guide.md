@@ -19,6 +19,14 @@ The 0.2.0 release has the same functionality as the signed-off 0.2.0-dev.7 prere
 
 Legacy combined wind markers and particles become **Particles**. Legacy wind settings that drew nothing become **Arrows**, while preserving whether the Wind layer is enabled.
 
+## Optional tile-streaming prerelease
+
+`0.2.1-dev.1` improves tile recovery and sharing across kiosks. Select it explicitly in HACS under **Need a different version? → Release**, restart Home Assistant and reload dashboard browsers. Normal `0.2.0` remains the stable release during testing.
+
+Visible basemap tiles retry temporary capacity/connection failures with controlled backoff. Cached tiles can load while uncached tiles wait for the provider, including when several kiosks share one HA login. Fresh basemap images can be reused for up to ten minutes after navigating away, within a bounded memory cache. Returning checks the current integration/cache identity before reuse; a cache clear invalidates retained images. This navigation cache does not retain household photos or keep map requests running while the card is closed.
+
+A previously unseen area can still load progressively because new OpenStreetMap requests remain paced. Existing **OpenStreetMap minimum interval** settings affect upstream fetching; local queuing and cache reuse need no new setting. Temporary retries do not bypass provider cooldowns.
+
 ## Checking the saved card
 
 Saved and editor cards should load real basemap tiles, selected HA trackers and enabled provider layers. The published integration does not contain the development provider shim. A **Synthetic · offline preview** badge or fabricated DEMO/Alex/Sam data indicates the older prerelease/frontend is still loaded; confirm the update, restart HA and reload the browser.

@@ -40,6 +40,9 @@ export class AssetFailure extends Error {
   constructor(
     readonly code: AssetErrorBody['code'],
     readonly localCapacity = false,
+    readonly retryable = false,
+    readonly retryAfterMs = 0,
+    readonly status?: number,
   ) {
     super(
       {
@@ -55,6 +58,19 @@ export class AssetFailure extends Error {
       }[code],
     );
   }
+}
+/** A valid server delay is a floor. Infinity suspends rather than overflowing. */
+export function retryAfter(value: string | null, now = Date.now()): number {
+  if (!value) return 0;
+  const text = value.trim();
+  if (/^\d+$/.test(text)) {
+    const delay = Number(text) * 1000;
+    return Number.isSafeInteger(delay) ? delay : Infinity;
+  }
+  // Reject numeric junk that Date.parse accepts as a calendar year/month.
+  if (!/^[A-Za-z]{3},?\s/.test(text)) return 0;
+  const date = Date.parse(text);
+  return Number.isFinite(date) ? Math.max(0, date - now) : 0;
 }
 const abortError = () =>
   new DOMException('Asset request cancelled', 'AbortError');
@@ -214,15 +230,19 @@ export function pictureKey(picture: string): string {
 function bounded<T>(
   promise: Promise<T>,
   signal: AbortSignal,
-  milliseconds = 10000,
+  milliseconds: number | null = 10000,
+  transient = false,
 ): Promise<T> {
   let cleanup = () => {};
   return new Promise<T>((resolve, reject) => {
     const abort = () => reject(abortError());
-    const timer = setTimeout(
-      () => reject(new AssetFailure('unavailable')),
-      milliseconds,
-    );
+    const timer =
+      milliseconds === null
+        ? undefined
+        : setTimeout(
+            () => reject(new AssetFailure('unavailable', false, transient)),
+            milliseconds,
+          );
     cleanup = () => {
       clearTimeout(timer);
       signal.removeEventListener('abort', abort);
@@ -234,7 +254,7 @@ function bounded<T>(
         error instanceof AssetFailure ||
           (error instanceof DOMException && error.name === 'AbortError')
           ? error
-          : new AssetFailure('unavailable'),
+          : new AssetFailure('unavailable', false, transient),
       ),
     );
   }).finally(() => cleanup());
@@ -271,6 +291,11 @@ export class AssetClient {
   get currentInfo(): AssetInfo | undefined {
     return this.info;
   }
+  get readyInfo(): AssetInfo | undefined {
+    return this.unsubscribe && !this.starting && !this.refreshing
+      ? this.info
+      : undefined;
+  }
   observe(listener: (info: AssetInfo | undefined) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -295,8 +320,9 @@ export class AssetClient {
   ready(): Promise<AssetInfo> {
     if (this.disposed || !this.ha.connected)
       return Promise.reject(new AssetFailure('unavailable'));
-    if (this.info && this.unsubscribe) return Promise.resolve(this.info);
     if (this.starting) return this.starting;
+    if (this.refreshing) return this.refreshing;
+    if (this.info && this.unsubscribe) return Promise.resolve(this.info);
     if (this.unsubscribe) return this.refresh();
     const epoch = this.epoch;
     this.starting = this.start(epoch).finally(() => {
@@ -392,7 +418,11 @@ export class AssetClient {
       this.lifetime.signal,
       ...(signal ? [signal] : []),
     ]);
-    const timer = setTimeout(() => controller.abort(), 150000);
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 150000);
     let response: Response | undefined,
       released = false;
     const release = () => {
@@ -415,13 +445,28 @@ export class AssetClient {
         },
         () => undefined,
       );
-      response = await bounded(fetching, combined, 150000);
+      response = await bounded(fetching, combined, 150000, true);
       if (combined.aborted) throw abortError();
       if (!response.ok) {
         // HA may reject auth or a missing route before our JSON handler runs.
         if (response.status === 401) throw new AssetFailure('unauthorized');
         if (response.status === 403) throw new AssetFailure('forbidden');
         if (response.status === 404) throw new AssetFailure('not_found');
+        const retryable = [429, 502, 503, 504].includes(response.status);
+        const delay = retryAfter(response.headers.get('Retry-After'));
+        if (
+          retryable &&
+          (response.status === 504 ||
+            response.headers.get('Content-Type')?.split(';')[0] !==
+              'application/json')
+        )
+          throw new AssetFailure(
+            response.status === 429 ? 'busy' : 'upstream_error',
+            false,
+            true,
+            delay,
+            response.status,
+          );
         // Error bodies are bounded before JSON decoding; upstream payloads never
         // become UI error text. A renderer must similarly bound PNG consumption.
         const body = await readError(response, combined);
@@ -433,7 +478,13 @@ export class AssetClient {
           this.publish(undefined);
           await this.refresh();
         }
-        throw new AssetFailure(body.code);
+        throw new AssetFailure(
+          body.code,
+          false,
+          retryable,
+          delay,
+          response.status,
+        );
       }
       if (
         response.headers.get(GENERATION_HEADER) !== info.generation ||
@@ -451,6 +502,7 @@ export class AssetClient {
       };
     } catch (error) {
       release();
+      if (timedOut) throw new AssetFailure('unavailable', false, true);
       if (
         error instanceof AssetFailure ||
         (error instanceof DOMException && error.name === 'AbortError')
@@ -496,7 +548,7 @@ async function readError(
   const decoder = new TextDecoder('utf-8', { fatal: true });
   try {
     while (true) {
-      const chunk = await bounded(reader.read(), signal);
+      const chunk = await bounded(reader.read(), signal, 10000, true);
       if (chunk.done) break;
       size += chunk.value.length;
       if (size > 2048) throw new AssetFailure('upstream_error');
@@ -506,11 +558,21 @@ async function readError(
       JSON.parse(text + decoder.decode()),
       response.status,
     );
-  } catch {
+  } catch (error) {
     if (signal.aborted) throw abortError();
+    if (error instanceof AssetFailure && error.retryable)
+      throw new AssetFailure(
+        error.code,
+        false,
+        [429, 502, 503, 504].includes(response.status),
+        retryAfter(response.headers.get('Retry-After')),
+        response.status,
+      );
     throw new AssetFailure('upstream_error');
   } finally {
-    await reader.cancel();
+    // An errored stream rejects cancel() with its stored transport error. It
+    // must neither replace the classified failure nor delay abort cleanup.
+    void reader.cancel().catch(() => undefined);
     reader.releaseLock();
   }
 }
@@ -524,9 +586,23 @@ const connections = new WeakMap<
     owners: Map<object, () => HassTransport>;
   }
 >();
-/** One owner per visible renderer. Last release cancels transport and forgets all
- * state. A new HA connection/user gets a different coordinator. An active owner's
- * getter supplies current hass methods; all getters must describe that connection.
+const IDLE_RETENTION_MS = 10 * 60 * 1000;
+interface RetiredBasemap {
+  connection: object;
+  userId?: string;
+  info: AssetInfo;
+  entries: DecodedEntry[];
+  timer: ReturnType<typeof setTimeout>;
+}
+let retired: RetiredBasemap | undefined;
+function discardRetired(): void {
+  if (!retired) return;
+  clearTimeout(retired.timer);
+  for (const entry of retired.entries) disposeImage(entry);
+  retired = undefined;
+}
+/** One owner per visible renderer. Last release stops all activity and may leave
+ * one bounded public-basemap cache; a fresh authenticated handshake gates reuse.
  */
 export function acquireAssets(current: () => HassTransport): {
   client: AssetClient;
@@ -536,6 +612,11 @@ export function acquireAssets(current: () => HassTransport): {
   const connection = current().connection;
   const owner = {};
   const userId = current().user?.id;
+  if (
+    retired &&
+    (retired.connection !== connection || retired.userId !== userId)
+  )
+    discardRetired();
   let shared = connections.get(connection);
   if (shared && shared.userId !== userId) {
     shared.decoded.dispose();
@@ -552,7 +633,30 @@ export function acquireAssets(current: () => HassTransport): {
         return getter();
       }),
     );
-    shared = { userId, client, decoded: new DecodedAssets(client), owners };
+    const decoded = new DecodedAssets(client);
+    const candidate = retired;
+    if (candidate) {
+      // An event arriving during subscription is not the required assets_info
+      // handshake. Adopt only after ready's authenticated refresh completes.
+      void client.ready().then(
+        (info) => {
+          if (retired !== candidate) return;
+          if (
+            client.currentInfo === info &&
+            info.generation === candidate.info.generation &&
+            info.entry_id === candidate.info.entry_id
+          ) {
+            clearTimeout(candidate.timer);
+            retired = undefined;
+            decoded.adopt(candidate.entries);
+          } else discardRetired();
+        },
+        () => {
+          if (retired === candidate) discardRetired();
+        },
+      );
+    }
+    shared = { userId, client, decoded, owners };
     connections.set(connection, shared);
   }
   shared.owners.set(owner, current);
@@ -565,6 +669,18 @@ export function acquireAssets(current: () => HassTransport): {
       released = true;
       shared.owners.delete(owner);
       if (shared.owners.size === 0) {
+        discardRetired();
+        const info = shared.client.currentInfo;
+        const entries = shared.decoded.retire();
+        if (info && entries.length && connections.get(connection) === shared) {
+          retired = {
+            connection,
+            userId,
+            info,
+            entries,
+            timer: setTimeout(discardRetired, IDLE_RETENTION_MS),
+          };
+        } else for (const entry of entries) disposeImage(entry);
         shared.decoded.dispose();
         shared.client.dispose();
         if (connections.get(connection) === shared)
@@ -604,9 +720,20 @@ interface DecodedEntry {
   image?: HTMLImageElement;
   expires: number;
   settled: boolean;
+  attempts: number;
+  nextAttempt: number;
+  failure?: AssetFailure;
+  unavailable: Set<(error: AssetFailure) => void>;
   promise: Promise<void>;
   resolve(): void;
   reject(error: unknown): void;
+}
+function disposeImage(entry: DecodedEntry): void {
+  entry.controller.abort();
+  entry.image?.removeAttribute('src');
+  entry.image = undefined;
+  if (entry.url) URL.revokeObjectURL(entry.url);
+  entry.url = undefined;
 }
 /** Connection-scoped admission, coalescing and decoded-image LRU. Active images
  * count against exactly the same budget as idle entries. Consumers share the URL
@@ -615,6 +742,8 @@ export class DecodedAssets {
   private entries = new Map<DecodedEntry, DecodedEntry>();
   private queue: DecodedEntry[] = [];
   private active = 0;
+  private retryTimer?: ReturnType<typeof setTimeout>;
+  private cooldown = 0;
   private bytes = 0;
   private disposed = false;
   private revision = 0;
@@ -627,6 +756,53 @@ export class DecodedAssets {
       this.revision++;
       this.clear();
     });
+  }
+  /** Transfer only completed public images; old leases are invalid immediately.
+   * Unsettled jobs remain in this decoder and cannot mutate its successor. */
+  retire(): DecodedEntry[] {
+    const kept: DecodedEntry[] = [];
+    this.disposed = true;
+    this.unobserve();
+    this.capacityListeners.clear();
+    for (const entry of this.entries.values()) {
+      if (
+        entry.need.kind !== 'basemap' ||
+        !entry.settled ||
+        entry.stale ||
+        entry.expires <= Date.now()
+      )
+        continue;
+      this.entries.delete(entry);
+      this.bytes -= entry.bytes;
+      const copy = {
+        ...entry,
+        controller: new AbortController(),
+        owners: 0,
+        unavailable: new Set<(error: AssetFailure) => void>(),
+      };
+      // Detach resources before abort listeners release their old leases.
+      entry.url = undefined;
+      entry.image = undefined;
+      entry.controller.abort();
+      kept.push(copy);
+    }
+    this.clear();
+    return kept;
+  }
+  adopt(entries: DecodedEntry[]): void {
+    for (const entry of entries) {
+      if (
+        this.disposed ||
+        entry.expires <= Date.now() ||
+        this.entries.size >= DECODED_LIMITS.entries ||
+        this.bytes + entry.bytes > DECODED_LIMITS.bytes
+      ) {
+        disposeImage(entry);
+      } else {
+        this.entries.set(entry, entry);
+        this.bytes += entry.bytes;
+      }
+    }
   }
   observeCapacity(listener: () => void): () => void {
     this.capacityListeners.add(listener);
@@ -654,9 +830,10 @@ export class DecodedAssets {
     need: AssetNeed,
     signal: AbortSignal,
     valid: () => boolean = () => true,
+    unavailable?: (error: AssetFailure) => void,
   ): Promise<DecodedAsset> {
     if (signal.aborted || this.disposed || !valid()) throw abortError();
-    let info = this.client.currentInfo;
+    let info = this.client.readyInfo;
     if (!info) {
       if (this.pendingReady + this.queue.length >= ASSET_LIMITS.pending)
         throw new AssetFailure('busy', true);
@@ -722,6 +899,9 @@ export class DecodedAssets {
         bytes,
         expires: 0,
         settled: false,
+        attempts: 0,
+        nextAttempt: 0,
+        unavailable: new Set(),
         promise,
         resolve,
         reject,
@@ -734,12 +914,17 @@ export class DecodedAssets {
     this.entries.delete(item);
     this.entries.set(item, item);
     item.owners++;
+    if (unavailable) {
+      item.unavailable.add(unavailable);
+      if (item.failure) unavailable(item.failure);
+    }
     let released = false;
     const release = () => {
       if (released) return;
       released = true;
       signal.removeEventListener('abort', release);
       item.owners--;
+      if (unavailable) item.unavailable.delete(unavailable);
       if (!item.owners) this.capacity();
       if (
         !item.owners &&
@@ -752,7 +937,7 @@ export class DecodedAssets {
     signal.addEventListener('abort', release, { once: true });
     this.pump();
     try {
-      await bounded(item.promise, signal, 150000);
+      await bounded(item.promise, signal, null);
       if (released || item.controller.signal.aborted || !valid())
         throw abortError();
       return {
@@ -768,23 +953,67 @@ export class DecodedAssets {
     }
   }
   private pump(): void {
-    while (
-      !this.disposed &&
-      this.active < ASSET_LIMITS.active &&
-      this.queue.length
-    ) {
-      const entry = this.queue.shift()!;
+    clearTimeout(this.retryTimer);
+    this.retryTimer = undefined;
+    if (this.disposed) return;
+    while (this.active < ASSET_LIMITS.active && this.queue.length) {
+      const now = Date.now();
+      if (now < this.cooldown) break;
+      // Stable FIFO among eligible jobs. Fresh demand skips sleeping retries.
+      const index = this.queue.findIndex((entry) => entry.nextAttempt <= now);
+      if (index < 0) break;
+      const entry = this.queue.splice(index, 1)[0];
       if (entry.controller.signal.aborted) continue;
       this.active++;
       void this.load(entry)
-        .then(entry.resolve, (error) => {
-          entry.reject(error);
-          this.drop(entry);
+        .then(entry.resolve, (error: unknown) => {
+          if (
+            !this.disposed &&
+            !entry.controller.signal.aborted &&
+            entry.owners &&
+            entry.need.kind === 'basemap' &&
+            error instanceof AssetFailure &&
+            error.retryable
+          ) {
+            entry.failure = error;
+            const backoff = Math.min(
+              30000,
+              1000 * 2 ** Math.min(entry.attempts++, 5),
+            );
+            const delay = Math.max(
+              Math.min(30000, backoff * (1 + Math.random() * 0.25)),
+              error.retryAfterMs,
+            );
+            entry.nextAttempt = Date.now() + delay;
+            if (error.status === 429)
+              this.cooldown = Math.max(this.cooldown, entry.nextAttempt);
+            this.queue.push(entry);
+            for (const listener of entry.unavailable) {
+              try {
+                listener(error);
+              } catch {
+                /* Presentation cannot own scheduling. */
+              }
+            }
+          } else {
+            entry.reject(error);
+            this.drop(entry);
+          }
         })
         .finally(() => {
           this.active--;
           this.pump();
         });
+    }
+    if (this.queue.length && this.active < ASSET_LIMITS.active) {
+      const next = Math.max(
+        this.cooldown,
+        Math.min(...this.queue.map((entry) => entry.nextAttempt)),
+      );
+      const delay = Math.max(0, next - Date.now());
+      // Long server delays suspend. Never wrap a timer into an immediate retry.
+      if (delay <= 2147483647)
+        this.retryTimer = setTimeout(() => this.pump(), delay);
     }
   }
   private async load(entry: DecodedEntry): Promise<void> {
@@ -793,6 +1022,7 @@ export class DecodedAssets {
       parseAssetPath(entry.key),
       entry.controller.signal,
     );
+    const receivedAt = Date.now();
     try {
       const bytes = await readPng(
         opened.response,
@@ -830,11 +1060,14 @@ export class DecodedAssets {
       const age = Number.isFinite(rawAge) && rawAge >= 0 ? rawAge : Infinity;
       const parsedDate = headers.has('Date')
         ? Date.parse(headers.get('Date')!)
-        : Date.now();
+        : receivedAt;
       const dateAge = Number.isFinite(parsedDate)
         ? Math.max(0, (Date.now() - parsedDate) / 1000)
         : Infinity;
-      const seconds = maxAge ? Number(maxAge[1]) - Math.max(age, dateAge) : 0;
+      const seconds = maxAge
+        ? Number(maxAge[1]) -
+          Math.max(age + (Date.now() - receivedAt) / 1000, dateAge)
+        : 0;
       const freshness = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
       entry.expires =
         /(?:^|,)\s*(?:no-store|no-cache)(?:\s|,|=|$)/i.test(control) ||
@@ -852,14 +1085,18 @@ export class DecodedAssets {
     this.bytes -= entry.bytes;
     this.capacity();
     this.queue = this.queue.filter((item) => item !== entry);
+    if (!this.queue.length) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = undefined;
+    }
     entry.controller.abort();
     entry.reject(abortError());
-    entry.image?.removeAttribute('src');
-    entry.image = undefined;
-    if (entry.url) URL.revokeObjectURL(entry.url);
-    entry.url = undefined;
+    disposeImage(entry);
   }
   clear(): void {
+    clearTimeout(this.retryTimer);
+    this.retryTimer = undefined;
+    this.cooldown = 0;
     for (const entry of this.entries.values()) this.drop(entry);
   }
   dispose(): void {
@@ -884,7 +1121,7 @@ async function readPng(
   let size = 0;
   try {
     while (true) {
-      const chunk = await bounded(reader.read(), signal);
+      const chunk = await bounded(reader.read(), signal, 10000, true);
       if (chunk.done) break;
       size += chunk.value.length;
       if (size > ASSET_LIMITS.bytes) throw new AssetFailure('upstream_error');

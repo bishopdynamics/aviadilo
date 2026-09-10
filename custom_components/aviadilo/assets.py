@@ -22,6 +22,8 @@ from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.http import KEY_HASS, HomeAssistantView
 from yarl import URL
 
+from .asset_admission import AssetLane
+
 GENERATION_HEADER = "X-Aviadilo-Generation"
 ASSETS_CHANGED = "aviadilo/assets_changed"
 MAX_BYTES = 2 * 1024 * 1024
@@ -245,6 +247,10 @@ class AssetService(Protocol):
     closed: bool
     generation: AssetGeneration
 
+    async def lookup(self, request: AssetRequest) -> AssetPayload | None:
+        """Fresh public basemap only; never fetch or revalidate."""
+        ...
+
     async def fetch(self, request: AssetRequest, user: User, referer: str | None) -> AssetPayload:
         """No collector demand. Never accept a client URL or token."""
         ...
@@ -255,6 +261,9 @@ class UnavailableAssetService:
     entry_id: str
     closed: bool = False
     generation: AssetGeneration = field(default_factory=AssetGeneration)
+
+    async def lookup(self, request: AssetRequest) -> AssetPayload | None:
+        return None
 
     async def fetch(self, request: AssetRequest, user: User, referer: str | None) -> AssetPayload:
         raise AssetFailure("unavailable")
@@ -374,11 +383,13 @@ def png_response(payload: AssetPayload, request: AssetRequest, headers: Any = No
 
 
 class AssetGateway:
-    """One gateway shared by both routes: 8 active/user, 32 total; no wait queue."""
+    """Authenticated cache-first admission, bounded independently of cold work."""
 
     def __init__(self, resolve: Callable[[], AssetService | None]) -> None:
         self.resolve = resolve
         self.users: dict[str, int] = {}
+        self.probes = AssetLane()
+        self.cold = AssetLane()
         self.subscription_users: dict[str, int] = {}
         self.subscription_connections: dict[ActiveConnection, int] = {}
 
@@ -449,7 +460,7 @@ class AssetGateway:
                 raise AssetFailure("stale_generation", service.generation.value)
             hass = request.app[KEY_HASS]
             authorize_photo(hass, user, asset)
-            if self.users.get(user.id, 0) >= 8 or sum(self.users.values()) >= 32:
+            if self.users.get(user.id, 0) >= 64 or sum(self.users.values()) >= 256:
                 raise AssetFailure("busy")
             self.users[user.id] = self.users.get(user.id, 0) + 1
             try:
@@ -461,29 +472,58 @@ class AssetGateway:
                     url = URL(referer)
                     if url.user is None and url.origin() == request.url.origin():
                         origin = str(url.origin()) + "/"
-                task = asyncio.create_task(
-                    service.fetch(
-                        asset,
-                        user,
-                        origin if asset.kind == "basemap" else str(request.url.origin()) + "/",
-                    )
-                )
+
+                def guard() -> None:
+                    if selected(self.resolve(), asset.entry_id) is not service:
+                        raise AssetFailure("unavailable")
+                    if asset.generation != service.generation.value:
+                        raise AssetFailure("stale_generation", service.generation.value)
+                    authorize_photo(hass, user, asset)
+
+                async def work() -> web.Response:
+                    from .providers.asset_http import off_loop
+
+                    payload = None
+                    if asset.kind == "basemap":
+                        async with self.probes.slot(user.id):
+                            guard()
+                            payload = await service.lookup(asset)
+                            guard()
+                            if payload is not None:
+                                response = await off_loop(
+                                    png_response, payload, asset, request.headers
+                                )
+                                guard()
+                                return response
+                    async with self.cold.slot(user.id):
+                        guard()
+                        if asset.kind == "basemap":
+                            payload = await service.lookup(asset)
+                            guard()
+                        if payload is None:
+                            payload = await service.fetch(
+                                asset,
+                                user,
+                                origin
+                                if asset.kind == "basemap"
+                                else str(request.url.origin()) + "/",
+                            )
+                        guard()
+                        response = await off_loop(png_response, payload, asset, request.headers)
+                        guard()
+                        return response
+
+                task = asyncio.create_task(work())
                 try:
                     async with asyncio.timeout(120):
                         while not task.done():
                             await asyncio.wait({task}, timeout=0.1)
                             if request.transport is None or request.transport.is_closing():
                                 raise asyncio.CancelledError
-                        payload = await task
+                        return await task
                 finally:
                     task.cancel()
                     await asyncio.gather(task, return_exceptions=True)
-                if selected(self.resolve(), asset.entry_id) is not service:
-                    raise AssetFailure("unavailable")
-                if asset.generation != service.generation.value:
-                    raise AssetFailure("stale_generation", service.generation.value)
-                authorize_photo(hass, user, asset)
-                return png_response(payload, asset, request.headers)
             finally:
                 self.users[user.id] -= 1
                 if not self.users[user.id]:

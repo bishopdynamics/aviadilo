@@ -749,6 +749,19 @@ class AviadiloService:
             self.reconcile()
             self._broadcast_status()
 
+    async def lookup(self, request: AssetRequest) -> AssetPayload | None:
+        if request.kind != "basemap":
+            return None
+        if self.closed or self.clearing:
+            raise AssetFailure("unavailable")
+        if request.generation != self.generation.value:
+            raise AssetFailure("stale_generation", self.generation.value)
+        epoch = self.asset_epoch
+        result = await self.osm.lookup(request)
+        if self.closed or self.clearing or epoch != self.asset_epoch:
+            raise AssetFailure("unavailable")
+        return result
+
     async def fetch(self, request: AssetRequest, user: User, referer: str | None) -> AssetPayload:
         if self.closed or self.clearing:
             raise AssetFailure("unavailable")

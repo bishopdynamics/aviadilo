@@ -149,6 +149,14 @@ class Basemap extends L.GridLayer {
             ...(this.entryId ? { entry_id: this.entryId } : {}),
           },
           controller.signal,
+          () => !controller.signal.aborted,
+          (error) => {
+            if (controller.signal.aborted) return;
+            tile.classList.add('tile-unavailable');
+            tile.title = error.message;
+            tile.textContent = '';
+            delete tile.dataset.aviadiloCache;
+          },
         )
         .then((asset) => {
           held = asset;

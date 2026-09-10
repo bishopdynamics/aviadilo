@@ -279,3 +279,22 @@ async def test_stream_byte_limit_without_content_length(setup: tuple[Cache, Sche
     with pytest.raises(InvalidAsset):
         await osm.fetch(REQUEST, None)
     assert not cache.index
+
+
+async def test_lookup_never_fetches_or_revalidates_and_preserves_freshness(
+    setup: tuple[Cache, Scheduler],
+) -> None:
+    cache, scheduler = setup
+    now = 100.0
+    cache.clock = lambda: now
+    session = Session(Response({"Cache-Control": "max-age=60"}))
+    osm = OsmProvider(cast(ClientSession, session), cache, scheduler, clock=lambda: now)
+    assert await osm.lookup(REQUEST) is None
+    assert not session.calls and not scheduler.jobs
+    await osm.fetch(REQUEST, None)
+    now += 30
+    hit = await osm.lookup(REQUEST)
+    assert hit is not None and hit.age_s == 30 and hit.max_age_s == 60
+    now += 31
+    assert await osm.lookup(REQUEST) is None
+    assert len(session.calls) == 1 and not scheduler.jobs

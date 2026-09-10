@@ -241,3 +241,78 @@ test('extremely wide zoom-zero views group world copies without changing map zoo
     0,
   );
 });
+
+test('visible basemap recovers from transient source failure without movement', async ({
+  page,
+}) => {
+  await page.goto('/runtime.html');
+  await expect(page.locator('.leaflet-tile img').first()).toBeVisible();
+  const center = await page.evaluate(
+    () => window.aviadiloTest.inspect(0).center,
+  );
+  await page.evaluate(() => {
+    window.aviadiloTest.assets(0, true);
+    window.aviadiloTest.clearAssets();
+  });
+  await expect(page.locator('.tile-unavailable').first()).toBeAttached();
+  await page.evaluate(() => window.aviadiloTest.assets());
+  await expect(page.locator('.leaflet-tile img').first()).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(page.locator('.tile-unavailable')).toHaveCount(0);
+  expect(
+    await page.evaluate(() => window.aviadiloTest.inspect(0).center),
+  ).toEqual(center);
+  expect(
+    await page.evaluate(() => window.aviadiloTest.stats().assetPeak),
+  ).toBeLessThanOrEqual(8);
+});
+
+test('navigation reuses fresh basemap after metadata handshake and observes idle clear', async ({
+  page,
+}) => {
+  await page.goto('/runtime.html');
+  await expect(page.locator('.leaflet-tile img').first()).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.aviadiloTest.inspect(0).assets?.pending),
+    )
+    .toBe(0);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.aviadiloTest.inspect(0).assets?.active),
+    )
+    .toBe(0);
+  const basemapCount = () =>
+    page.evaluate(
+      () =>
+        window.aviadiloTest
+          .stats()
+          .assets.filter((path) => path.includes('/basemap/')).length,
+    );
+  const before = await basemapCount();
+  await page.evaluate(() => window.aviadiloTest.detach(0));
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.aviadiloTest.stats().assetSubscriptions),
+    )
+    .toBe(0);
+  await expect
+    .poll(() => page.evaluate(() => window.aviadiloTest.stats().assetActive))
+    .toBe(0);
+  await page.evaluate(() => window.aviadiloTest.attach(0));
+  await expect(page.locator('.leaflet-tile img').first()).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.aviadiloTest.inspect(0).assets?.active),
+    )
+    .toBe(0);
+  expect(await basemapCount()).toBe(before);
+  await page.evaluate(() => {
+    window.aviadiloTest.detach(0);
+    window.aviadiloTest.clearAssets();
+    window.aviadiloTest.attach(0);
+  });
+  await expect(page.locator('.leaflet-tile img').first()).toBeVisible();
+  expect(await basemapCount()).toBeGreaterThan(before);
+});

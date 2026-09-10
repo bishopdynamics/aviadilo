@@ -19,6 +19,7 @@ REQUIRED = {
     "const.py",
     "models.py",
     "assets.py",
+    "asset_admission.py",
     "cache.py",
     "config_flow.py",
     "diagnostics.py",

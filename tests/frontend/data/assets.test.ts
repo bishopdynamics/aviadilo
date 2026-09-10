@@ -11,6 +11,7 @@ import {
   GENERATION_HEADER,
   parseAssetPath,
   pictureKey,
+  retryAfter,
 } from '../../../src/data/assets';
 import type { AssetInfo, BasemapRequest } from '../../../src/data/asset-types';
 import {
@@ -519,6 +520,382 @@ describe('shared bounded decoded resources', () => {
     ha.fetch.mockImplementation(async () => pngResponse());
     return { ha, client, decoded: new DecodedAssets(client) };
   }
+  it('retries a shared visible tile after429, honors Retry-After and cools fresh connection demand', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const { ha, client, decoded } = await cache();
+    ha.fetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          schema_version: 1,
+          code: 'busy',
+          message: 'Asset capacity reached',
+        }),
+        {
+          status: 429,
+          headers: { 'Content-Type': 'application/json', 'Retry-After': '2' },
+        },
+      ),
+    );
+    const a = new AbortController(),
+      b = new AbortController();
+    const unavailable = vi.fn();
+    const first = decoded
+      .acquire(need, a.signal, () => true, unavailable)
+      .catch(() => null);
+    const alias = decoded.acquire(need, b.signal);
+    await flush();
+    expect(unavailable).toHaveBeenCalledOnce();
+    expect(decoded.diagnostics()).toMatchObject({
+      active: 0,
+      pending: 1,
+      owners: 2,
+    });
+    const fresh = decoded.acquire({ ...need, x: 2 }, b.signal);
+    await flush();
+    expect(ha.fetch).toHaveBeenCalledOnce();
+    a.abort();
+    await vi.advanceTimersByTimeAsync(1999);
+    expect(ha.fetch).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(1);
+    const [one, two] = await Promise.all([alias, fresh]);
+    expect(await first).toBeNull();
+    expect(ha.fetch).toHaveBeenCalledTimes(3);
+    expect(one.current() && two.current()).toBe(true);
+    b.abort();
+    decoded.dispose();
+    client.dispose();
+    expect(vi.getTimerCount()).toBe(0);
+    vi.useRealTimers();
+  });
+  it('recovers after a prolonged outage without holding transfer slots or exhausting visible demand', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const { ha, client, decoded } = await cache();
+    let failing = true;
+    ha.fetch.mockImplementation(async () =>
+      failing
+        ? new Response('proxy unavailable', { status: 503 })
+        : pngResponse(),
+    );
+    const controller = new AbortController();
+    const pending = decoded.acquire(need, controller.signal);
+    await flush();
+    for (let attempt = 0; attempt < 10; attempt++) {
+      expect(decoded.diagnostics()).toMatchObject({ active: 0, pending: 1 });
+      await vi.advanceTimersByTimeAsync(30000);
+    }
+    expect(ha.fetch.mock.calls.length).toBeGreaterThan(10);
+    failing = false;
+    await vi.advanceTimersByTimeAsync(30000);
+    const held = await pending;
+    expect(held.current()).toBe(true);
+    held.release();
+    decoded.dispose();
+    client.dispose();
+    expect(vi.getTimerCount()).toBe(0);
+    vi.useRealTimers();
+  });
+  it('recovers transient fetch failures, but terminal auth and malformed PNG failures never retry', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const { ha, client, decoded } = await cache();
+    ha.fetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    const signal = new AbortController().signal;
+    const pending = decoded.acquire(need, signal);
+    await flush();
+    await vi.advanceTimersByTimeAsync(1000);
+    (await pending).release();
+    expect(ha.fetch).toHaveBeenCalledTimes(2);
+    decoded.clear();
+    for (const response of [
+      new Response('denied', { status: 401 }),
+      new Response('missing', { status: 404 }),
+      pngResponse(257),
+      new Response('{invalid', {
+        status: 502,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    ]) {
+      ha.fetch.mockResolvedValueOnce(response);
+      await expect(decoded.acquire(need, signal)).rejects.toBeInstanceOf(
+        AssetFailure,
+      );
+      const calls = ha.fetch.mock.calls.length;
+      await vi.advanceTimersByTimeAsync(60000);
+      expect(ha.fetch).toHaveBeenCalledTimes(calls);
+    }
+    decoded.dispose();
+    client.dispose();
+    expect(vi.getTimerCount()).toBe(0);
+    vi.useRealTimers();
+  });
+  it.each([429, 502, 503])(
+    'recovers an erroring JSON %s stream without cleanup masking retry metadata',
+    async (status) => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, 'random').mockReturnValue(0);
+      const { ha, client, decoded } = await cache();
+      try {
+        const response = new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.error(new TypeError('connection reset'));
+            },
+          }),
+          {
+            status,
+            headers: { 'Content-Type': 'application/json', 'Retry-After': '2' },
+          },
+        );
+        ha.fetch.mockResolvedValueOnce(response);
+        const unavailable = vi.fn();
+        const pending = decoded.acquire(
+          need,
+          new AbortController().signal,
+          () => true,
+          unavailable,
+        );
+        void pending.catch(() => undefined);
+        await flush();
+        await flush();
+        expect(decoded.diagnostics()).toMatchObject({ active: 0, pending: 1 });
+        expect(response.body!.locked).toBe(false);
+        expect(unavailable).toHaveBeenCalledWith(
+          expect.objectContaining({
+            retryable: true,
+            status,
+            retryAfterMs: 2000,
+          }),
+        );
+        await vi.advanceTimersByTimeAsync(1999);
+        expect(ha.fetch).toHaveBeenCalledOnce();
+        await vi.advanceTimersByTimeAsync(1);
+        const held = await pending;
+        expect(held.current()).toBe(true);
+        expect(ha.fetch).toHaveBeenCalledTimes(2);
+        held.release();
+      } finally {
+        decoded.dispose();
+        client.dispose();
+        expect(vi.getTimerCount()).toBe(0);
+        vi.useRealTimers();
+      }
+    },
+  );
+  it('cancels sleeping retries and safely suspends excessively large Retry-After', async () => {
+    vi.useFakeTimers();
+    const { ha, client, decoded } = await cache();
+    ha.fetch.mockImplementation(
+      async () =>
+        new Response('busy', {
+          status: 429,
+          headers: { 'Retry-After': '999999999999999999999999' },
+        }),
+    );
+    const controller = new AbortController();
+    const pending = decoded.acquire(need, controller.signal);
+    const rejected = expect(pending).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+    await flush();
+    expect(decoded.diagnostics()).toMatchObject({ active: 0, pending: 1 });
+    expect(vi.getTimerCount()).toBe(0);
+    await vi.advanceTimersByTimeAsync(600000);
+    expect(ha.fetch).toHaveBeenCalledOnce();
+    controller.abort();
+    await rejected;
+    decoded.dispose();
+    client.dispose();
+    expect(vi.getTimerCount()).toBe(0);
+    vi.useRealTimers();
+  });
+  function transport() {
+    const unsub = vi.fn().mockResolvedValue(undefined);
+    const hass: HassTransport = {
+      user: { id: 'regular' },
+      connection: {
+        connected: true,
+        subscribeMessage: vi.fn().mockResolvedValue(unsub),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      },
+      callWS: vi.fn().mockResolvedValue(info),
+      fetchWithAuth: vi.fn().mockImplementation(async () => pngResponse()),
+    };
+    return { hass, unsub };
+  }
+  it('retains only decoded basemap bytes across navigation and gates adoption on a new metadata handshake', async () => {
+    vi.useFakeTimers();
+    const { hass, unsub } = transport();
+    const a = acquireAssets(() => hass);
+    const old = await a.decoded.acquire(need, new AbortController().signal);
+    a.release();
+    expect(old.current()).toBe(false);
+    expect(unsub).toHaveBeenCalledOnce();
+    expect(revoke).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(1);
+    await vi.advanceTimersByTimeAsync(10000);
+    const metadata = deferred<AssetInfo>();
+    vi.mocked(hass.callWS).mockReturnValueOnce(metadata.promise);
+    const b = acquireAssets(() => hass);
+    const adopting = b.decoded.acquire(need, new AbortController().signal);
+    await flush();
+    expect(b.decoded.diagnostics().entries).toBe(0);
+    expect(hass.fetchWithAuth).toHaveBeenCalledOnce();
+    vi.mocked(hass.connection.subscribeMessage).mock.calls[1][0]({
+      event_type: ASSETS_CHANGED,
+      data: info,
+    });
+    const earlyEvent = b.decoded.acquire(need, new AbortController().signal);
+    await flush();
+    expect(b.client.currentInfo).toEqual(info);
+    expect(b.decoded.diagnostics().entries).toBe(0);
+    expect(hass.fetchWithAuth).toHaveBeenCalledOnce();
+    metadata.resolve(info);
+    const current = await adopting;
+    (await earlyEvent).release();
+    expect(current.url).toBe(old.url);
+    expect(current.current()).toBe(true);
+    expect(hass.callWS).toHaveBeenCalledTimes(2);
+    expect(hass.fetchWithAuth).toHaveBeenCalledOnce();
+    expect(create).toHaveBeenCalledOnce();
+    old.release();
+    current.release();
+    b.release();
+    await vi.advanceTimersByTimeAsync(600000);
+    expect(revoke).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+    vi.useRealTimers();
+  });
+  it.each(['generation', 'entry', 'user', 'connection', 'expired'])(
+    'discards retained data on %s mismatch or expiry',
+    async (change) => {
+      vi.useFakeTimers();
+      const { hass } = transport();
+      vi.mocked(hass.fetchWithAuth!).mockImplementation(async () =>
+        pngResponse(256, 'max-age=20', { Age: '10' }),
+      );
+      const a = acquireAssets(() => hass);
+      (await a.decoded.acquire(need, new AbortController().signal)).release();
+      a.release();
+      let nextInfo = info;
+      if (change === 'generation')
+        nextInfo = { ...info, generation: generation.slice(0, -1) + '1' };
+      if (change === 'entry') nextInfo = { ...info, entry_id: 'replacement' };
+      if (change === 'user') hass.user = { id: 'other-user' };
+      if (change === 'connection') hass.connection = { ...hass.connection };
+      if (change === 'expired') await vi.advanceTimersByTimeAsync(10001);
+      vi.mocked(hass.callWS).mockResolvedValue(nextInfo);
+      vi.mocked(hass.fetchWithAuth!).mockImplementation(async () =>
+        pngResponse(256, 'max-age=60', {
+          [GENERATION_HEADER]: nextInfo.generation,
+        }),
+      );
+      const b = acquireAssets(() => hass);
+      const held = await b.decoded.acquire(need, new AbortController().signal);
+      expect(hass.fetchWithAuth).toHaveBeenCalledTimes(2);
+      expect(revoke).toHaveBeenCalledOnce();
+      held.release();
+      b.release();
+      await vi.advanceTimersByTimeAsync(600000);
+      expect(revoke).toHaveBeenCalledTimes(2);
+      expect(vi.getTimerCount()).toBe(0);
+      vi.useRealTimers();
+    },
+  );
+  it('last owner drops private photos and late decodes while idle retention stays globally bounded', async () => {
+    vi.useFakeTimers();
+    const { hass } = transport();
+    const a = acquireAssets(() => hass);
+    const signal = new AbortController().signal;
+    const leases = await Promise.all(
+      Array.from({ length: 128 }, (_, x) =>
+        a.decoded.acquire({ ...need, x }, signal),
+      ),
+    );
+    a.release();
+    expect(vi.getTimerCount()).toBe(1);
+    expect(revoke).not.toHaveBeenCalled();
+    const other = transport();
+    const b = acquireAssets(() => other.hass);
+    expect(revoke).toHaveBeenCalledTimes(128);
+    width = 128;
+    vi.mocked(other.hass.fetchWithAuth!).mockImplementation(async () =>
+      pngResponse(128, 'no-store'),
+    );
+    const photo = await b.decoded.acquire(
+      {
+        kind: 'photo',
+        entity_id: 'person.synthetic',
+        picture_key: pictureKey('photo'),
+      },
+      signal,
+    );
+    b.release();
+    expect(photo.current()).toBe(false);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(revoke).toHaveBeenCalledTimes(129);
+    leases.forEach((held) => held.release());
+    photo.release();
+    width = 256;
+    const c = acquireAssets(() => hass);
+    const late = deferred<void>();
+    decode = () => late.promise;
+    const pending = c.decoded.acquire(need, signal);
+    const rejected = expect(pending).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+    await flush();
+    c.release();
+    await rejected;
+    late.resolve();
+    await flush();
+    expect(c.decoded.diagnostics()).toMatchObject({
+      active: 0,
+      entries: 0,
+      bytes: 0,
+    });
+    expect(vi.getTimerCount()).toBe(0);
+    expect(revoke).toHaveBeenCalledTimes(create.mock.calls.length);
+    vi.useRealTimers();
+  });
+  it('last-owner release cancels a retry timer and new ownership starts with clean counters', async () => {
+    vi.useFakeTimers();
+    const { hass, unsub } = transport();
+    vi.mocked(hass.fetchWithAuth).mockImplementation(
+      async () =>
+        new Response('busy', { status: 429, headers: { 'Retry-After': '30' } }),
+    );
+    const a = acquireAssets(() => hass);
+    const pending = a.decoded.acquire(need, new AbortController().signal);
+    const rejected = expect(pending).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+    await flush();
+    await flush();
+    expect(a.decoded.diagnostics()).toMatchObject({ active: 0, pending: 1 });
+    expect(vi.getTimerCount()).toBe(1);
+    a.release();
+    await rejected;
+    await flush();
+    expect(unsub).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+    vi.mocked(hass.fetchWithAuth).mockImplementation(async () => pngResponse());
+    const b = acquireAssets(() => hass);
+    const held = await b.decoded.acquire(need, new AbortController().signal);
+    expect(b.decoded.diagnostics()).toMatchObject({
+      active: 0,
+      pending: 0,
+      entries: 1,
+    });
+    expect(hass.fetchWithAuth).toHaveBeenCalledTimes(2);
+    held.release();
+    b.release();
+    await vi.advanceTimersByTimeAsync(600000);
+    expect(vi.getTimerCount()).toBe(0);
+    vi.useRealTimers();
+  });
   it('carries stale response metadata across shared decoded leases without extra requests', async () => {
     const { ha, client, decoded } = await cache();
     ha.fetch.mockImplementation(async () =>
@@ -772,4 +1149,14 @@ it('keeps a clear event that races foreground refresh without adding a subscript
   ).toEqual([{ type: 'aviadilo/subscribe_assets', schema_version: 1 }]);
   expect(ha.fetch).not.toHaveBeenCalled();
   client.dispose();
+});
+
+it('parses Retry-After defensively without early or overflowing retries', () => {
+  const now = Date.parse('Wed, 09 Sep 2026 12:00:00 GMT');
+  expect(retryAfter('2', now)).toBe(2000);
+  expect(retryAfter('Wed, 09 Sep 2026 12:00:05 GMT', now)).toBe(5000);
+  expect(retryAfter('Wed, 09 Sep 2026 11:00:00 GMT', now)).toBe(0);
+  for (const value of [null, '', '-1', '1.5', 'nope', 'NaN', 'Infinity'])
+    expect(retryAfter(value, now)).toBe(0);
+  expect(retryAfter('999999999999999999999999', now)).toBe(Infinity);
 });

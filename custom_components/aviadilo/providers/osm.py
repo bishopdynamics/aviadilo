@@ -46,6 +46,14 @@ class OsmProvider:
             raise InvalidAsset("Invalid tile request")
         return f"basemap-v1/osm_standard/standard/{request.z}/{request.x}/{request.y}/256"
 
+    async def lookup(self, request: AssetRequest) -> AssetPayload | None:
+        """Read a fresh cached tile only, without creating upstream demand."""
+        cached = await self.cache.get(self.key(request))
+        if cached is None:
+            return None
+        self.counters["hits"] += 1
+        return self.payload(cached)
+
     async def fetch(self, request: AssetRequest, referer: str | None) -> AssetPayload:
         key = self.key(request)
         cached = await self.cache.get(key)
