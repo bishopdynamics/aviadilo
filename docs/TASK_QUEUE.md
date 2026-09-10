@@ -4,17 +4,15 @@ Agent-worked, ordered queue. Processing rules live in `AGENTS.md` and project-sp
 
 ## Queue
 
-1. [in-progress, awaiting user assessment] [Singleton priority and clearer connectors](spec/FEATURE_SPEC_marker_anchor_priority.md) delivered as [v0.2.1-dev.3](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.3) from 2197808. Parent 431 frontend / 576 backend / 41 browser checks, native three-role/theme/grouping/101-member acceptance, all remote gates and actual public-ZIP HACS upgrade passed. Originally isolated in-bounds markers stay anchored; outlined leaders improve contrast. Stable 0.2.0 remains Latest.
-
-## Awaiting user assessment
-
-- One-hour idle basemap retention delivered as [v0.2.1-dev.2](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.1-dev.2) from a9a15f7. Original dev.1 tile-streaming repair is user-confirmed and its TODO marked done. Parent 427 frontend / 576 backend / 40 browser checks, native package navigation, all remote gates and actual published-byte HACS upgrade from dev.1 passed. Stable0.2.0 remains Latest.
+1. [in-progress] Publish normal0.2.1 after user confirmation of dev.3 on2026-09-09. Promote exact tested behavior, verify fresh HACS installation and stable/prerelease upgrades, publish and check the actual public ZIP/Latest metadata. Prepare a clear quick-start for additional testers.
 
 ## Awaiting incident evidence
 
 - Intermittent Aircraft unavailable warning: icons are user-confirmed working; no household cause was established. The supplied capture showed a healthy adsb.fi state and no active viewers. Revisit if active-warning diagnostics become available; no runtime fix or warning suppression is claimed. See [investigation](research/intermittent-aircraft-status.md). The separate people-location mismatch is fixed and user-confirmed.
 
 ## Completed
+
+- 2026-09-09 — User accepted tile streaming, one-hour basemap retention and singleton/connector refinements through dev.3 and authorized normal0.2.1. Earlier delivery history is preserved in [archive37](handoff/archive_37.md).
 
 - 2026-09-09 — User signed off the original [implementation](spec/ROOT_SPEC.md) and all kiosk/layout/permissions/reference/aircraft/person/marker-layout addenda through v0.2.0-dev.7. Both final user TODO items were marked done in the release commit. Normal [v0.2.0](https://github.com/bishopdynamics/aviadilo/releases/tag/v0.2.0) is published as GitHub Latest/HACS default; actual public ZIP and six default HACS install/update cases passed.
 - 2026-09-08 — HACS metadata/topics and normal-channel update repair verified and user-confirmed.

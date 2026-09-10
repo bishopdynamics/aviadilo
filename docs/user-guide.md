@@ -1,27 +1,29 @@
 # Using Aviadilo
 
-Aviadilo 0.2.0 combines aircraft, radar, wind, and household locations in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. Shared basemap caching and the same real data serve saved, editor and picker views; synthetic data is confined to the developer test harness.
+Aviadilo 0.2.1 combines aircraft, radar, wind, and household locations in one Home Assistant map. It targets Home Assistant 2026.9.1 and Chromium. Shared basemap caching and the same real data serve saved, editor and picker views; synthetic data is confined to the developer test harness.
 
 ## Installation
 
-1. In HACS, add `https://github.com/bishopdynamics/aviadilo` as a custom repository with type **Integration**. Download the latest normal release (`v0.2.0`). If already installed, use the ordinary Update action. Restart Home Assistant when requested.
+For a first installation and a short testing checklist, see the [quick-start guide](quick-start.md).
+
+1. In HACS, add `https://github.com/bishopdynamics/aviadilo` as a custom repository with type **Integration**. Download the latest normal release (`v0.2.1`). If already installed, use the ordinary Update action. Restart Home Assistant when requested.
 2. Open **Settings → Devices & services → Add integration → Aviadilo**. Choose the shared collection anchor, aircraft provider, radius, and cache settings. Leave conservative provider pacing at its defaults unless you want slower collection.
 3. Reload the dashboard in your browser. Edit the dashboard, add a card, and select **Aviadilo**. The integration loads its matching card automatically; no manual JavaScript resource is needed.
 4. Use the graphical editor to choose layers and add your `person` or `device_tracker` entities under People. **Save the card, then click Done to leave dashboard edit mode.**
 
 The card picker, card editor and dashboard edit mode use the same HA states, source fetching and shared caches as the saved card. **Done** exits dashboard editing. Missing HA context, integration or source data produces a real loading/unavailable state. HA may recreate its preview card after a settings change, which creates a new viewer while shared data/cache remains available.
 
-## Upgrading to 0.2.0
+## Upgrading to 0.2.1
 
-Use the normal HACS **Update** action from 0.1.0 or any 0.2.0 prerelease. If the new version is missing, use Aviadilo’s three-dot menu → **Update information**. Restart HA and reload dashboard browsers before editing card settings. Existing dashboards load through an in-memory migration; a normal editor save stores version-2 card configuration, which an old cached frontend cannot read. Integration settings and the shared cache are retained.
+Use the normal HACS **Update** action from 0.1.0, 0.2.0 or an Aviadilo prerelease. If the new version is missing, use Aviadilo’s three-dot menu → **Update information**. Restart HA and reload dashboard browsers before editing card settings. Existing dashboards load through an in-memory migration; a normal editor save stores version-2 card configuration, which an old cached frontend cannot read. Integration settings and the shared cache are retained.
 
-The 0.2.0 release has the same functionality as the signed-off 0.2.0-dev.7 prerelease.
+The 0.2.1 release has the same functionality as the confirmed 0.2.1-dev.3 prerelease.
 
 Legacy combined wind markers and particles become **Particles**. Legacy wind settings that drew nothing become **Arrows**, while preserving whether the Wind layer is enabled.
 
-## Optional tile-streaming prerelease
+## Tile loading and cache reuse
 
-`0.2.1-dev.3` includes tile recovery, one-hour basemap reuse and singleton marker priority. Select it explicitly in HACS under **Need a different version? → Release**, restart Home Assistant and reload dashboard browsers. Normal `0.2.0` remains the stable release during testing.
+Version 0.2.1 includes tile recovery, one-hour basemap reuse and singleton marker priority through the normal HACS update channel.
 
 Visible basemap tiles retry temporary capacity/connection failures with controlled backoff. Cached tiles can load while uncached tiles wait for the provider, including when several kiosks share one HA login. Fresh basemap images can be reused for up to one hour after navigating away, within a bounded memory cache. Tiles must still be fresh according to their HTTP expiry; the one-hour idle window never extends that expiry. Returning checks the current integration/cache identity before reuse; a cache clear invalidates retained images. This navigation cache does not retain household photos or keep map requests running while the card is closed.
 
@@ -84,7 +86,7 @@ The card editor controls that card's view, filters, units, layers and presentati
 
 A blank basemap with **Refusing to allow … to subscribe to event aviadilo/assets_changed** is a permissions bug in releases through v0.2.0-dev.2. Update to v0.2.0-dev.3 or later, restart HA and reload the kiosk page. Keep the kiosk's existing regular/read-only role: MQTT and administrator permissions are not involved. Browser cache/profile clearing alone cannot correct this server-side refusal. The fixed version uses a dedicated authenticated metadata subscription while preserving HA's event and entity access restrictions.
 
-If HACS still offers a commit hash, its metadata may reflect the former prerelease-only repository. On Aviadilo's entry, open the three-dot menu and choose **Update information**, then install the `v0.1.0` update. This refresh changes version metadata; it does not install files by itself. After downloading, restart HA and reload the dashboard. See [HACS metadata refresh](https://www.hacs.xyz/docs/use/repositories/dashboard/#updating-repository-metadata).
+If HACS still offers a commit hash, its metadata may reflect the former prerelease-only repository. On Aviadilo's entry, open the three-dot menu and choose **Update information**, then install the latest normal release (`v0.2.1`). This refresh changes version metadata; it does not install files by itself. After downloading, restart HA and reload the dashboard. See [HACS metadata refresh](https://www.hacs.xyz/docs/use/repositories/dashboard/#updating-repository-metadata).
 
 Normal releases use tags such as `v0.1.0`; development versions remain prereleases and do not replace the normal update channel. HACS should no longer advertise each main-branch commit as an update. **Need a different version?** is still available for deliberate version selection, including the retained `v0.1.0-dev.2`; it is not the routine update path. Repository topics and validation failures do not determine this channel selection.
 

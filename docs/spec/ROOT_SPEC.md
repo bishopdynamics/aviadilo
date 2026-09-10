@@ -8,8 +8,8 @@
 - **Addenda:** [FEATURE_SPEC_aircraft_types.md](FEATURE_SPEC_aircraft_types.md) — aircraft-kind icons and graphical type filters, requested 2026-09-09.
 - **Addenda:** [FEATURE_SPEC_person_locations.md](FEATURE_SPEC_person_locations.md) — person selection and stock-map zone fallback, requested 2026-09-09.
 - **Addenda:** [FEATURE_SPEC_marker_layout.md](FEATURE_SPEC_marker_layout.md) — always-spread household markers, optional grouping and people-only auto-fit, requested 2026-09-09.
-- **Addenda:** [FEATURE_SPEC_tile_streaming.md](FEATURE_SPEC_tile_streaming.md) — post-0.2.0 tile-streaming repair user-confirmed; one-hour retention follow-up delivered in dev.2 for assessment.
-- **Addenda:** [FEATURE_SPEC_marker_anchor_priority.md](FEATURE_SPEC_marker_anchor_priority.md) — requested2026-09-09; singleton priority and clearer connectors delivered as dev.3 for assessment.
+- **Addenda:** [FEATURE_SPEC_tile_streaming.md](FEATURE_SPEC_tile_streaming.md) — post-0.2.0 tile streaming and one-hour retention accepted for normal0.2.1.
+- **Addenda:** [FEATURE_SPEC_marker_anchor_priority.md](FEATURE_SPEC_marker_anchor_priority.md) — singleton priority and clearer connectors user-accepted for normal0.2.1.
 - **Repository:** public `https://github.com/bishopdynamics/aviadilo`; remote `github`, upstream `github/main`. HACS from the first release is an accepted user requirement.
 - **Compatibility baseline:** Home Assistant Core 2026.9.1, current stable Chromium on a tablet PC. The user reported using latest HA; this patch version is the verified release baseline, not an inspection of their installation.
 - **Inputs:** `docs/idea/revised-direction.md`, `docs/research/everything-map.md`, `docs/research/weather-source-quality.md`, and the frozen Claremont spike.

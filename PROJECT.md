@@ -6,6 +6,8 @@ This file is **project-owned**: template migrations never touch it. It holds eve
 
 ## Project-specific rules
 
+- Release acceptance (2026-09-09): the user confirmed the combined0.2.1-dev.3 build and authorized normal0.2.1, accepting tile recovery, one-hour retention and singleton/connector refinements. Broader tester feedback follows this release; keep first-install instructions clear and preserve the prerelease feedback workflow for future changes.
+
 - Marker refinement (2026-09-09): prioritize originally isolated household icons at their true positions; relocated group members use remaining space. Make connectors thicker with strong light/dark contrast. See docs/spec/FEATURE_SPEC_marker_anchor_priority.md.
 
 - Release acceptance (2026-09-09): the user signed off v0.2.0-dev.7 and authorized normal v0.2.0. The original implementation and all feature addenda through marker layout are accepted. Promote the tested behavior without functional changes; future work follows the established prerelease feedback process.
